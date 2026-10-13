@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// 2人プレイ用: 商品棚(画面2)で1P/2Pがカーソルで商品を掴むと、
 /// 商品とカーソルがそのプレイヤーの画面(1P=画面1 / 2P=画面3)へ移る。
-/// 自分の画面でAボタンを押すと商品を落とし、カーソルは商品棚へ戻る。
+/// 自分の画面でAボタンを押すと商品を離し、Rigidbody2Dで自由落下する。
+/// 離した後、カーソルは商品棚へ戻る。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// DisplayTestSwitcher と併用する。
@@ -42,6 +43,16 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ONならキーボードも予備として使える(1P: WASD+Space / 2P: 矢印+Enter)")]
     public bool useKeyboard = true;
 
+    [Header("落下(物理)")]
+    [Tooltip("重力の強さ(大きいほど速く落ちる)")]
+    public float gravityScale = 2f;
+    [Tooltip("ONなら、1P/2P画面に床と左右の壁を作る")]
+    public bool createFloor = true;
+    public float floorY = -4.5f;
+    public float wallX = 8.9f;
+    [Tooltip("ONなら、落下中に商品が回転しない")]
+    public bool freezeRotation = false;
+
     [Header("動作")]
     public bool arrangeCameras = true;
     public bool showOverlayLabel = true;
@@ -75,6 +86,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
 
+        SetupPhysicsLayers();
         CreateProducts();
         if (arrangeCameras) ArrangeCameras();
 
@@ -83,12 +95,30 @@ public class TwoPlayerShop2D : MonoBehaviour
 
         SetupCullingMasks();
 
+        if (createFloor)
+        {
+            CreateFloor(layerP1);
+            CreateFloor(layerP2);
+        }
+
         // 最初は両プレイヤーとも棚を操作中
         foreach (var p in new[] { p1, p2 })
         {
             p.cursorShop.gameObject.SetActive(true);
             p.cursorOwn.gameObject.SetActive(false);
         }
+    }
+
+    // 3つの画面は同じワールド座標を使っているので、
+    // 画面(レイヤー)が違う物同士は物理的にぶつからないようにする
+    void SetupPhysicsLayers()
+    {
+        Physics2D.IgnoreLayerCollision(layerP1, layerP2, true);
+        Physics2D.IgnoreLayerCollision(layerP1, layerShop, true);
+        Physics2D.IgnoreLayerCollision(layerP2, layerShop, true);
+        // 同じ画面の中(1P同士、2P同士)はぶつかる
+        Physics2D.IgnoreLayerCollision(layerP1, layerP1, false);
+        Physics2D.IgnoreLayerCollision(layerP2, layerP2, false);
     }
 
     void CreateProducts()
@@ -203,6 +233,37 @@ public class TwoPlayerShop2D : MonoBehaviour
         }
     }
 
+    // 指定レイヤー(=その画面だけ)に映る床と左右の壁を作る
+    void CreateFloor(int layer)
+    {
+        var root = new GameObject($"Floor_Layer{layer}");
+        root.layer = layer;
+
+        // 床(見える)
+        var floor = new GameObject("Floor");
+        floor.transform.SetParent(root.transform);
+        floor.layer = layer;
+        floor.transform.position = new Vector3(0f, floorY - 0.25f, 0f);
+        floor.transform.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
+        var sr = floor.AddComponent<SpriteRenderer>();
+        sr.sprite = GetSquareSprite();
+        sr.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
+        sr.sortingOrder = -10;
+        floor.AddComponent<BoxCollider2D>();
+
+        // 左右の壁(見えない)
+        for (int i = 0; i < 2; i++)
+        {
+            float sign = i == 0 ? -1f : 1f;
+            var wall = new GameObject(i == 0 ? "WallLeft" : "WallRight");
+            wall.transform.SetParent(root.transform);
+            wall.layer = layer;
+            wall.transform.position = new Vector3(sign * (wallX + 0.5f), 0f, 0f);
+            wall.transform.localScale = new Vector3(1f, 40f, 1f);
+            wall.AddComponent<BoxCollider2D>().size = Vector2.one;
+        }
+    }
+
     // ---------- メインループ ----------
 
     void Update()
@@ -263,7 +324,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         return new Vector2(Mathf.Clamp(v.x, -8.5f, 8.5f), Mathf.Clamp(v.y, -4.5f, 4.5f));
     }
 
-    // Aボタン: 棚なら「掴む」、自分の画面なら「落とす」
+    // Aボタン: 棚なら「掴む」、自分の画面なら「離す」
     void PressAction(Player p)
     {
         if (p.inShop) TryPickUp(p);
@@ -277,15 +338,25 @@ public class TwoPlayerShop2D : MonoBehaviour
 
         // 商品を自分の画面へ移し、カーソルも自分の画面へ
         SetLayer(go, p.layer);
-        go.GetComponent<SpriteRenderer>().color = originalColors[go];
-        go.GetComponent<SpriteRenderer>().sortingOrder = 999;   // 持ち運び中は手前に
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.color = originalColors[go];
+        sr.sortingOrder = 999;   // 持ち運び中は手前に
+
+        // 持ち運び中は物理を止める(他の商品を押しのけない)
+        foreach (var c in go.GetComponentsInChildren<Collider2D>()) c.isTrigger = true;
+        var rb = go.GetComponent<Rigidbody2D>();
+        if (rb == null) rb = go.AddComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        go.transform.rotation = Quaternion.identity;
 
         p.held = go;
-        p.ownPos = Vector2.zero;   // 自分の画面の中央から始める
+        p.ownPos = new Vector2(0f, 3.5f);   // 自分の画面の上のほうから始める
         p.inShop = false;
         go.transform.position = new Vector3(p.ownPos.x, p.ownPos.y, 0f);
 
-        lastEvent = $"{p.name}が {go.name} を掴んだ → 画面{p.screen + 1}へ移動(Aで落とす)";
+        lastEvent = $"{p.name}が {go.name} を掴んだ → 画面{p.screen + 1}へ移動(Aで離す)";
         Debug.Log($"[Shop2D] {lastEvent}");
     }
 
@@ -293,11 +364,20 @@ public class TwoPlayerShop2D : MonoBehaviour
     {
         if (p.held == null) { p.inShop = true; return; }
 
-        // 今のカーソル位置に落として、カーソルは棚へ戻る
-        p.held.transform.position = new Vector3(p.ownPos.x, p.ownPos.y, 0f);
-        p.held.GetComponent<SpriteRenderer>().sortingOrder = ++dropOrder;
+        var go = p.held;
 
-        lastEvent = $"{p.name}が {p.held.name} を落とした → カーソルは棚へ戻る";
+        // 今のカーソル位置から自由落下させる
+        go.transform.position = new Vector3(p.ownPos.x, p.ownPos.y, 0f);
+        go.GetComponent<SpriteRenderer>().sortingOrder = ++dropOrder;
+
+        foreach (var c in go.GetComponentsInChildren<Collider2D>()) c.isTrigger = false;
+        var rb = go.GetComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.gravityScale = gravityScale;
+        rb.linearVelocity = Vector2.zero;
+        rb.freezeRotation = freezeRotation;
+
+        lastEvent = $"{p.name}が {go.name} を離した → 落下 / カーソルは棚へ戻る";
         Debug.Log($"[Shop2D] {lastEvent}");
 
         p.held = null;
@@ -353,7 +433,6 @@ public class TwoPlayerShop2D : MonoBehaviour
         for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)
             {
-                // 左上(0, size-1)を先端とする三角形
                 int fromTop = (size - 1) - y;
                 bool inside = x <= fromTop * 0.6f && fromTop <= size - 8 && x <= size - 8 - fromTop * 0.2f && fromTop >= x * 1.3f;
                 px[y * size + x] = inside ? Color.white : Color.clear;
@@ -372,7 +451,6 @@ public class TwoPlayerShop2D : MonoBehaviour
         return playerIndex == 0 ? pad1 : pad2;
     }
 
-    // 現在つながっているコントローラー数
     int PadCount => Gamepad.all.Count;
 
     Keyboard Kb => useKeyboard ? Keyboard.current : null;
@@ -387,7 +465,6 @@ public class TwoPlayerShop2D : MonoBehaviour
 
     Vector2 GetMove1P()
     {
-        // キーボードを押している間はキーボード優先、それ以外はコントローラー
         var k = Kb;
         if (k != null)
         {
