@@ -142,13 +142,37 @@ public partial class TwoPlayerShop2D
             RemoveProduct(p, go);
         }
 
+        // 袋に入ったあと、袋から出て場外に落ちた商品(床に着いた / 袋の左右の外で止まった / 下へ抜けた)
+        // → 消して、その金額を合計から引く。袋の上に積み上がっただけ(袋の幅の中)なら消さない
+        float t = bagWallThickness;
+        float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
         for (int i = p.inBag.Count - 1; i >= 0; i--)
         {
             var go = p.inBag[i];
             if (go == null) { p.inBag.RemoveAt(i); continue; }
-            if (!TouchesFloor(go)) continue;
+
+            Vector2 c = go.transform.position;
+            bool outside = c.x < left || c.x > right;
+            bool remove = TouchesFloor(go) || c.y < floorY - 3f;
+            if (!remove)
+            {
+                var rb = go.GetComponent<Rigidbody2D>();
+                bool stopped = rb == null || rb.linearVelocity.sqrMagnitude < 0.01f;
+                stoppedTime.TryGetValue(go, out float time);
+                time = outside && stopped ? time + Time.deltaTime : 0f;
+                stoppedTime[go] = time;
+                remove = time >= removeAfterStopTime;
+            }
+            if (!remove) continue;
+
             p.inBag.RemoveAt(i);
+            priceOf.TryGetValue(go, out int price);
+            p.total -= price;
+            p.bag.totalLabel.text = $"¥{p.total}";
+            StartCoroutine(Popup(p.layer, c + Vector2.up, $"-¥{price}", new Color(1f, 0.35f, 0.3f), 0.08f));
             RemoveProduct(p, go);
+            lastEvent = $"{p.name}の {go.name} が袋から落ちた -¥{price}(合計 ¥{p.total})";
+            Debug.Log($"[Shop2D] {lastEvent}");
         }
     }
 
