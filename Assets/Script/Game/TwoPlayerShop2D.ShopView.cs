@@ -18,6 +18,7 @@ public partial class TwoPlayerShop2D
     Rect shopBaseRect, shopAppliedRect;   // DisplayTestSwitcher が決めた範囲 / こちらで縮めた範囲
     TextMesh timerPlaceholder;
     bool shopCameraChanged;               // 縦のためにカメラを変えたか(横に戻すときに元へ戻す)
+    Camera shopBackCamera;                // 縦のとき、左右(上下)の余りを黒く塗るカメラ
 
     bool IsPortrait => shopOrientation != ShopOrientation.Landscape;
 
@@ -108,6 +109,27 @@ public partial class TwoPlayerShop2D
         var cam = switcher.screens[screenShop].camera;
         if (cam == null) return;
         ApplyShopCamera(cam);
+        ApplyShopBackCamera(cam);
+    }
+
+    // 縦のとき、棚のカメラは真ん中しか描かないので、左右の余りには前の映像が残ってしまう
+    // (棚が2つ重なって見える)。元の範囲全体を、先に黒で塗るカメラを置いて消す
+    void ApplyShopBackCamera(Camera shopCam)
+    {
+        if (shopBackCamera == null)
+        {
+            var go = new GameObject("ShopBackCamera");
+            shopBackCamera = go.AddComponent<Camera>();
+            shopBackCamera.orthographic = true;
+            shopBackCamera.cullingMask = 0;                        // 何も映さない(黒で塗るだけ)
+            shopBackCamera.clearFlags = CameraClearFlags.SolidColor;
+            shopBackCamera.backgroundColor = Color.black;
+            go.transform.position = new Vector3(0f, 0f, -10f);
+        }
+        shopBackCamera.enabled = IsPortrait && shopCam.enabled;
+        shopBackCamera.targetDisplay = shopCam.targetDisplay;
+        shopBackCamera.rect = shopBaseRect;
+        shopBackCamera.depth = shopCam.depth - 1f;                // 棚のカメラより先に描く
     }
 
     // 棚のカメラを向きに合わせる。DisplayTestSwitcher が決めた範囲の中に、縦長(または回した縦長)の画面を収める
