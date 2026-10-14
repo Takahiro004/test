@@ -119,7 +119,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float clashPerfect = 0.95f;
     [Tooltip("勝ち負けを表示しておく秒数")]
     public float clashResultTime = 1.2f;
-    [Tooltip("ゲージの高さ(棚の画面。中心が0、下の端が-5)")]
+    [Tooltip("ONなら、ゲージを棚の画面の真ん中に出す(横でも縦でも)")]
+    public bool clashGaugeCentered = true;
+    [Tooltip("真ん中にしないときのゲージの高さ(横の棚の画面。中心が0、下の端が-5。縦のときは画面の下)")]
     public float clashGaugeY = -3.6f;
 
     [Header("棚の画面(画面2)の向き")]
