@@ -301,7 +301,7 @@ MonoBehaviour:
     canvases: []
     originalCameraDisplay: 0
     originalCanvasDisplays: 
-  testMode: 1
+  testMode: 0
   autoDisableIfMultiDisplay: 1
   splitView: 1
   baseOrthoSize: 5
@@ -573,6 +573,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   switcher: {fileID: 0}
+  refillShelf: 1
+  horizontalOnlyOnOwnScreen: 1
+  createFloor: 1
+  createBag: 1
+  showPricePopup: 1
+  removeOutsideBag: 1
+  subtractSpilledFromTotal: 1
+  clashEnabled: 1
+  clashRematchOnTie: 1
+  clashGaugeCentered: 1
+  kickEnabled: 1
+  kickShakeBag: 1
+  kickShakeScreen: 1
+  kickShakeSelf: 1
+  autoFitPlayerScreens: 1
+  autoFitShopScreen: 1
+  showTimerPlaceholder: 1
+  useKeyboard: 0
+  showOverlayLabel: 1
   screenP1: 0
   screenShop: 1
   screenP2: 2
@@ -582,14 +601,20 @@ MonoBehaviour:
   cursorSpeed: 8
   p1Color: {r: 1, g: 0.3, b: 0.3, a: 1}
   p2Color: {r: 0.3, g: 0.5, b: 1, a: 1}
+  playerViewAspect: 0.5625
+  playerViewWidth: 10
+  floorFromBottom: 0.04
+  dropHeightRatio: 0.85
+  bagWidthRatio: 0.8
+  bagHeightRatio: 0.45
+  bagXRatio: 0
   dropHeight: 9
   p1CursorSprite: {fileID: 8957324059118975939, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   p2CursorSprite: {fileID: -863147454, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   cursorScale: 1.2
+  textScale: 2
   stickDeadzone: 0.2
-  useKeyboard: 0
   gravityScale: 2
-  createFloor: 1
   floorY: -4
   wallX: 8.9
   freezeRotation: 0
@@ -600,10 +625,9 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  productSize: 1.4
   productImageSize: 2
-  refillShelf: 1
   refillDelay: 1.5
-  createBag: 1
   bagX: 0
   bagWidth: 4
   bagHeight: 7.5
@@ -612,15 +636,12 @@ MonoBehaviour:
   bagSprite: {fileID: 0}
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
   pricePopupTime: 1
-  removeOutsideBag: 1
   removeAfterStopTime: 0.5
   grabWindow: 0.5
   clashGaugeSpeed: 1.2
   clashPerfect: 0.95
   clashResultTime: 1.2
-  clashGaugeCentered: 1
   clashGaugeY: -3.6
-  kickEnabled: 1
   kickGaugeSpeed: 1.2
   kickPerfect: 0.95
   kickCooldown: 3
@@ -635,14 +656,12 @@ MonoBehaviour:
   kickScreenShake: 0.6
   kickScreenShakeTime: 0.5
   kickShakeTime: 1
-  shopOrientation: 0
+  shopOrientation: 1
   portraitAspect: 0.5625
   portraitViewWidth: 8
   portraitColumns: 2
   portraitTopSpace: 0.2
-  showTimerPlaceholder: 1
   arrangeCameras: 1
-  showOverlayLabel: 1
 --- !u!4 &699965479
 Transform:
   m_ObjectHideFlags: 0
