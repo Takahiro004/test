@@ -590,7 +590,7 @@ MonoBehaviour:
   useKeyboard: 0
   gravityScale: 2
   createFloor: 1
-  floorY: -9
+  floorY: -4
   wallX: 8.9
   freezeRotation: 0
   productSprites:
@@ -605,8 +605,8 @@ MonoBehaviour:
   refillDelay: 1.5
   createBag: 1
   bagX: 0
-  bagWidth: 15
-  bagHeight: 15
+  bagWidth: 4
+  bagHeight: 7.5
   bagWallThickness: 0.2
   bagColor: {r: 1, g: 1, b: 1, a: 0.85}
   bagSprite: {fileID: 0}
@@ -618,7 +618,23 @@ MonoBehaviour:
   clashGaugeSpeed: 1.2
   clashPerfect: 0.95
   clashResultTime: 1.2
+  clashGaugeCentered: 1
   clashGaugeY: -3.6
+  kickEnabled: 1
+  kickGaugeSpeed: 1.2
+  kickPerfect: 0.95
+  kickCooldown: 3
+  kickFlightTime: 0.7
+  kickFootSprite: {fileID: 0}
+  kickFootSize: 2.5
+  kickFootRotation: 0
+  kickShakeMax: 1
+  kickShakeUp: 0.3
+  kickShakeFrequency: 4
+  kickSelfShake: 0.8
+  kickScreenShake: 0.6
+  kickScreenShakeTime: 0.5
+  kickShakeTime: 1
   shopOrientation: 0
   portraitAspect: 0.5625
   portraitViewWidth: 8
