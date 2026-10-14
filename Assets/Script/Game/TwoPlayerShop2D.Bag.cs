@@ -111,7 +111,7 @@ public partial class TwoPlayerShop2D
             priceOf.TryGetValue(go, out int price);
             p.total += price;
             p.bag.totalLabel.text = $"¥{p.total}";
-            StartCoroutine(PricePopup(p, c, price));
+            if (showPricePopup) StartCoroutine(PricePopup(p, c, price));
 
             lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
             Debug.Log($"[Shop2D] {lastEvent}");
@@ -169,9 +169,12 @@ public partial class TwoPlayerShop2D
 
             p.inBag.RemoveAt(i);
             priceOf.TryGetValue(go, out int price);
-            p.total -= price;
-            p.bag.totalLabel.text = $"¥{p.total}";
-            StartCoroutine(Popup(p.layer, c + Vector2.up, $"-¥{price}", new Color(1f, 0.35f, 0.3f), 0.08f));
+            if (subtractSpilledFromTotal)
+            {
+                p.total -= price;
+                p.bag.totalLabel.text = $"¥{p.total}";
+                StartCoroutine(Popup(p.layer, c + Vector2.up, $"-¥{price}", new Color(1f, 0.35f, 0.3f), 0.08f));
+            }
             RemoveProduct(p, go);
             lastEvent = $"{p.name}の {go.name} が袋から落ちた -¥{price}(合計 ¥{p.total})";
             Debug.Log($"[Shop2D] {lastEvent}");

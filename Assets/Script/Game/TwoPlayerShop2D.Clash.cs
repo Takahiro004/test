@@ -161,7 +161,7 @@ public partial class TwoPlayerShop2D
         int score1 = Mathf.RoundToInt(c.value[0] * 100), score2 = Mathf.RoundToInt(c.value[1] * 100);
         c.title.text = $"1P {score1}  -  {score2} 2P";
         c.resultTimer = clashResultTime;
-        if (score1 == score2)
+        if (score1 == score2 && clashRematchOnTie)
         {
             c.result.text = "引き分け！ もう一回！";
             c.result.color = Color.white;
@@ -170,7 +170,7 @@ public partial class TwoPlayerShop2D
             return;
         }
 
-        int win = score1 > score2 ? 0 : 1;
+        int win = score1 > score2 ? 0 : score2 > score1 ? 1 : Random.Range(0, 2);   // 同点(やり直しOFF)はランダム
         c.winner = win == 0 ? p1 : p2;
         bool perfect = c.value[win] >= clashPerfect;
         c.result.text = $"{c.winner.name}の勝ち！" + (perfect ? " パーフェクト！！" : "");

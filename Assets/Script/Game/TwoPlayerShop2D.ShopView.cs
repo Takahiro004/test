@@ -151,7 +151,8 @@ public partial class TwoPlayerShop2D
             shopAppliedRect = cam.rect;
             // 横の配置(16:9)が、どんな形の画面でも全部映るようにズームする(縦長の画面なら上下に余り)
             Vector2 land = ShopViewSize();
-            cam.orthographicSize = Mathf.Max(land.y / 2f, land.x / 2f / Mathf.Max(0.01f, cam.aspect));
+            if (autoFitShopScreen)
+                cam.orthographicSize = Mathf.Max(land.y / 2f, land.x / 2f / Mathf.Max(0.01f, cam.aspect));
             return;
         }
         shopCameraChanged = true;
