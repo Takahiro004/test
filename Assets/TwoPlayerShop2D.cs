@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// 2人プレイ用: 商品棚(画面2)で1P/2Pがカーソルで商品を掴むと、
 /// 商品とカーソルがそのプレイヤーの画面(1P=画面1 / 2P=画面3)へ移る。
-/// 自分の画面でAボタンを押すと商品を離し、Rigidbody2Dで自由落下する。
+/// 自分の画面では横にだけ動ける(高さは dropHeight で固定)。
+/// Aボタンを押すと商品を離し、Rigidbody2Dで自由落下する。
 /// 離した後、カーソルは商品棚へ戻る。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
@@ -31,6 +32,10 @@ public class TwoPlayerShop2D : MonoBehaviour
     public float cursorSpeed = 8f;
     public Color p1Color = new Color(1f, 0.3f, 0.3f);
     public Color p2Color = new Color(0.3f, 0.5f, 1f);
+
+    [Header("自分の画面(商品を落とす位置を選ぶとき)")]
+    [Tooltip("商品を持って横移動するときの高さ(画面の中心が0、上の端が4.5)")]
+    public float dropHeight = 3.5f;
 
     [Header("カーソル画像(未設定なら矢印を自動生成)")]
     public Sprite p1CursorSprite;
@@ -342,7 +347,7 @@ public class TwoPlayerShop2D : MonoBehaviour
 
         // 操作中の画面の位置だけを動かす
         if (p.inShop) p.shopPos = ClampToView(p.shopPos + delta);
-        else p.ownPos = ClampToView(p.ownPos + delta);
+        else p.ownPos = ClampToView(new Vector2(p.ownPos.x + delta.x, dropHeight));   // 自分の画面では横移動だけ
 
         p.cursorShop.position = p.shopPos;
         p.cursorOwn.position = p.ownPos;
@@ -396,7 +401,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         }
 
         p.held = go;
-        p.ownPos = new Vector2(0f, 3.5f);   // 自分の画面の上のほうから始める
+        p.ownPos = new Vector2(0f, dropHeight);   // 自分の画面の上のほう(dropHeight)から始める
         p.inShop = false;
         go.transform.position = new Vector3(p.ownPos.x, p.ownPos.y, 0f);
 
