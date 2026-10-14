@@ -7,6 +7,8 @@ public partial class TwoPlayerShop2D
     // レジ袋(左右のふち + 底 + 背景 + 合計の表示)
     class Bag
     {
+        public Transform root;
+        public Rigidbody2D body;   // 揺らすとき用(Kinematic。動かすと中の商品を押す)
         public Transform back, left, right, bottom;
         public TextMesh totalLabel;
     }
@@ -20,7 +22,9 @@ public partial class TwoPlayerShop2D
     {
         var root = new GameObject($"Bag_{p.name}");
         root.layer = p.layer;
-        var bag = new Bag();
+        var bag = new Bag { root = root.transform };
+        bag.body = root.AddComponent<Rigidbody2D>();
+        bag.body.bodyType = RigidbodyType2D.Kinematic;
 
         // 背景(商品より奥。当たり判定なし)
         bag.back = MakeBagPart("Back", root.transform, p.layer, new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f), -20, false);

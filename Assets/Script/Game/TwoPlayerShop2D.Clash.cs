@@ -85,7 +85,7 @@ public partial class TwoPlayerShop2D
     void MakeGaugeShape(Transform bar, string objName, float from, float w, float h, Color color, int order)
     {
         var go = new GameObject(objName);
-        go.layer = layerShop;
+        go.layer = bar.gameObject.layer;   // ゲージを出す画面のレイヤー
         go.transform.SetParent(bar, false);
         go.transform.localPosition = new Vector3(from, 0f, 0f);
         go.transform.localScale = new Vector3(w, h / GetGaugeSprite().bounds.size.y, 1f);
@@ -99,7 +99,7 @@ public partial class TwoPlayerShop2D
     SpriteRenderer MakeGaugeFill(Transform bar, string objName, float from, float w, Color color, int order)
     {
         var go = new GameObject(objName);
-        go.layer = layerShop;
+        go.layer = bar.gameObject.layer;
         go.transform.SetParent(bar, false);
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = GetSquareSprite();
