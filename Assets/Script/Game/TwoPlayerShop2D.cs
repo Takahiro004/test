@@ -145,9 +145,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("威力が最大のときの、相手のレジ袋の左右の揺れ幅")]
     public float kickShakeMax = 3f;
     [Tooltip("威力が最大のときの、相手のレジ袋が上に跳ねる高さ(中の商品が浮く)")]
-    public float kickShakeUp = 1.2f;
+    public float kickShakeUp = 0.3f;
     [Tooltip("1秒に揺れる回数")]
     public float kickShakeFrequency = 4f;
+    [Tooltip("同じ机なので、蹴った人のレジ袋も揺れる。相手の揺れに対する割合(0.3なら3割。0なら揺れない)")]
+    [Range(0f, 1f)] public float kickSelfShake = 0.3f;
     [Tooltip("相手のレジ袋が揺れる秒数")]
     public float kickShakeTime = 1f;
 

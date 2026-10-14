@@ -137,16 +137,19 @@ public partial class TwoPlayerShop2D
         }
         Destroy(foot);
 
-        ShakeBag(target, power);
+        ShakeBag(target, power, true);
+        // 同じ机なので、蹴った人のレジ袋も少し揺れる
+        if (kickSelfShake > 0f) ShakeBag(from, power * kickSelfShake, false);
+        lastEvent = $"{target.name}のレジ袋が揺れた(威力 {Mathf.RoundToInt(power * 100)})";
     }
 
-    void ShakeBag(Player target, float power)
+    void ShakeBag(Player target, float power, bool kicked)
     {
         if (target.bag == null || target.bag.body == null) return;
         if (target.shakeRoutine != null) StopCoroutine(target.shakeRoutine);
         target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, power));
-        StartCoroutine(Popup(target.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
-        lastEvent = $"{target.name}のレジ袋が揺れた(威力 {Mathf.RoundToInt(power * 100)})";
+        if (kicked)
+            StartCoroutine(Popup(target.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
     }
 
     // レジ袋を左右に揺らす。威力が大きいほど大きく揺れる。中の商品は袋に押されて動く(こぼれたら消える)
