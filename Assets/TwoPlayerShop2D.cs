@@ -54,6 +54,7 @@ public class TwoPlayerShop2D : MonoBehaviour
     public float gravityScale = 2f;
     [Tooltip("ONなら、1P/2P画面に床と左右の壁を作る")]
     public bool createFloor = true;
+    [Tooltip("床の上の面の高さ(画面の中心が0、下の端が-5)。再生中に変えてもすぐ反映される")]
     public float floorY = -4.5f;
     public float wallX = 8.9f;
     [Tooltip("ONなら、落下中に商品が回転しない")]
@@ -99,6 +100,8 @@ public class TwoPlayerShop2D : MonoBehaviour
     readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
     static Sprite squareSprite, circleSprite, arrowSprite;
     string lastEvent = "";
+    readonly List<Transform> floors = new List<Transform>();   // 1P/2P画面の床
+    float appliedFloorY;   // 床に今反映している高さ
     int dropOrder = 0;   // 落とした順に手前へ重ねる
     Gamepad pad1, pad2;  // 参加済みのコントローラー(Aボタンで割り当て)
 
@@ -287,6 +290,8 @@ public class TwoPlayerShop2D : MonoBehaviour
         floor.layer = layer;
         floor.transform.position = new Vector3(0f, floorY - 0.25f, 0f);
         floor.transform.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
+        floors.Add(floor.transform);
+        appliedFloorY = floorY;
         var sr = floor.AddComponent<SpriteRenderer>();
         sr.sprite = GetSquareSprite();
         sr.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
@@ -312,6 +317,8 @@ public class TwoPlayerShop2D : MonoBehaviour
     {
         if (switcher == null || p1 == null) return;
 
+        if (floorY != appliedFloorY) ApplyFloorY();
+
         // 参加(Aボタンを押したコントローラーを1P→2Pの順に割り当てる)
         TryAssignPads(out bool joined1, out bool joined2);
 
@@ -321,6 +328,21 @@ public class TwoPlayerShop2D : MonoBehaviour
         // 参加したフレームのAボタンは「掴む」として扱わない
         if (!joined1 && Grab1PPressed()) PressAction(p1);
         if (!joined2 && Grab2PPressed()) PressAction(p2);
+    }
+
+    // Inspector で床の高さを変えたら、床を動かす
+    void ApplyFloorY()
+    {
+        appliedFloorY = floorY;
+        foreach (var f in floors)
+            f.position = new Vector3(f.position.x, floorY - 0.25f, f.position.z);
+
+        // 床の上で止まっている商品を起こす(床を下げたとき宙に浮いたままにならないように)
+        foreach (var go in originalColors.Keys)
+        {
+            var rb = go != null ? go.GetComponent<Rigidbody2D>() : null;
+            if (rb != null && rb.bodyType == RigidbodyType2D.Dynamic) rb.WakeUp();
+        }
     }
 
     void TryAssignPads(out bool joined1, out bool joined2)
