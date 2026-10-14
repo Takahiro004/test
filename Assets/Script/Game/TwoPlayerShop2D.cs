@@ -35,6 +35,46 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("参照")]
     public DisplayTestSwitcher switcher;
 
+    [Header("機能のON/OFF(チェックを外すとその機能が止まる。★は再生前に決める)")]
+    [Tooltip("棚: 取られた商品を同じ場所に補充する")]
+    public bool refillShelf = true;
+    [Tooltip("自分の画面: 商品を持っている間は横にだけ動く。OFFなら上下にも動ける")]
+    public bool horizontalOnlyOnOwnScreen = true;
+    [Tooltip("★自分の画面: 床と左右の壁を作る")]
+    public bool createFloor = true;
+    [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
+    public bool createBag = true;
+    [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
+    public bool showPricePopup = true;
+    [Tooltip("レジ袋: 袋の外に落ちた商品を消す(袋に入らなかったもの・袋から場外に落ちたもの)")]
+    public bool removeOutsideBag = true;
+    [Tooltip("レジ袋: 袋から場外に落ちて消えた商品の金額を、合計から引く")]
+    public bool subtractSpilledFromTotal = true;
+    [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
+    public bool clashEnabled = true;
+    [Tooltip("掴み合い: 引き分けならやり直す。OFFならランダムで勝ちを決める")]
+    public bool clashRematchOnTie = true;
+    [Tooltip("掴み合い: ゲージを棚の画面の真ん中に出す")]
+    public bool clashGaugeCentered = true;
+    [Tooltip("キック: 棚を操作中(商品を持っていないとき)にLBでキックできる")]
+    public bool kickEnabled = true;
+    [Tooltip("キック: 足が届いたら相手のレジ袋を揺らす")]
+    public bool kickShakeBag = true;
+    [Tooltip("キック: 足が届いたら1P/2Pの画面を揺らす")]
+    public bool kickShakeScreen = true;
+    [Tooltip("キック: 蹴った人のレジ袋・画面も揺れる(強さは Kick Self Shake)")]
+    public bool kickShakeSelf = true;
+    [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
+    public bool autoFitPlayerScreens = true;
+    [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
+    public bool autoFitShopScreen = true;
+    [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
+    public bool showTimerPlaceholder = true;
+    [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
+    public bool useKeyboard = true;
+    [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
+    public bool showOverlayLabel = true;
+
     [Header("画面の割り当て(0始まり)")]
     public int screenP1 = 0;     // ディスプレイ1 = 1P
     public int screenShop = 1;   // ディスプレイ2 = 商品棚
@@ -82,14 +122,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("コントローラー")]
     [Tooltip("スティックの遊び(これ未満は無視)")]
     public float stickDeadzone = 0.2f;
-    [Tooltip("ONならキーボードも予備として使える(1P: WASD+Space / 2P: 矢印+Enter)")]
-    public bool useKeyboard = true;
 
     [Header("落下(物理)")]
     [Tooltip("重力の強さ(大きいほど速く落ちる)")]
     public float gravityScale = 2f;
-    [Tooltip("ONなら、1P/2P画面に床と左右の壁を作る")]
-    public bool createFloor = true;
     [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
     [HideInInspector] public float wallX = 8.9f;     // 自動で計算(範囲の左右の端)
     [Tooltip("ONなら、落下中に商品が回転しない")]
@@ -103,14 +139,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
     [Header("棚の補充")]
-    [Tooltip("ONなら、取られた商品を同じ場所に補充する")]
-    public bool refillShelf = true;
     [Tooltip("取られてから補充されるまでの秒数")]
     public float refillDelay = 1.5f;
 
     [Header("レジ袋(1P/2Pの画面)")]
-    [Tooltip("ONなら、1P/2Pの画面にレジ袋を置く")]
-    public bool createBag = true;
     [HideInInspector] public float bagX = 0f;        // 自動で計算(bagXRatio)
     [HideInInspector] public float bagWidth = 5f;    // 自動で計算(bagWidthRatio)
     [HideInInspector] public float bagHeight = 4f;   // 自動で計算(bagHeightRatio)
@@ -123,8 +155,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
     public float pricePopupTime = 1f;
-    [Tooltip("ONなら、袋の外に落ちた商品を消す(床に着いたとき / 袋の外で止まったとき)")]
-    public bool removeOutsideBag = true;
     [Tooltip("袋の外で止まってから消えるまでの秒数(袋のふちや他の商品の上に乗ったとき)")]
     public float removeAfterStopTime = 0.5f;
 
@@ -137,14 +167,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float clashPerfect = 0.95f;
     [Tooltip("勝ち負けを表示しておく秒数")]
     public float clashResultTime = 1.2f;
-    [Tooltip("ONなら、ゲージを棚の画面の真ん中に出す(横でも縦でも)")]
-    public bool clashGaugeCentered = true;
     [Tooltip("真ん中にしないときのゲージの高さ(横の棚の画面。中心が0、下の端が-5。縦のときは画面の下)")]
     public float clashGaugeY = -3.6f;
 
     [Header("キック(LBで蹴る)")]
-    [Tooltip("ONなら、棚を操作中(商品を持っていないとき)にLBでキックできる")]
-    public bool kickEnabled = true;
     [Tooltip("キックのゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
     public float kickGaugeSpeed = 1.2f;
     [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
@@ -185,12 +211,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public int portraitColumns = 2;
     [Tooltip("縦のとき、上を空ける割合(タイマー用。0.2なら上の2割)")]
     [Range(0f, 0.5f)] public float portraitTopSpace = 0.2f;
-    [Tooltip("ONなら、空けた場所に「TIMER」の目印を出す(タイマーができたら消す)")]
-    public bool showTimerPlaceholder = true;
 
     [Header("動作")]
     public bool arrangeCameras = true;
-    public bool showOverlayLabel = true;
 
     class Player
     {
@@ -577,7 +600,15 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         // 操作中の画面の位置だけを動かす
         if (p.inShop) p.shopPos = ClampToShopView(p.shopPos + delta);
-        else p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -(wallX - 0.4f), wallX - 0.4f), dropHeight);   // 自分の画面では横移動だけ(左右は範囲の中)
+        else if (horizontalOnlyOnOwnScreen)
+            p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -(wallX - 0.4f), wallX - 0.4f), dropHeight);   // 自分の画面では横移動だけ(左右は範囲の中)
+        else
+        {
+            // 上下にも動ける(範囲の中、床より上)
+            Vector2 view = PlayerViewSize();
+            p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -(wallX - 0.4f), wallX - 0.4f),
+                                   Mathf.Clamp(p.ownPos.y + delta.y, floorY + 1f, view.y / 2f - 0.4f));
+        }
 
         p.cursorShop.position = p.shopPos;
         p.cursorOwn.position = p.ownPos;
@@ -607,7 +638,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         // もう1人が grabWindow 秒以内に取った商品の場所なら、掴み合い
         var other = p == p1 ? p2 : p1;
-        if (grabWindow > 0f && other.lastTaken != null && other.held == other.lastTaken &&
+        if (clashEnabled && grabWindow > 0f && other.lastTaken != null && other.held == other.lastTaken &&
             Time.time - other.lastTakenTime <= grabWindow &&
             other.lastTakenBounds.Contains(new Vector3(p.shopPos.x, p.shopPos.y, other.lastTakenBounds.center.z)))
         {

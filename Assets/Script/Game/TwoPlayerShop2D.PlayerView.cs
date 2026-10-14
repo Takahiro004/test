@@ -31,6 +31,7 @@ public partial class TwoPlayerShop2D
     // (DisplayTestSwitcher が決めた表示の場所・形はそのまま。ズームだけ上書きする)
     void FitPlayerCameras()
     {
+        if (!autoFitPlayerScreens) return;   // OFF: ズームは DisplayTestSwitcher に任せる
         Vector2 view = PlayerViewSize();
         foreach (var p in new[] { p1, p2 })
         {

@@ -145,16 +145,16 @@ public partial class TwoPlayerShop2D
         }
         Destroy(foot);
 
-        ShakeBag(target, power, true);
+        if (kickShakeBag) ShakeBag(target, power, true);
         // 同じ机なので、蹴った人のレジ袋も少し揺れる
-        if (kickSelfShake > 0f) ShakeBag(from, power * kickSelfShake, false);
+        if (kickShakeBag && kickShakeSelf && kickSelfShake > 0f) ShakeBag(from, power * kickSelfShake, false);
 
         // 画面も揺らす(棚の画面は揺らさない)
         //  蹴った人の画面は相手の側へ、蹴られた人の画面は蹴られた向き(蹴った人と反対の側)へずれる
         //  1Pが蹴ると、どちらの画面も右へ。2Pが蹴ると、どちらも左へ
         float toTarget = from == p1 ? 1f : -1f;
-        ShakeScreen(target, toTarget, power);
-        if (kickSelfShake > 0f) ShakeScreen(from, toTarget, power * kickSelfShake);
+        if (kickShakeScreen) ShakeScreen(target, toTarget, power);
+        if (kickShakeScreen && kickShakeSelf && kickSelfShake > 0f) ShakeScreen(from, toTarget, power * kickSelfShake);
         lastEvent = $"{target.name}のレジ袋が揺れた(威力 {Mathf.RoundToInt(power * 100)})";
     }
 
