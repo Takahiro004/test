@@ -18,12 +18,14 @@ using UnityEngine.InputSystem;
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
 /// DisplayTestSwitcher と併用する。
 ///
+/// 棚の画面(画面2)は 横 / 縦 / 縦(モニターだけ回す) を shopOrientation で切り替えられる。
 /// ファイルの分け方(すべて同じ1つのスクリプト。partial class):
 ///   TwoPlayerShop2D.cs        設定の欄・初期化・棚・移動・掴む/離す・画面表示
 ///   TwoPlayerShop2D.Clash.cs  掴み合い
 ///   TwoPlayerShop2D.Bag.cs    レジ袋・金額・袋の外の商品を消す
 ///   TwoPlayerShop2D.Sprites.cs 四角・丸・矢印・ゲージの形の自動生成
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
+///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
 /// </summary>
 public partial class TwoPlayerShop2D : MonoBehaviour
@@ -120,6 +122,20 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ゲージの高さ(棚の画面。中心が0、下の端が-5)")]
     public float clashGaugeY = -3.6f;
 
+    [Header("棚の画面(画面2)の向き")]
+    [Tooltip("横: 今までどおり / 縦: 縦長の配置(横のモニターでは真ん中に縦長で表示) / 縦(右回り・左回り): Windows は横のままモニターだけ90度回したとき用(逆さに見えたらもう一方)。再生中に変えてもすぐ反映")]
+    public ShopOrientation shopOrientation = ShopOrientation.Landscape;
+    [Tooltip("縦のときの画面の横:縦の比率(9:16なら0.5625)。モニターが決まったら合わせる")]
+    public float portraitAspect = 9f / 16f;
+    [Tooltip("縦のときに映る横幅。小さいほど棚が大きく映る")]
+    public float portraitViewWidth = 8f;
+    [Tooltip("縦のときの棚の列の数")]
+    public int portraitColumns = 2;
+    [Tooltip("縦のとき、上を空ける割合(タイマー用。0.2なら上の2割)")]
+    [Range(0f, 0.5f)] public float portraitTopSpace = 0.2f;
+    [Tooltip("ONなら、空けた場所に「TIMER」の目印を出す(タイマーができたら消す)")]
+    public bool showTimerPlaceholder = true;
+
     [Header("動作")]
     public bool arrangeCameras = true;
     public bool showOverlayLabel = true;
@@ -185,6 +201,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         p2 = CreatePlayer("2P", screenP2, layerP2, p2Color, p2CursorSprite, new Vector2(4f, -3f));
 
         SetupCullingMasks();
+        ApplyShopLayout();
 
         if (createFloor)
         {
@@ -227,9 +244,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         };
         for (int i = 0; i < cols.Length; i++)
         {
-            float x = -4f + (i % 3) * 4f;
-            float y = 1.5f - (i / 3) * 3f;
-            var slot = new ShelfSlot { pos = new Vector2(x, y), circle = i % 2 == 1, color = cols[i] };
+            var slot = new ShelfSlot { pos = ShelfSlotPosition(i, cols.Length), circle = i % 2 == 1, color = cols[i] };
             slots.Add(slot);
             PlaceProduct(slot);
         }
@@ -476,7 +491,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         Vector2 delta = input * cursorSpeed * Time.deltaTime;
 
         // 操作中の画面の位置だけを動かす
-        if (p.inShop) p.shopPos = ClampToView(p.shopPos + delta);
+        if (p.inShop) p.shopPos = ClampToShopView(p.shopPos + delta);
         else p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -8.5f, 8.5f), dropHeight);   // 自分の画面では横移動だけ(高さは制限しない)
 
         p.cursorShop.position = p.shopPos;

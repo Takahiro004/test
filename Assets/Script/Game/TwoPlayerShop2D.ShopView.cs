@@ -1,0 +1,161 @@
+using UnityEngine;
+
+public enum ShopOrientation
+{
+    Landscape,            // 横(今まで)
+    Portrait,             // 縦。横のモニターでは真ん中に縦長で表示(左右は黒)
+    PortraitRotatedRight, // 縦。Windows は横のまま、モニターを右回り(時計回り)に90度回したとき
+    PortraitRotatedLeft,  // 縦。Windows は横のまま、モニターを左回りに90度回したとき
+}
+
+// 棚の画面(画面2)の向き・棚の並べ方・カメラ(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
+// 縦のときは、DisplayTestSwitcher が決めた表示範囲の中に、縦長の画面を収める(LateUpdate で毎フレーム)
+public partial class TwoPlayerShop2D
+{
+    ShopOrientation appliedOrientation;
+    float appliedPortraitAspect, appliedPortraitWidth, appliedTopSpace;
+    int appliedColumns;
+    Rect shopBaseRect, shopAppliedRect;   // DisplayTestSwitcher が決めた範囲 / こちらで縮めた範囲
+    TextMesh timerPlaceholder;
+    bool shopCameraChanged;               // 縦のためにカメラを変えたか(横に戻すときに元へ戻す)
+
+    bool IsPortrait => shopOrientation != ShopOrientation.Landscape;
+
+    // 棚の画面に映る範囲(ワールド座標の横幅・縦幅)
+    Vector2 ShopViewSize()
+    {
+        if (!IsPortrait) return new Vector2(17.8f, 10f);   // 横: 今までの 16:9(Orthographic Size 5)
+        float w = Mathf.Max(1f, portraitViewWidth);
+        return new Vector2(w, w / Mathf.Clamp(portraitAspect, 0.1f, 1f));
+    }
+
+    // 棚の i 番目(0始まり)の場所
+    Vector2 ShelfSlotPosition(int i, int count)
+    {
+        if (!IsPortrait) return new Vector2(-4f + (i % 3) * 4f, 1.5f - (i / 3) * 3f);   // 横: 今までどおり 3列 x 2段
+
+        // 縦: 上を空けて、残りに portraitColumns 列で並べる
+        Vector2 view = ShopViewSize();
+        int cols = Mathf.Max(1, portraitColumns);
+        int rows = Mathf.Max(1, Mathf.CeilToInt(count / (float)cols));
+        float top = view.y / 2f - view.y * portraitTopSpace;
+        float cellW = view.x / cols;
+        float cellH = (top + view.y / 2f) / rows;
+        return new Vector2(-view.x / 2f + cellW * (i % cols + 0.5f), top - cellH * (i / cols + 0.5f));
+    }
+
+    Vector2 ClampToShopView(Vector2 v)
+    {
+        if (!IsPortrait) return ClampToView(v);
+        Vector2 half = ShopViewSize() / 2f - new Vector2(0.3f, 0.3f);
+        return new Vector2(Mathf.Clamp(v.x, -half.x, half.x), Mathf.Clamp(v.y, -half.y, half.y));
+    }
+
+    // 横用に作った物(掴み合いのゲージなど)を、縦の画面の横幅に収まるように縮める
+    void FitToShopView(Transform root, float baseY)
+    {
+        if (!IsPortrait) return;
+        Vector2 view = ShopViewSize();
+        float scale = Mathf.Min(1f, view.x / 18f);
+        float y = -view.y / 2f + 1.6f * scale;   // 画面の下のほう
+        root.localScale = new Vector3(scale, scale, 1f);
+        root.position = new Vector3(0f, y - baseY * scale, 0f);
+    }
+
+    // 向きや配置の設定を反映する(棚の商品・カーソルを並べ直す)
+    void ApplyShopLayout()
+    {
+        appliedOrientation = shopOrientation;
+        appliedPortraitAspect = portraitAspect;
+        appliedPortraitWidth = portraitViewWidth;
+        appliedColumns = portraitColumns;
+        appliedTopSpace = portraitTopSpace;
+
+        for (int i = 0; i < slots.Count; i++) slots[i].pos = ShelfSlotPosition(i, slots.Count);
+        foreach (var kv in slotOf)   // 棚に置いてある商品だけ動かす
+            if (kv.Key != null) kv.Key.transform.position = kv.Value.pos;
+
+        foreach (var p in new[] { p1, p2 })
+            if (p != null) p.shopPos = ClampToShopView(p.shopPos);
+
+        // タイマー予定地の目印
+        if (timerPlaceholder == null)
+            timerPlaceholder = MakeText("TimerPlaceholder", null, layerShop, "TIMER", new Color(1f, 1f, 1f, 0.35f), 5);
+        Vector2 view = ShopViewSize();
+        timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && portraitTopSpace > 0f);
+        timerPlaceholder.transform.position = new Vector3(0f, view.y / 2f - view.y * portraitTopSpace / 2f, 0f);
+        timerPlaceholder.characterSize = 0.08f * Mathf.Max(1f, view.x / 8f);
+    }
+
+    void LateUpdate()
+    {
+        if (switcher == null || p1 == null) return;
+
+        if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
+            portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
+            portraitTopSpace != appliedTopSpace) ApplyShopLayout();
+        if (timerPlaceholder != null)
+            timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && portraitTopSpace > 0f);
+
+        if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
+        var cam = switcher.screens[screenShop].camera;
+        if (cam == null) return;
+        ApplyShopCamera(cam);
+    }
+
+    // 棚のカメラを向きに合わせる。DisplayTestSwitcher が決めた範囲の中に、縦長(または回した縦長)の画面を収める
+    void ApplyShopCamera(Camera cam)
+    {
+        // DisplayTestSwitcher が範囲を変えたら(分割表示・本番切替)、それを元の範囲として覚える
+        if (cam.rect != shopAppliedRect) shopBaseRect = cam.rect;
+
+        if (!IsPortrait)
+        {
+            // 横は DisplayTestSwitcher に任せる。縦から戻したときだけ元に戻す
+            if (shopCameraChanged)
+            {
+                cam.rect = shopBaseRect;
+                cam.orthographicSize = switcher.baseOrthoSize;
+                cam.transform.rotation = Quaternion.identity;
+                shopCameraChanged = false;
+            }
+            shopAppliedRect = cam.rect;
+            return;
+        }
+        shopCameraChanged = true;
+
+        // 元の範囲の、画面上での横:縦の比率
+        float displayW = cam.pixelWidth / Mathf.Max(0.0001f, cam.rect.width);
+        float displayH = cam.pixelHeight / Mathf.Max(0.0001f, cam.rect.height);
+        float baseAspect = (displayW * shopBaseRect.width) / Mathf.Max(1f, displayH * shopBaseRect.height);
+
+        bool rotated = shopOrientation != ShopOrientation.Portrait;
+        Vector2 view = ShopViewSize();
+        // 画面上に映したい比率(回すときは縦横が入れ替わる)
+        float wantAspect = rotated ? view.y / view.x : view.x / view.y;
+
+        // 比率が合うように、元の範囲の真ん中を切り出す(余りは黒)
+        Rect r = shopBaseRect;
+        if (baseAspect > wantAspect)
+        {
+            float w = r.width * wantAspect / baseAspect;
+            r.x += (r.width - w) / 2f;
+            r.width = w;
+        }
+        else
+        {
+            float h = r.height * baseAspect / wantAspect;
+            r.y += (r.height - h) / 2f;
+            r.height = h;
+        }
+        cam.rect = r;
+        shopAppliedRect = cam.rect;
+
+        // 回すときは、画面の縦がワールドの横になる
+        cam.orthographicSize = (rotated ? view.x : view.y) / 2f;
+        // モニターを右回りに回したら、映像は左回りに回して描く(逆さに見えたらもう一方を選ぶ)
+        float angle = shopOrientation == ShopOrientation.PortraitRotatedRight ? -90f
+                    : shopOrientation == ShopOrientation.PortraitRotatedLeft ? 90f : 0f;
+        cam.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+    }
+}
