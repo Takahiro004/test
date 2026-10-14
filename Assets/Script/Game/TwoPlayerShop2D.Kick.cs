@@ -140,6 +140,13 @@ public partial class TwoPlayerShop2D
         ShakeBag(target, power, true);
         // 同じ机なので、蹴った人のレジ袋も少し揺れる
         if (kickSelfShake > 0f) ShakeBag(from, power * kickSelfShake, false);
+
+        // 画面も揺らす(棚の画面は揺らさない)
+        //  蹴った人の画面は相手の側へ、蹴られた人の画面は蹴られた向き(蹴った人と反対の側)へずれる
+        //  1Pが蹴ると、どちらの画面も右へ。2Pが蹴ると、どちらも左へ
+        float toTarget = from == p1 ? 1f : -1f;
+        ShakeScreen(target, toTarget, power);
+        if (kickSelfShake > 0f) ShakeScreen(from, toTarget, power * kickSelfShake);
         lastEvent = $"{target.name}のレジ袋が揺れた(威力 {Mathf.RoundToInt(power * 100)})";
     }
 
@@ -150,6 +157,34 @@ public partial class TwoPlayerShop2D
         target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, power));
         if (kicked)
             StartCoroutine(Popup(target.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
+    }
+
+    // プレイヤーの画面(カメラ)を、direction(+1 右 / -1 左)へ押されたように揺らす
+    void ShakeScreen(Player p, float direction, float power)
+    {
+        if (kickScreenShake <= 0f || p.screen < 0 || p.screen >= switcher.screens.Length) return;
+        var cam = switcher.screens[p.screen].camera;
+        if (cam == null) return;
+        if (!p.hasCameraBase) { p.cameraBase = cam.transform.position; p.hasCameraBase = true; }
+        if (p.screenShakeRoutine != null) StopCoroutine(p.screenShakeRoutine);
+        p.screenShakeRoutine = StartCoroutine(ShakeScreenRoutine(p, cam, direction, power));
+    }
+
+    IEnumerator ShakeScreenRoutine(Player p, Camera cam, float direction, float power)
+    {
+        float amplitude = kickScreenShake * power;
+        float duration = Mathf.Max(0.01f, kickScreenShakeTime);
+        for (float time = 0f; time < duration; time += Time.deltaTime)
+        {
+            // 最初に direction の側へぐっとずれて、行き来しながら戻る
+            float fade = 1f - time / duration;
+            float shift = direction * amplitude * fade * Mathf.Sin(time / duration * Mathf.PI * 5f);
+            // 画面の中身を右へずらす = カメラを左へ動かす
+            cam.transform.position = p.cameraBase + new Vector3(-shift, 0f, 0f);
+            yield return null;
+        }
+        cam.transform.position = p.cameraBase;
+        p.screenShakeRoutine = null;
     }
 
     // レジ袋を左右に揺らす。威力が大きいほど大きく揺れる。中の商品は袋に押されて動く(こぼれたら消える)
