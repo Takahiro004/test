@@ -60,6 +60,23 @@ public partial class TwoPlayerShop2D
         return k != null && k.spaceKey.wasPressedThisFrame;
     }
 
+    // キック: LBボタン(キーボード予備: 1P Q / 2P 右Shift)
+    bool Kick1PPressed()
+    {
+        var pad = PadOf(0);
+        if (pad != null && pad.leftShoulder.wasPressedThisFrame) return true;
+        var k = Kb;
+        return k != null && k.qKey.wasPressedThisFrame;
+    }
+
+    bool Kick2PPressed()
+    {
+        var pad = PadOf(1);
+        if (pad != null && pad.leftShoulder.wasPressedThisFrame) return true;
+        var k = Kb;
+        return k != null && k.rightShiftKey.wasPressedThisFrame;
+    }
+
     bool Grab2PPressed()
     {
         var pad = PadOf(1);

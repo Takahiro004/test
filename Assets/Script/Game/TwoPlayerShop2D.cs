@@ -26,6 +26,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Sprites.cs 四角・丸・矢印・ゲージの形の自動生成
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
+///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
 /// </summary>
 public partial class TwoPlayerShop2D : MonoBehaviour
@@ -124,6 +125,28 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("真ん中にしないときのゲージの高さ(横の棚の画面。中心が0、下の端が-5。縦のときは画面の下)")]
     public float clashGaugeY = -3.6f;
 
+    [Header("キック(LBで蹴る)")]
+    [Tooltip("ONなら、棚を操作中(商品を持っていないとき)にLBでキックできる")]
+    public bool kickEnabled = true;
+    [Tooltip("キックのゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
+    public float kickGaugeSpeed = 1.2f;
+    [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
+    [Range(0f, 1f)] public float kickPerfect = 0.95f;
+    [Tooltip("1回蹴ってから、次に蹴れるまでの秒数")]
+    public float kickCooldown = 3f;
+    [Tooltip("足が棚の画面を飛んでいく秒数")]
+    public float kickFlightTime = 0.7f;
+    [Tooltip("足の画像(未設定なら自動生成の靴)。つま先が右を向いた画像を想定")]
+    public Sprite kickFootSprite;
+    [Tooltip("足の大きさ(縦横の長いほうがこの長さになる)")]
+    public float kickFootSize = 2.5f;
+    [Tooltip("足の画像の向きの調整(度)。つま先が飛ぶ方向を向かないときに変える")]
+    public float kickFootRotation = 0f;
+    [Tooltip("威力が最大のときの、相手のレジ袋の揺れ幅")]
+    public float kickShakeMax = 1f;
+    [Tooltip("相手のレジ袋が揺れる秒数")]
+    public float kickShakeTime = 1f;
+
     [Header("棚の画面(画面2)の向き")]
     [Tooltip("横: 今までどおり / 縦: 縦長の配置(横のモニターでは真ん中に縦長で表示) / 縦(右回り・左回り): Windows は横のままモニターだけ90度回したとき用(逆さに見えたらもう一方)。再生中に変えてもすぐ反映")]
     public ShopOrientation shopOrientation = ShopOrientation.Landscape;
@@ -162,6 +185,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public float lastTakenTime;
         public Bounds lastTakenBounds;   // 取ったときの棚での範囲
         public Vector3 lastTakenShelfPos;
+        public KickGauge kick;           // キックのゲージ中なら null 以外
+        public float kickCooldown;       // 0より大きい間は蹴れない
+        public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
+        public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
     }
 
     // 棚の1か所ぶん(どこに・どんな商品を置くか)
@@ -438,6 +465,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         bool press1 = !joined1 && Grab1PPressed();   // 参加したフレームのAボタンは「掴む」として扱わない
         bool press2 = !joined2 && Grab2PPressed();
+        bool kick1 = Kick1PPressed(), kick2 = Kick2PPressed();
 
         if (clash != null)
         {
@@ -448,11 +476,19 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             return;
         }
 
-        MoveCursor(p1, GetMove1P());
-        MoveCursor(p2, GetMove2P());
+        // キックのゲージ中はカーソルを止める
+        MoveCursor(p1, p1.kick != null ? Vector2.zero : GetMove1P());
+        MoveCursor(p2, p2.kick != null ? Vector2.zero : GetMove2P());
 
-        if (press1) PressAction(p1);
-        if (press2) PressAction(p2);
+        if (kick1) ToggleKick(p1);
+        if (kick2) ToggleKick(p2);
+
+        // キックのゲージ中のAボタンは、威力を決めるのに使う
+        if (press1) { if (p1.kick != null) LockKick(p1); else PressAction(p1); }
+        if (press2) { if (p2.kick != null) LockKick(p2); else PressAction(p2); }
+
+        UpdateKick(p1);
+        UpdateKick(p2);
     }
 
     // Inspector で床の高さを変えたら、床を動かす
