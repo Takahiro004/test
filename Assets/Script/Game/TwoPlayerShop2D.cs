@@ -150,6 +150,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float kickShakeFrequency = 4f;
     [Tooltip("同じ机なので、蹴った人のレジ袋も揺れる。相手の揺れに対する割合(0.3なら3割。0なら揺れない)")]
     [Range(0f, 1f)] public float kickSelfShake = 0.3f;
+    [Tooltip("足が届いたときに、1P/2Pの画面(カメラ)がずれる大きさ(威力が最大のとき)。0なら画面は揺れない。棚の画面は揺れない")]
+    public float kickScreenShake = 0.6f;
+    [Tooltip("画面が揺れる秒数")]
+    public float kickScreenShakeTime = 0.5f;
     [Tooltip("相手のレジ袋が揺れる秒数")]
     public float kickShakeTime = 1f;
 
@@ -195,6 +199,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public float kickCooldown;       // 0より大きい間は蹴れない
         public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
         public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
+        public Coroutine screenShakeRoutine;   // 自分の画面(カメラ)が揺れている処理
+        public bool hasCameraBase;
+        public Vector3 cameraBase;       // 揺れていないときのカメラの位置
     }
 
     // 棚の1か所ぶん(どこに・どんな商品を置くか)
