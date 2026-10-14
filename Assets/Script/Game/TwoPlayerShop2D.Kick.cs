@@ -160,12 +160,14 @@ public partial class TwoPlayerShop2D
         }
 
         float amplitude = kickShakeMax * power;
-        const float frequency = 6f;   // 1秒に揺れる回数
+        float up = kickShakeUp * power;
         for (float time = 0f; time < kickShakeTime; time += Time.fixedDeltaTime)
         {
             float fade = 1f - time / Mathf.Max(0.01f, kickShakeTime);
-            float x = amplitude * fade * Mathf.Sin(time * frequency * Mathf.PI * 2f);
-            body.MovePosition(new Vector2(x, 0f));
+            float wave = time * kickShakeFrequency * Mathf.PI * 2f;
+            float x = amplitude * fade * Mathf.Sin(wave);                 // 左右
+            float y = up * fade * Mathf.Abs(Mathf.Sin(wave));             // 上に跳ねる
+            body.MovePosition(new Vector2(x, y));
             yield return new WaitForFixedUpdate();
         }
         body.MovePosition(Vector2.zero);

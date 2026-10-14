@@ -142,8 +142,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float kickFootSize = 2.5f;
     [Tooltip("足の画像の向きの調整(度)。つま先が飛ぶ方向を向かないときに変える")]
     public float kickFootRotation = 0f;
-    [Tooltip("威力が最大のときの、相手のレジ袋の揺れ幅")]
-    public float kickShakeMax = 1f;
+    [Tooltip("威力が最大のときの、相手のレジ袋の左右の揺れ幅")]
+    public float kickShakeMax = 3f;
+    [Tooltip("威力が最大のときの、相手のレジ袋が上に跳ねる高さ(中の商品が浮く)")]
+    public float kickShakeUp = 1.2f;
+    [Tooltip("1秒に揺れる回数")]
+    public float kickShakeFrequency = 4f;
     [Tooltip("相手のレジ袋が揺れる秒数")]
     public float kickShakeTime = 1f;
 
@@ -637,6 +641,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         rb.gravityScale = gravityScale;
         rb.linearVelocity = Vector2.zero;
         rb.freezeRotation = freezeRotation;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;   // 袋が強く揺れても、ふちをすり抜けないように
 
         if (!p.dropped.Contains(go)) p.dropped.Add(go);
 
