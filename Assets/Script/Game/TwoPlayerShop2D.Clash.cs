@@ -75,6 +75,8 @@ public partial class TwoPlayerShop2D
         clash.result.transform.position = new Vector3(0f, y + 1.1f, 0f);
         clash.result.characterSize = 0.12f;
 
+        FitToShopView(clash.root.transform, clashGaugeY);   // 縦の画面でもはみ出さないように縮める
+
         lastEvent = $"掴み合い！ {go.name}";
         Debug.Log($"[Shop2D] {lastEvent}");
     }
