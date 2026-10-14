@@ -10,6 +10,8 @@ using UnityEngine.InputSystem;
 /// 離した後、カーソルは商品棚へ戻る。
 /// 1P/2Pの画面にはレジ袋があり、商品が入った瞬間にその商品の金額が出て、袋の合計に足される。
 /// 袋の外に落ちた商品(床に着いた / 袋の外で止まった)は消える。
+/// 2人が同じ商品を grabWindow 秒以内に掴むと「掴み合い」になり、棚の画面にゲージが出る。
+/// ゲージが最大に近いときにAで止めた方が商品を勝ち取る(チャージインパクト風)。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
@@ -97,6 +99,20 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋の外で止まってから消えるまでの秒数(袋のふちや他の商品の上に乗ったとき)")]
     public float removeAfterStopTime = 0.5f;
 
+    [Header("掴み合い(2人が同じ商品を掴んだとき)")]
+    [Tooltip("掴んでから自分の画面へ移るまでの秒数。この間にもう1人が同じ商品を掴むと掴み合いになる。0なら掴み合いなし")]
+    public float grabWindow = 0.5f;
+    [Tooltip("ゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
+    public float clashGaugeSpeed = 1.2f;
+    [Tooltip("この秒数までにAを押さないと、ゲージ0(負け)になる")]
+    public float clashTimeLimit = 3f;
+    [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
+    [Range(0f, 1f)] public float clashPerfect = 0.95f;
+    [Tooltip("勝ち負けを表示しておく秒数")]
+    public float clashResultTime = 1.2f;
+    [Tooltip("ゲージの高さ(棚の画面。中心が0、下の端が-5)")]
+    public float clashGaugeY = -3.6f;
+
     [Header("動作")]
     public bool arrangeCameras = true;
     public bool showOverlayLabel = true;
@@ -117,6 +133,24 @@ public class TwoPlayerShop2D : MonoBehaviour
         public readonly List<GameObject> inBag = new List<GameObject>();     // 袋に入った商品
         public Bag bag;
         public int total;                // 袋に入った商品の合計金額
+        public GameObject grabbing;      // 棚で掴んでいる途中の商品(grabWindow 秒たつと自分の画面へ移る)
+        public float grabTimer;
+    }
+
+    // 掴み合い(2人が同じ商品を掴んだとき)
+    class Clash
+    {
+        public GameObject product;
+        public float time;                          // 始まってからの秒数
+        public readonly float[] value = new float[2];
+        public readonly bool[] locked = new bool[2];
+        public readonly float[] offset = new float[2];   // ゲージの動き出しを少しずらす
+        public Player winner;
+        public float resultTimer;                   // 0より大きい間は勝ち負けを表示中
+        public GameObject root;
+        public readonly Transform[] fill = new Transform[2];
+        public readonly SpriteRenderer[] fillSr = new SpriteRenderer[2];
+        public TextMesh title, result;
     }
 
     // レジ袋(左右のふち + 底 + 背景 + 合計の表示)
@@ -141,6 +175,8 @@ public class TwoPlayerShop2D : MonoBehaviour
     readonly Dictionary<GameObject, int> priceOf = new Dictionary<GameObject, int>();   // 商品ごとの金額
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
     static Font labelFont;
+    Clash clash;
+    const float ClashBarWidth = 6f, ClashBarHeight = 0.7f, ClashBarEdge = 7.2f;
     float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY;
     readonly Dictionary<Collider2D, GameObject> products = new Dictionary<Collider2D, GameObject>();
     readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
@@ -398,12 +434,27 @@ public class TwoPlayerShop2D : MonoBehaviour
         // 参加(Aボタンを押したコントローラーを1P→2Pの順に割り当てる)
         TryAssignPads(out bool joined1, out bool joined2);
 
-        MoveCursor(p1, GetMove1P());
-        MoveCursor(p2, GetMove2P());
+        bool press1 = !joined1 && Grab1PPressed();   // 参加したフレームのAボタンは「掴む」として扱わない
+        bool press2 = !joined2 && Grab2PPressed();
 
-        // 参加したフレームのAボタンは「掴む」として扱わない
-        if (!joined1 && Grab1PPressed()) PressAction(p1);
-        if (!joined2 && Grab2PPressed()) PressAction(p2);
+        if (clash != null)
+        {
+            // 掴み合い中: カーソルは止めて、Aボタンはゲージを止めるのに使う
+            MoveCursor(p1, Vector2.zero);
+            MoveCursor(p2, Vector2.zero);
+            UpdateClash(press1, press2);
+            return;
+        }
+
+        // 棚で掴んでいる途中はカーソルを止める
+        MoveCursor(p1, p1.grabbing != null ? Vector2.zero : GetMove1P());
+        MoveCursor(p2, p2.grabbing != null ? Vector2.zero : GetMove2P());
+
+        if (press1) PressAction(p1);
+        if (press2) PressAction(p2);
+
+        UpdateGrabbing(p1);
+        UpdateGrabbing(p2);
     }
 
     // Inspector で床の高さを変えたら、床を動かす
@@ -473,10 +524,40 @@ public class TwoPlayerShop2D : MonoBehaviour
 
     void TryPickUp(Player p)
     {
+        if (p.grabbing != null) return;   // 掴んでいる途中
         Collider2D col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
         if (col == null || !products.TryGetValue(col, out var go)) return;
 
-        // 商品を自分の画面へ移し、カーソルも自分の画面へ
+        if (grabWindow <= 0f) { TakeProduct(p, go); return; }
+
+        // もう1人が同じ商品を掴んでいる途中なら、掴み合い
+        var other = p == p1 ? p2 : p1;
+        if (other.grabbing == go)
+        {
+            StartClash(go);
+            return;
+        }
+
+        // grabWindow 秒たったら自分の画面へ移る。それまでは棚で自分の色に光らせる
+        p.grabbing = go;
+        p.grabTimer = grabWindow;
+        go.GetComponent<SpriteRenderer>().color = Color.Lerp(originalColors[go], p.color, 0.5f);
+        lastEvent = $"{p.name}が {go.name} を掴もうとしている…";
+    }
+
+    void UpdateGrabbing(Player p)
+    {
+        if (p.grabbing == null) return;
+        p.grabTimer -= Time.deltaTime;
+        if (p.grabTimer > 0f) return;
+        var go = p.grabbing;
+        p.grabbing = null;
+        TakeProduct(p, go);
+    }
+
+    // 商品を自分の画面へ移し、カーソルも自分の画面へ
+    void TakeProduct(Player p, GameObject go)
+    {
         SetLayer(go, p.layer);
         var sr = go.GetComponent<SpriteRenderer>();
         sr.color = originalColors[go];
@@ -531,6 +612,116 @@ public class TwoPlayerShop2D : MonoBehaviour
 
         p.held = null;
         p.inShop = true;
+    }
+
+    // ---------- 掴み合い ----------
+
+    void StartClash(GameObject go)
+    {
+        p1.grabbing = p2.grabbing = null;
+        go.GetComponent<SpriteRenderer>().color = originalColors[go];
+
+        clash = new Clash { product = go };
+        clash.offset[0] = Random.value;
+        clash.offset[1] = Random.value;
+
+        clash.root = new GameObject("Clash");
+        clash.root.layer = layerShop;
+        var t = clash.root.transform;
+        float y = clashGaugeY;
+
+        // 背景
+        MakeClashRect(t, "Panel", 0f, y + 0.6f, 17f, 3.2f, new Color(0f, 0f, 0f, 0.7f), 2000);
+        for (int i = 0; i < 2; i++)
+        {
+            float sign = i == 0 ? -1f : 1f;   // 1Pは左、2Pは右。どちらも真ん中(VS)に向かって伸びる
+            float outer = sign * ClashBarEdge;
+            float inner = outer - sign * ClashBarWidth;
+            MakeClashRect(t, $"Bar{i + 1}", (outer + inner) / 2f, y, ClashBarWidth, ClashBarHeight, new Color(0.15f, 0.15f, 0.15f), 2001);
+            // 最大の近く(パーフェクトの範囲)を金色にする
+            float perfectW = ClashBarWidth * (1f - clashPerfect);
+            MakeClashRect(t, $"Perfect{i + 1}", inner + sign * perfectW / 2f, y, perfectW, ClashBarHeight + 0.2f, new Color(1f, 0.85f, 0.2f), 2002);
+            var fill = MakeClashRect(t, $"Fill{i + 1}", outer, y, 0f, ClashBarHeight * 0.7f, i == 0 ? p1.color : p2.color, 2003);
+            clash.fill[i] = fill;
+            clash.fillSr[i] = fill.GetComponent<SpriteRenderer>();
+            MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", Color.white, 2004).transform.position = new Vector3(outer - sign * 0.6f, y + 0.8f, 0f);
+        }
+        MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2004).transform.position = new Vector3(0f, y, 0f);
+        clash.title = MakeText("Title", t, layerShop, "掴み合い！ 最大に近いところでA！", Color.white, 2004);
+        clash.title.transform.position = new Vector3(0f, y + 1.4f, 0f);
+        clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2005);
+        clash.result.transform.position = new Vector3(0f, y + 0.75f, 0f);
+
+        lastEvent = $"掴み合い！ {go.name}";
+        Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    Transform MakeClashRect(Transform parent, string objName, float cx, float cy, float w, float h, Color color, int order)
+    {
+        var tr = MakeBagPart(objName, parent, layerShop, color, order, false);
+        SetRect(tr, cx, cy, w, h);
+        return tr;
+    }
+
+    void UpdateClash(bool press1, bool press2)
+    {
+        var c = clash;
+
+        // 勝ち負けの表示中
+        if (c.resultTimer > 0f)
+        {
+            c.resultTimer -= Time.deltaTime;
+            if (c.resultTimer <= 0f) EndClash();
+            return;
+        }
+
+        c.time += Time.deltaTime;
+        bool[] pressed = { press1, press2 };
+        for (int i = 0; i < 2; i++)
+        {
+            if (c.locked[i]) continue;
+            // 0 → 1(最大) → 0 と往復する
+            c.value[i] = Mathf.PingPong((c.time + c.offset[i]) * clashGaugeSpeed * 2f, 1f);
+            if (pressed[i])
+            {
+                c.locked[i] = true;
+                c.fillSr[i].color = Color.white;   // 止めたら白く光る
+            }
+        }
+
+        // 時間切れ: 押していない方は0
+        if (c.time >= clashTimeLimit)
+            for (int i = 0; i < 2; i++)
+                if (!c.locked[i]) { c.locked[i] = true; c.value[i] = 0f; }
+
+        for (int i = 0; i < 2; i++)
+        {
+            float sign = i == 0 ? -1f : 1f;
+            float w = ClashBarWidth * c.value[i];
+            SetRect(c.fill[i], sign * ClashBarEdge - sign * w / 2f, clashGaugeY, w, ClashBarHeight * 0.7f);
+        }
+
+        if (!c.locked[0] || !c.locked[1]) return;
+
+        // 2人とも止めた → 最大に近い方の勝ち(同じならランダム)
+        int win = c.value[0] > c.value[1] ? 0 : c.value[1] > c.value[0] ? 1 : Random.Range(0, 2);
+        c.winner = win == 0 ? p1 : p2;
+        bool perfect = c.value[win] >= clashPerfect;
+        c.result.text = $"{c.winner.name}の勝ち！" + (perfect ? " パーフェクト！！" : "");
+        c.result.color = c.winner.color;
+        c.title.text = $"1P {Mathf.RoundToInt(c.value[0] * 100)}  -  {Mathf.RoundToInt(c.value[1] * 100)} 2P";
+        c.resultTimer = clashResultTime;
+
+        lastEvent = $"掴み合い: {c.result.text}(1P {c.value[0]:0.00} / 2P {c.value[1]:0.00})";
+        Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    void EndClash()
+    {
+        var c = clash;
+        clash = null;
+        Destroy(c.root);
+        if (c.product != null) TakeProduct(c.winner, c.product);
     }
 
     // ---------- レジ袋 ----------
