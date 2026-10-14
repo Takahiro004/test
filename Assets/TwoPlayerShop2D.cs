@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 /// 袋の外に落ちた商品(床に着いた / 袋の外で止まった)は消える。
 /// 1人が商品を掴んでから grabWindow 秒以内に、もう1人が同じ商品を掴むと「掴み合い」になり、
 /// 棚の画面にゲージが出る。ゲージが最大に近いときにAで止めた方が商品を勝ち取る(チャージインパクト風)。
-/// 2人ともAを押すまで掴み合いは終わらない。
+/// 2人ともAを押すまで掴み合いは終わらない。引き分け(表示の数字が同じ)ならやり直す。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
@@ -146,7 +146,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         public readonly float[] value = new float[2];
         public readonly bool[] locked = new bool[2];
         public readonly float[] offset = new float[2];   // ゲージの動き出しを少しずらす
-        public Player winner;
+        public Player winner;                       // null のまま結果表示が終わったら引き分け → やり直し
         public float resultTimer;                   // 0より大きい間は勝ち負けを表示中
         public GameObject root;
         public readonly Transform[] fill = new Transform[2];   // ゲージの中身(形で切り抜く)
@@ -720,7 +720,9 @@ public class TwoPlayerShop2D : MonoBehaviour
         if (c.resultTimer > 0f)
         {
             c.resultTimer -= Time.deltaTime;
-            if (c.resultTimer <= 0f) EndClash();
+            if (c.resultTimer > 0f) return;
+            if (c.winner != null) EndClash();
+            else RestartClash();
             return;
         }
 
@@ -744,17 +746,44 @@ public class TwoPlayerShop2D : MonoBehaviour
         // 2人とも押すまで終わらない
         if (!c.locked[0] || !c.locked[1]) return;
 
-        // 2人とも止めた → 最大に近い方の勝ち(同じならランダム)
-        int win = c.value[0] > c.value[1] ? 0 : c.value[1] > c.value[0] ? 1 : Random.Range(0, 2);
+        // 2人とも止めた → 最大に近い方の勝ち。表示の数字(0〜100)が同じなら引き分けでやり直し
+        int score1 = Mathf.RoundToInt(c.value[0] * 100), score2 = Mathf.RoundToInt(c.value[1] * 100);
+        c.title.text = $"1P {score1}  -  {score2} 2P";
+        c.resultTimer = clashResultTime;
+        if (score1 == score2)
+        {
+            c.result.text = "引き分け！ もう一回！";
+            c.result.color = Color.white;
+            lastEvent = $"掴み合い: 引き分け({score1}) → やり直し";
+            Debug.Log($"[Shop2D] {lastEvent}");
+            return;
+        }
+
+        int win = score1 > score2 ? 0 : 1;
         c.winner = win == 0 ? p1 : p2;
         bool perfect = c.value[win] >= clashPerfect;
         c.result.text = $"{c.winner.name}の勝ち！" + (perfect ? " パーフェクト！！" : "");
         c.result.color = c.winner.color;
-        c.title.text = $"1P {Mathf.RoundToInt(c.value[0] * 100)}  -  {Mathf.RoundToInt(c.value[1] * 100)} 2P";
-        c.resultTimer = clashResultTime;
 
         lastEvent = $"掴み合い: {c.result.text}(1P {c.value[0]:0.00} / 2P {c.value[1]:0.00})";
         Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    // 引き分けのあと: ゲージを0に戻して、もう一度
+    void RestartClash()
+    {
+        var c = clash;
+        c.time = 0f;
+        for (int i = 0; i < 2; i++)
+        {
+            c.locked[i] = false;
+            c.value[i] = 0f;
+            c.offset[i] = Random.value;
+            c.fillSr[i].color = i == 0 ? p1.color : p2.color;
+            SetGaugeFill(c.fill[i], 0f, 0f);
+        }
+        c.title.text = "掴み合い！ 最大に近いところでA！";
+        c.result.text = "";
     }
 
     void EndClash()
