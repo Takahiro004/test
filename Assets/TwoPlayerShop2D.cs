@@ -61,6 +61,12 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ONなら、落下中に商品が回転しない")]
     public bool freezeRotation = false;
 
+    [Header("商品の画像(未設定なら四角・丸を自動生成)")]
+    [Tooltip("棚の左上から順に Product_1, 2, 3 … の画像。空の欄は四角・丸のまま")]
+    public Sprite[] productSprites = new Sprite[6];
+    [Tooltip("画像の商品の大きさ(縦横の長いほうがこの長さになる。四角・丸は2)")]
+    public float productImageSize = 2f;
+
     [Header("棚の補充")]
     [Tooltip("ONなら、取られた商品を同じ場所に補充する")]
     public bool refillShelf = true;
@@ -79,6 +85,8 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋のふちの太さ")]
     public float bagWallThickness = 0.3f;
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
+    [Tooltip("袋の画像(未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
+    public Sprite bagSprite;
     [Tooltip("棚の商品の金額(左上から順に Product_1, 2, 3 …)")]
     public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
@@ -207,7 +215,9 @@ public class TwoPlayerShop2D : MonoBehaviour
         slot.count++;
         int index = slots.IndexOf(slot) + 1;
         string objName = slot.count == 1 ? $"Product_{index}" : $"Product_{index}_{slot.count}";
-        var go = MakeSprite(objName, slot.pos, slot.circle, slot.color, layerShop);
+        int si = slots.IndexOf(slot);
+        Sprite image = productSprites != null && si < productSprites.Length ? productSprites[si] : null;
+        var go = MakeSprite(objName, slot.pos, slot.circle, slot.color, layerShop, image);
         RegisterProduct(go);
         slotOf[go] = slot;
         int i = index - 1;
@@ -220,18 +230,30 @@ public class TwoPlayerShop2D : MonoBehaviour
         PlaceProduct(slot);
     }
 
-    GameObject MakeSprite(string objName, Vector2 pos, bool circle, Color color, int layer)
+    GameObject MakeSprite(string objName, Vector2 pos, bool circle, Color color, int layer, Sprite image = null)
     {
         var go = new GameObject(objName);
         go.transform.position = pos;
         go.transform.localScale = new Vector3(2f, 2f, 1f);
 
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = circle ? GetCircleSprite() : GetSquareSprite();
-        sr.color = color;
-
-        if (circle) go.AddComponent<CircleCollider2D>();
-        else go.AddComponent<BoxCollider2D>();
+        if (image != null)
+        {
+            // 用意した画像: 色はそのまま、当たり判定は画像の形に合わせる
+            sr.sprite = image;
+            sr.color = Color.white;
+            Vector2 size = image.bounds.size;
+            float scale = productImageSize / Mathf.Max(size.x, size.y, 0.01f);
+            go.transform.localScale = new Vector3(scale, scale, 1f);
+            go.AddComponent<PolygonCollider2D>();
+        }
+        else
+        {
+            sr.sprite = circle ? GetCircleSprite() : GetSquareSprite();
+            sr.color = color;
+            if (circle) go.AddComponent<CircleCollider2D>();
+            else go.AddComponent<BoxCollider2D>();
+        }
 
         go.layer = layer;
         return go;
@@ -519,6 +541,16 @@ public class TwoPlayerShop2D : MonoBehaviour
         bag.right = MakeBagPart("Right", root.transform, p.layer, bagColor, 500, true);
         bag.bottom = MakeBagPart("Bottom", root.transform, p.layer, bagColor, 500, true);
 
+        if (bagSprite != null)
+        {
+            // 袋の画像を背景に使い、ふちと底は見えない壁にする
+            var backSr = bag.back.GetComponent<SpriteRenderer>();
+            backSr.sprite = bagSprite;
+            backSr.color = Color.white;
+            foreach (var wall in new[] { bag.left, bag.right, bag.bottom })
+                wall.GetComponent<SpriteRenderer>().enabled = false;
+        }
+
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
         return bag;
     }
@@ -548,6 +580,9 @@ public class TwoPlayerShop2D : MonoBehaviour
             var b = p.bag;
             if (b == null) continue;
             SetRect(b.back, bagX, floorY + bagHeight / 2f, bagWidth, bagHeight);
+            // 画像は大きさがまちまちなので、袋の幅・高さぴったりに引き伸ばす
+            Vector2 backSize = b.back.GetComponent<SpriteRenderer>().sprite.bounds.size;
+            b.back.localScale = new Vector3(bagWidth / Mathf.Max(backSize.x, 0.01f), bagHeight / Mathf.Max(backSize.y, 0.01f), 1f);
             SetRect(b.left, bagX - bagWidth / 2f + t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.right, bagX + bagWidth / 2f - t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.bottom, bagX, floorY + t / 2f, bagWidth, t);
