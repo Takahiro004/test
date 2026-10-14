@@ -44,6 +44,7 @@ public partial class TwoPlayerShop2D
         }
 
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
+        bag.totalLabel.characterSize = HudTextSize;
         return bag;
     }
 
@@ -78,7 +79,8 @@ public partial class TwoPlayerShop2D
             SetRect(b.left, bagX - bagWidth / 2f + t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.right, bagX + bagWidth / 2f - t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.bottom, bagX, floorY + t / 2f, bagWidth, t);
-            b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.6f, 0f);
+            b.totalLabel.characterSize = HudTextSize;
+            b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
         }
     }
 
@@ -223,6 +225,7 @@ public partial class TwoPlayerShop2D
     System.Collections.IEnumerator PricePopup(Player p, Vector2 pos, int price)
     {
         var label = MakeText("PricePopup", null, p.layer, $"+¥{price}", new Color(1f, 0.95f, 0.3f), 1002);
+        label.characterSize = HudTextSize;
         var color = label.color;
         float time = 0f;
         while (time < pricePopupTime)
@@ -235,6 +238,9 @@ public partial class TwoPlayerShop2D
         }
         Destroy(label.gameObject);
     }
+
+    // 合計金額・「+¥」・「LB: キック」などの文字の大きさ(textScale で変える)
+    float HudTextSize => 0.08f * Mathf.Max(0.1f, textScale);
 
     static TextMesh MakeText(string objName, Transform parent, int layer, string text, Color color, int order)
     {

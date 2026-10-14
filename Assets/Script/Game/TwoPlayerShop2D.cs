@@ -62,7 +62,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("レジ袋の幅(範囲の横幅の何割か)")]
     [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
     [Tooltip("レジ袋の高さ(範囲の高さの何割か)")]
-    [Range(0.05f, 1f)] public float bagHeightRatio = 0.45f;
+    [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
     [Tooltip("レジ袋の横の位置(-0.5 で左の端、0 で真ん中、0.5 で右の端)")]
     [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
 
@@ -72,8 +72,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("カーソル画像(未設定なら矢印を自動生成)")]
     public Sprite p1CursorSprite;
     public Sprite p2CursorSprite;
-    [Tooltip("カーソルの大きさ(画像が大きすぎ/小さすぎるときに調整)")]
+    [Tooltip("カーソルの大きさ(縦横の長いほうがこの長さになる。画像の大きさに関係なくそろう)")]
     public float cursorScale = 1.2f;
+
+    [Header("文字")]
+    [Tooltip("合計金額・「+¥」「LB: キック」などの文字の大きさ(1で前の大きさ)")]
+    public float textScale = 2f;
 
     [Header("コントローラー")]
     [Tooltip("スティックの遊び(これ未満は無視)")]
@@ -94,8 +98,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("商品の画像(未設定なら四角・丸を自動生成)")]
     [Tooltip("棚の左上から順に Product_1, 2, 3 … の画像。空の欄は四角・丸のまま")]
     public Sprite[] productSprites = new Sprite[6];
-    [Tooltip("画像の商品の大きさ(縦横の長いほうがこの長さになる。四角・丸は2)")]
-    public float productImageSize = 2f;
+    [Tooltip("商品の大きさ(縦横の長いほうがこの長さになる。四角・丸も画像も同じ)。小さくすると袋にたくさん入る")]
+    public float productSize = 1.4f;
+    [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
     [Header("棚の補充")]
     [Tooltip("ONなら、取られた商品を同じ場所に補充する")]
@@ -333,7 +338,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         var go = new GameObject(objName);
         go.transform.position = pos;
-        go.transform.localScale = new Vector3(2f, 2f, 1f);
+        go.transform.localScale = new Vector3(productSize, productSize, 1f);   // 四角・丸の絵は 1x1
 
         var sr = go.AddComponent<SpriteRenderer>();
         if (image != null)
@@ -342,7 +347,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             sr.sprite = image;
             sr.color = Color.white;
             Vector2 size = image.bounds.size;
-            float scale = productImageSize / Mathf.Max(size.x, size.y, 0.01f);
+            float scale = productSize / Mathf.Max(size.x, size.y, 0.01f);
             go.transform.localScale = new Vector3(scale, scale, 1f);
             go.AddComponent<PolygonCollider2D>();
         }
@@ -382,7 +387,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     GameObject MakeCursor(string objName, Color color, int layer, Sprite customSprite)
     {
         var go = new GameObject(objName);
-        go.transform.localScale = new Vector3(cursorScale, cursorScale, 1f);
         var sr = go.AddComponent<SpriteRenderer>();
 
         if (customSprite != null)
@@ -395,6 +399,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             sr.sprite = GetArrowSprite();
             sr.color = color;            // 自動生成の矢印は1P赤/2P青で着色
         }
+
+        // 縦横の長いほうを cursorScale の長さにそろえる(大きい画像でも巨大にならない)
+        Vector2 size = sr.sprite.bounds.size;
+        float scale = cursorScale / Mathf.Max(size.x, size.y, 0.01f);
+        go.transform.localScale = new Vector3(scale, scale, 1f);
 
         sr.sortingOrder = 1000;   // 商品より常に手前
         go.layer = layer;
@@ -691,6 +700,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void OnGUI()
     {
         if (!showOverlayLabel || switcher == null) return;
+        // 解像度が高い画面でも読める大きさにする(高さ 1080 を基準)
+        float guiScale = Mathf.Max(1f, Screen.height / 1080f) * Mathf.Max(0.5f, textScale / 2f);
+        GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));
         GUI.Label(new Rect(10, 34, 1100, 24), $"{lastEvent}");
         GUI.Label(new Rect(10, 58, 1100, 24), $"接続中のコントローラー: {PadCount}台");
         GUI.Label(new Rect(10, 82, 1100, 24),

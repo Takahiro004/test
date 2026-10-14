@@ -141,15 +141,17 @@ public partial class TwoPlayerShop2D
 
         if (!IsPortrait)
         {
-            // 横は DisplayTestSwitcher に任せる。縦から戻したときだけ元に戻す
+            // 縦から戻したときは、範囲と向きを元に戻す
             if (shopCameraChanged)
             {
                 cam.rect = shopBaseRect;
-                cam.orthographicSize = switcher.baseOrthoSize;
                 cam.transform.rotation = Quaternion.identity;
                 shopCameraChanged = false;
             }
             shopAppliedRect = cam.rect;
+            // 横の配置(16:9)が、どんな形の画面でも全部映るようにズームする(縦長の画面なら上下に余り)
+            Vector2 land = ShopViewSize();
+            cam.orthographicSize = Mathf.Max(land.y / 2f, land.x / 2f / Mathf.Max(0.01f, cam.aspect));
             return;
         }
         shopCameraChanged = true;
