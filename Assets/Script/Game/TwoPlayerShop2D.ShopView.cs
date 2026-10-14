@@ -51,13 +51,20 @@ public partial class TwoPlayerShop2D
         return new Vector2(Mathf.Clamp(v.x, -half.x, half.x), Mathf.Clamp(v.y, -half.y, half.y));
     }
 
-    // 横用に作った物(掴み合いのゲージなど)を、縦の画面の横幅に収まるように縮める
+    // 掴み合いのゲージの置き場所を決める(root は高さ baseY のゲージを、原点に置いた状態で作ってある)
+    //  - 縦のときは、画面の横幅に収まるように縮める
+    //  - clashGaugeCentered なら、ゲージ全体(背景の枠)の真ん中を画面の真ん中に合わせる
     void FitToShopView(Transform root, float baseY)
     {
-        if (!IsPortrait) return;
         Vector2 view = ShopViewSize();
-        float scale = Mathf.Min(1f, view.x / 18f);
-        float y = -view.y / 2f + 1.6f * scale;   // 画面の下のほう
+        float scale = IsPortrait ? Mathf.Min(1f, view.x / 18f) : 1f;
+        const float panelCenter = 0.7f;   // 背景の枠の中心は、ゲージより 0.7 上(StartClash と同じ)
+
+        float y;   // ゲージの高さ
+        if (clashGaugeCentered) y = -panelCenter * scale;            // 枠の真ん中が画面の真ん中(0)に来る
+        else if (IsPortrait) y = -view.y / 2f + 1.6f * scale;        // 縦: 画面の下のほう
+        else y = baseY;                                              // 横: 今までどおり
+
         root.localScale = new Vector3(scale, scale, 1f);
         root.position = new Vector3(0f, y - baseY * scale, 0f);
     }
