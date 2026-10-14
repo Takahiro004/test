@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 /// 自分の画面では横にだけ動ける(高さは dropHeight で固定)。
 /// Aボタンを押すと商品を離し、Rigidbody2Dで自由落下する。
 /// 離した後、カーソルは商品棚へ戻る。
+/// 1P/2Pの画面にはレジ袋があり、商品が入った瞬間にその商品の金額が出て、袋の合計に足される。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
@@ -66,6 +67,23 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("取られてから補充されるまでの秒数")]
     public float refillDelay = 1.5f;
 
+    [Header("レジ袋(1P/2Pの画面)")]
+    [Tooltip("ONなら、1P/2Pの画面にレジ袋を置く")]
+    public bool createBag = true;
+    [Tooltip("袋の横の位置(画面の中心が0、右の端が8.9)")]
+    public float bagX = 0f;
+    [Tooltip("袋の幅")]
+    public float bagWidth = 5f;
+    [Tooltip("袋の高さ(床から上へ)")]
+    public float bagHeight = 4f;
+    [Tooltip("袋のふちの太さ")]
+    public float bagWallThickness = 0.3f;
+    public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
+    [Tooltip("棚の商品の金額(左上から順に Product_1, 2, 3 …)")]
+    public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
+    [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
+    public float pricePopupTime = 1f;
+
     [Header("動作")]
     public bool arrangeCameras = true;
     public bool showOverlayLabel = true;
@@ -82,6 +100,16 @@ public class TwoPlayerShop2D : MonoBehaviour
         public Color color;
         public bool inShop = true;       // true: 棚を操作中 / false: 自分の画面を操作中
         public GameObject held;          // 掴んでいる商品(自分の画面で持ち運び中)
+        public readonly List<GameObject> dropped = new List<GameObject>();   // 自分の画面に落とした商品(まだ袋に入っていない)
+        public Bag bag;
+        public int total;                // 袋に入った商品の合計金額
+    }
+
+    // レジ袋(左右のふち + 底 + 背景 + 合計の表示)
+    class Bag
+    {
+        public Transform back, left, right, bottom;
+        public TextMesh totalLabel;
     }
 
     // 棚の1か所ぶん(どこに・どんな商品を置くか)
@@ -96,6 +124,9 @@ public class TwoPlayerShop2D : MonoBehaviour
     Player p1, p2;
     readonly List<ShelfSlot> slots = new List<ShelfSlot>();
     readonly Dictionary<GameObject, ShelfSlot> slotOf = new Dictionary<GameObject, ShelfSlot>();
+    readonly Dictionary<GameObject, int> priceOf = new Dictionary<GameObject, int>();   // 商品ごとの金額
+    static Font labelFont;
+    float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY;
     readonly Dictionary<Collider2D, GameObject> products = new Dictionary<Collider2D, GameObject>();
     readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
     static Sprite squareSprite, circleSprite, arrowSprite;
@@ -125,6 +156,13 @@ public class TwoPlayerShop2D : MonoBehaviour
         {
             CreateFloor(layerP1);
             CreateFloor(layerP2);
+        }
+
+        if (createBag)
+        {
+            p1.bag = CreateBag(p1);
+            p2.bag = CreateBag(p2);
+            LayoutBags();
         }
 
         // 最初は両プレイヤーとも棚を操作中
@@ -172,6 +210,8 @@ public class TwoPlayerShop2D : MonoBehaviour
         var go = MakeSprite(objName, slot.pos, slot.circle, slot.color, layerShop);
         RegisterProduct(go);
         slotOf[go] = slot;
+        int i = index - 1;
+        priceOf[go] = productPrices != null && i < productPrices.Length ? productPrices[i] : 0;
     }
 
     System.Collections.IEnumerator RefillLater(ShelfSlot slot)
@@ -318,6 +358,13 @@ public class TwoPlayerShop2D : MonoBehaviour
         if (switcher == null || p1 == null) return;
 
         if (floorY != appliedFloorY) ApplyFloorY();
+        if (createBag && p1.bag != null)
+        {
+            if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
+                bagWallThickness != appliedBagWall || floorY != appliedBagFloorY) LayoutBags();
+            CheckBag(p1);
+            CheckBag(p2);
+        }
 
         // 参加(Aボタンを押したコントローラーを1P→2Pの順に割り当てる)
         TryAssignPads(out bool joined1, out bool joined2);
@@ -448,11 +495,134 @@ public class TwoPlayerShop2D : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.freezeRotation = freezeRotation;
 
+        if (!p.dropped.Contains(go)) p.dropped.Add(go);
+
         lastEvent = $"{p.name}が {go.name} を離した → 落下 / カーソルは棚へ戻る";
         Debug.Log($"[Shop2D] {lastEvent}");
 
         p.held = null;
         p.inShop = true;
+    }
+
+    // ---------- レジ袋 ----------
+
+    Bag CreateBag(Player p)
+    {
+        var root = new GameObject($"Bag_{p.name}");
+        root.layer = p.layer;
+        var bag = new Bag();
+
+        // 背景(商品より奥。当たり判定なし)
+        bag.back = MakeBagPart("Back", root.transform, p.layer, new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f), -20, false);
+        // ふちと底(商品がぶつかって積み重なる)
+        bag.left = MakeBagPart("Left", root.transform, p.layer, bagColor, 500, true);
+        bag.right = MakeBagPart("Right", root.transform, p.layer, bagColor, 500, true);
+        bag.bottom = MakeBagPart("Bottom", root.transform, p.layer, bagColor, 500, true);
+
+        bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
+        return bag;
+    }
+
+    Transform MakeBagPart(string objName, Transform parent, int layer, Color color, int order, bool collider)
+    {
+        var go = new GameObject(objName);
+        go.transform.SetParent(parent);
+        go.layer = layer;
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = GetSquareSprite();
+        sr.color = color;
+        sr.sortingOrder = order;
+        if (collider) go.AddComponent<BoxCollider2D>();
+        return go.transform;
+    }
+
+    // Inspector の袋の位置・大きさを反映する(再生中に変えてもすぐ反映)
+    void LayoutBags()
+    {
+        appliedBagX = bagX; appliedBagWidth = bagWidth; appliedBagHeight = bagHeight;
+        appliedBagWall = bagWallThickness; appliedBagFloorY = floorY;
+
+        float t = bagWallThickness;
+        foreach (var p in new[] { p1, p2 })
+        {
+            var b = p.bag;
+            if (b == null) continue;
+            SetRect(b.back, bagX, floorY + bagHeight / 2f, bagWidth, bagHeight);
+            SetRect(b.left, bagX - bagWidth / 2f + t / 2f, floorY + bagHeight / 2f, t, bagHeight);
+            SetRect(b.right, bagX + bagWidth / 2f - t / 2f, floorY + bagHeight / 2f, t, bagHeight);
+            SetRect(b.bottom, bagX, floorY + t / 2f, bagWidth, t);
+            b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.6f, 0f);
+        }
+    }
+
+    static void SetRect(Transform tr, float cx, float cy, float w, float h)
+    {
+        tr.position = new Vector3(cx, cy, 0f);
+        tr.localScale = new Vector3(w, h, 1f);
+    }
+
+    // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
+    void CheckBag(Player p)
+    {
+        float t = bagWallThickness;
+        float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
+        float bottom = floorY + t, top = floorY + bagHeight;
+
+        for (int i = p.dropped.Count - 1; i >= 0; i--)
+        {
+            var go = p.dropped[i];
+            if (go == null) { p.dropped.RemoveAt(i); continue; }
+
+            Vector2 c = go.transform.position;
+            if (c.x < left || c.x > right || c.y < bottom || c.y > top) continue;
+
+            p.dropped.RemoveAt(i);
+            priceOf.TryGetValue(go, out int price);
+            p.total += price;
+            p.bag.totalLabel.text = $"¥{p.total}";
+            StartCoroutine(PricePopup(p, c, price));
+
+            lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
+            Debug.Log($"[Shop2D] {lastEvent}");
+        }
+    }
+
+    // 金額を表示して、上へ浮かびながら消える
+    System.Collections.IEnumerator PricePopup(Player p, Vector2 pos, int price)
+    {
+        var label = MakeText("PricePopup", null, p.layer, $"+¥{price}", new Color(1f, 0.95f, 0.3f), 1002);
+        var color = label.color;
+        float time = 0f;
+        while (time < pricePopupTime)
+        {
+            float k = time / pricePopupTime;
+            label.transform.position = new Vector3(pos.x, pos.y + 1f + k, 0f);
+            label.color = new Color(color.r, color.g, color.b, 1f - k);
+            time += Time.deltaTime;
+            yield return null;
+        }
+        Destroy(label.gameObject);
+    }
+
+    static TextMesh MakeText(string objName, Transform parent, int layer, string text, Color color, int order)
+    {
+        if (labelFont == null) labelFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        var go = new GameObject(objName);
+        if (parent != null) go.transform.SetParent(parent);
+        go.layer = layer;
+        var tm = go.AddComponent<TextMesh>();
+        tm.font = labelFont;
+        tm.text = text;
+        tm.color = color;
+        tm.fontSize = 64;
+        tm.characterSize = 0.08f;
+        tm.anchor = TextAnchor.MiddleCenter;
+        tm.alignment = TextAlignment.Center;
+        var mr = go.GetComponent<MeshRenderer>();
+        mr.material = labelFont.material;
+        mr.sortingOrder = order;
+        return tm;
     }
 
     static void SetLayer(GameObject go, int layer)
