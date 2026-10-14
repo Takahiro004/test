@@ -34,7 +34,7 @@ public class TwoPlayerShop2D : MonoBehaviour
     public Color p2Color = new Color(0.3f, 0.5f, 1f);
 
     [Header("自分の画面(商品を落とす位置を選ぶとき)")]
-    [Tooltip("商品を持って横移動するときの高さ(画面の中心が0、上の端が4.5)")]
+    [Tooltip("商品を持って横移動するときの高さ(画面の中心が0、上の端が5)。上限なし。5より大きいと画面の外(上)から落ちてくる")]
     public float dropHeight = 3.5f;
 
     [Header("カーソル画像(未設定なら矢印を自動生成)")]
@@ -369,7 +369,7 @@ public class TwoPlayerShop2D : MonoBehaviour
 
         // 操作中の画面の位置だけを動かす
         if (p.inShop) p.shopPos = ClampToView(p.shopPos + delta);
-        else p.ownPos = ClampToView(new Vector2(p.ownPos.x + delta.x, dropHeight));   // 自分の画面では横移動だけ
+        else p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -8.5f, 8.5f), dropHeight);   // 自分の画面では横移動だけ(高さは制限しない)
 
         p.cursorShop.position = p.shopPos;
         p.cursorOwn.position = p.ownPos;
