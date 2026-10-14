@@ -1,0 +1,44 @@
+using UnityEngine;
+
+// 1P/2Pの画面(レジ袋の画面)の大きさと配置(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
+// 「必ず映す範囲」(横 playerViewWidth、縦は playerViewAspect から計算)を決めておき、
+//  - カメラは、どんな形・解像度の画面でもこの範囲が全部映るように自動でズームする(余りは背景の色)
+//  - 床・壁・袋・落とす高さは、この範囲に対する割合で置く
+// なので、画面の形を変えても、商品・手・足・袋・文字が全部そろって大きさが変わり、崩れない
+public partial class TwoPlayerShop2D
+{
+    // 必ず映す範囲(ゲーム内の横幅・縦幅)
+    Vector2 PlayerViewSize()
+    {
+        float w = Mathf.Max(1f, playerViewWidth);
+        return new Vector2(w, w / Mathf.Clamp(playerViewAspect, 0.1f, 4f));
+    }
+
+    // 割合の設定から、床・壁・袋・落とす高さを計算する(値が変わったら、床や袋はそれぞれの処理で動く)
+    void ApplyPlayerLayout()
+    {
+        Vector2 view = PlayerViewSize();
+        float bottom = -view.y / 2f;
+        floorY = bottom + view.y * floorFromBottom;
+        wallX = view.x / 2f;
+        bagWidth = view.x * bagWidthRatio;
+        bagHeight = view.y * bagHeightRatio;
+        bagX = Mathf.Clamp(view.x * bagXRatio, -wallX + bagWidth / 2f, wallX - bagWidth / 2f);   // はみ出さない
+        dropHeight = bottom + view.y * dropHeightRatio;
+    }
+
+    // 1P/2Pのカメラを、必ず映す範囲が全部入るようにズームする
+    // (DisplayTestSwitcher が決めた表示の場所・形はそのまま。ズームだけ上書きする)
+    void FitPlayerCameras()
+    {
+        Vector2 view = PlayerViewSize();
+        foreach (var p in new[] { p1, p2 })
+        {
+            if (p == null || p.screen < 0 || p.screen >= switcher.screens.Length) continue;
+            var cam = switcher.screens[p.screen].camera;
+            if (cam == null || !cam.orthographic) continue;
+            float aspect = Mathf.Max(0.01f, cam.aspect);   // 今の画面(表示の場所)の横:縦
+            cam.orthographicSize = Mathf.Max(view.y / 2f, view.x / 2f / aspect);
+        }
+    }
+}
