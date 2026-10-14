@@ -9,6 +9,7 @@ using UnityEngine.InputSystem;
 /// 離した後、カーソルは商品棚へ戻る。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
+/// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
 /// DisplayTestSwitcher と併用する。
 /// </summary>
 public class TwoPlayerShop2D : MonoBehaviour
@@ -53,6 +54,12 @@ public class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ONなら、落下中に商品が回転しない")]
     public bool freezeRotation = false;
 
+    [Header("棚の補充")]
+    [Tooltip("ONなら、取られた商品を同じ場所に補充する")]
+    public bool refillShelf = true;
+    [Tooltip("取られてから補充されるまでの秒数")]
+    public float refillDelay = 1.5f;
+
     [Header("動作")]
     public bool arrangeCameras = true;
     public bool showOverlayLabel = true;
@@ -71,7 +78,18 @@ public class TwoPlayerShop2D : MonoBehaviour
         public GameObject held;          // 掴んでいる商品(自分の画面で持ち運び中)
     }
 
+    // 棚の1か所ぶん(どこに・どんな商品を置くか)
+    class ShelfSlot
+    {
+        public Vector2 pos;
+        public bool circle;
+        public Color color;
+        public int count;   // これまでに置いた個数(名前の番号に使う)
+    }
+
     Player p1, p2;
+    readonly List<ShelfSlot> slots = new List<ShelfSlot>();
+    readonly Dictionary<GameObject, ShelfSlot> slotOf = new Dictionary<GameObject, ShelfSlot>();
     readonly Dictionary<Collider2D, GameObject> products = new Dictionary<Collider2D, GameObject>();
     readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
     static Sprite squareSprite, circleSprite, arrowSprite;
@@ -131,8 +149,27 @@ public class TwoPlayerShop2D : MonoBehaviour
         {
             float x = -4f + (i % 3) * 4f;
             float y = 1.5f - (i / 3) * 3f;
-            RegisterProduct(MakeSprite($"Product_{i + 1}", new Vector2(x, y), i % 2 == 1, cols[i], layerShop));
+            var slot = new ShelfSlot { pos = new Vector2(x, y), circle = i % 2 == 1, color = cols[i] };
+            slots.Add(slot);
+            PlaceProduct(slot);
         }
+    }
+
+    // 棚の場所に商品を1個置く
+    void PlaceProduct(ShelfSlot slot)
+    {
+        slot.count++;
+        int index = slots.IndexOf(slot) + 1;
+        string objName = slot.count == 1 ? $"Product_{index}" : $"Product_{index}_{slot.count}";
+        var go = MakeSprite(objName, slot.pos, slot.circle, slot.color, layerShop);
+        RegisterProduct(go);
+        slotOf[go] = slot;
+    }
+
+    System.Collections.IEnumerator RefillLater(ShelfSlot slot)
+    {
+        yield return new WaitForSeconds(refillDelay);
+        PlaceProduct(slot);
     }
 
     GameObject MakeSprite(string objName, Vector2 pos, bool circle, Color color, int layer)
@@ -350,6 +387,13 @@ public class TwoPlayerShop2D : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
         go.transform.rotation = Quaternion.identity;
+
+        // 棚から取ったので、その場所に補充する(1回だけ)
+        if (refillShelf && slotOf.TryGetValue(go, out var slot))
+        {
+            slotOf.Remove(go);
+            StartCoroutine(RefillLater(slot));
+        }
 
         p.held = go;
         p.ownPos = new Vector2(0f, 3.5f);   // 自分の画面の上のほうから始める
