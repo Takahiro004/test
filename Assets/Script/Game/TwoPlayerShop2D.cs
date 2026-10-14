@@ -26,6 +26,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Sprites.cs 四角・丸・矢印・ゲージの形の自動生成
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
+///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
 /// </summary>
@@ -49,9 +50,24 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color p1Color = new Color(1f, 0.3f, 0.3f);
     public Color p2Color = new Color(0.3f, 0.5f, 1f);
 
-    [Header("自分の画面(商品を落とす位置を選ぶとき)")]
-    [Tooltip("商品を持って横移動するときの高さ(画面の中心が0、上の端が5)。上限なし。5より大きいと画面の外(上)から落ちてくる")]
-    public float dropHeight = 3.5f;
+    [Header("1P/2Pの画面(レジ袋の画面)の大きさと配置")]
+    [Tooltip("必ず映す範囲の横:縦の比率(縦型 9:16 なら 0.5625)。どんな形・解像度の画面でも、この範囲が全部映るようにカメラが自動でズームする")]
+    public float playerViewAspect = 9f / 16f;
+    [Tooltip("必ず映す範囲の横幅(ゲーム内の長さ)。小さくすると、商品・手・袋などが全部まとめて大きく映る")]
+    public float playerViewWidth = 10f;
+    [Tooltip("床の高さ(範囲の下の端から、範囲の高さの何割上か)")]
+    [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
+    [Tooltip("商品を持って横移動する高さ(範囲の下の端から、範囲の高さの何割上か。1で上の端)")]
+    [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
+    [Tooltip("レジ袋の幅(範囲の横幅の何割か)")]
+    [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
+    [Tooltip("レジ袋の高さ(範囲の高さの何割か)")]
+    [Range(0.05f, 1f)] public float bagHeightRatio = 0.45f;
+    [Tooltip("レジ袋の横の位置(-0.5 で左の端、0 で真ん中、0.5 で右の端)")]
+    [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
+
+    // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
+    [HideInInspector] public float dropHeight = 3.5f;
 
     [Header("カーソル画像(未設定なら矢印を自動生成)")]
     public Sprite p1CursorSprite;
@@ -70,9 +86,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float gravityScale = 2f;
     [Tooltip("ONなら、1P/2P画面に床と左右の壁を作る")]
     public bool createFloor = true;
-    [Tooltip("床の上の面の高さ(画面の中心が0、下の端が-5)。再生中に変えてもすぐ反映される")]
-    public float floorY = -4.5f;
-    public float wallX = 8.9f;
+    [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
+    [HideInInspector] public float wallX = 8.9f;     // 自動で計算(範囲の左右の端)
     [Tooltip("ONなら、落下中に商品が回転しない")]
     public bool freezeRotation = false;
 
@@ -91,12 +106,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("レジ袋(1P/2Pの画面)")]
     [Tooltip("ONなら、1P/2Pの画面にレジ袋を置く")]
     public bool createBag = true;
-    [Tooltip("袋の横の位置(画面の中心が0、右の端が8.9)")]
-    public float bagX = 0f;
-    [Tooltip("袋の幅")]
-    public float bagWidth = 5f;
-    [Tooltip("袋の高さ(床から上へ)")]
-    public float bagHeight = 4f;
+    [HideInInspector] public float bagX = 0f;        // 自動で計算(bagXRatio)
+    [HideInInspector] public float bagWidth = 5f;    // 自動で計算(bagWidthRatio)
+    [HideInInspector] public float bagHeight = 4f;   // 自動で計算(bagHeightRatio)
     [Tooltip("袋のふちの太さ")]
     public float bagWallThickness = 0.3f;
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
@@ -225,6 +237,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     string lastEvent = "";
     readonly List<Transform> floors = new List<Transform>();   // 1P/2P画面の床
     float appliedFloorY;   // 床に今反映している高さ
+    float appliedWallX;    // 壁に今反映している位置
     int dropOrder = 0;   // 落とした順に手前へ重ねる
     Gamepad pad1, pad2;  // 参加済みのコントローラー(Aボタンで割り当て)
 
@@ -244,6 +257,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         SetupCullingMasks();
         ApplyShopLayout();
+        ApplyPlayerLayout();   // 床・袋・落とす高さを、1P/2Pの画面の範囲から計算する
 
         if (createFloor)
         {
@@ -439,6 +453,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         floor.transform.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
         floors.Add(floor.transform);
         appliedFloorY = floorY;
+        appliedWallX = wallX;
         var sr = floor.AddComponent<SpriteRenderer>();
         sr.sprite = GetSquareSprite();
         sr.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
@@ -464,7 +479,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         if (switcher == null || p1 == null) return;
 
-        if (floorY != appliedFloorY) ApplyFloorY();
+        ApplyPlayerLayout();
+        if (floorY != appliedFloorY || wallX != appliedWallX) ApplyFloorY();
         if (createBag && p1.bag != null)
         {
             if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
@@ -508,8 +524,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void ApplyFloorY()
     {
         appliedFloorY = floorY;
+        appliedWallX = wallX;
         foreach (var f in floors)
+        {
             f.position = new Vector3(f.position.x, floorY - 0.25f, f.position.z);
+            f.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
+            // 左右の壁も範囲の端へ
+            var left = f.parent != null ? f.parent.Find("WallLeft") : null;
+            var right = f.parent != null ? f.parent.Find("WallRight") : null;
+            if (left != null) left.position = new Vector3(-(wallX + 0.5f), 0f, 0f);
+            if (right != null) right.position = new Vector3(wallX + 0.5f, 0f, 0f);
+        }
 
         // 床の上で止まっている商品を起こす(床を下げたとき宙に浮いたままにならないように)
         foreach (var go in originalColors.Keys)
@@ -543,7 +568,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         // 操作中の画面の位置だけを動かす
         if (p.inShop) p.shopPos = ClampToShopView(p.shopPos + delta);
-        else p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -8.5f, 8.5f), dropHeight);   // 自分の画面では横移動だけ(高さは制限しない)
+        else p.ownPos = new Vector2(Mathf.Clamp(p.ownPos.x + delta.x, -(wallX - 0.4f), wallX - 0.4f), dropHeight);   // 自分の画面では横移動だけ(左右は範囲の中)
 
         p.cursorShop.position = p.shopPos;
         p.cursorOwn.position = p.ownPos;

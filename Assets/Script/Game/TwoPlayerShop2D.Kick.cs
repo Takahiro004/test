@@ -52,6 +52,10 @@ public partial class TwoPlayerShop2D
 
         MakeText("Title", t, p.layer, "キック！ 最大でA（LBでやめる）", Color.white, 2006).transform.position = new Vector3(0f, 1.4f, 0f);
 
+        // 範囲の横幅に収まるように縮める(真ん中のまま)
+        float fit = Mathf.Min(1f, PlayerViewSize().x / (ClashBarWidth + 2f));
+        t.localScale = new Vector3(fit, fit, 1f);
+
         p.kick = k;
         lastEvent = $"{p.name}がキックのかまえ";
     }
@@ -103,8 +107,11 @@ public partial class TwoPlayerShop2D
         if (p.kickLabel == null)
             p.kickLabel = MakeText($"KickLabel_{p.name}", null, p.layer, "", Color.white, 1500);
         p.kickLabel.gameObject.SetActive(p.kick == null);
-        // 画面の左上あたり(横の画面の範囲 -8.9〜8.9 / -5〜5 の中)
-        p.kickLabel.transform.position = new Vector3(-6.5f, 4.3f, 0f);
+        // 1P/2Pの画面の範囲の左上
+        Vector2 view = PlayerViewSize();
+        p.kickLabel.anchor = TextAnchor.UpperLeft;
+        p.kickLabel.alignment = TextAlignment.Left;
+        p.kickLabel.transform.position = new Vector3(-view.x / 2f + 0.3f, view.y / 2f - 0.3f, 0f);
         p.kickLabel.text = p.kickCooldown > 0f ? $"キック あと{Mathf.CeilToInt(p.kickCooldown)}秒" : "LB: キック OK";
         p.kickLabel.color = p.kickCooldown > 0f ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.95f, 0.3f);
     }

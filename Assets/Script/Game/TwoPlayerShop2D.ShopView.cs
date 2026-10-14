@@ -98,6 +98,7 @@ public partial class TwoPlayerShop2D
     void LateUpdate()
     {
         if (switcher == null || p1 == null) return;
+        FitPlayerCameras();
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
