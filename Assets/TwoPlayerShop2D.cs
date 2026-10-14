@@ -10,8 +10,9 @@ using UnityEngine.InputSystem;
 /// 離した後、カーソルは商品棚へ戻る。
 /// 1P/2Pの画面にはレジ袋があり、商品が入った瞬間にその商品の金額が出て、袋の合計に足される。
 /// 袋の外に落ちた商品(床に着いた / 袋の外で止まった)は消える。
-/// 2人が同じ商品を grabWindow 秒以内に掴むと「掴み合い」になり、棚の画面にゲージが出る。
-/// ゲージが最大に近いときにAで止めた方が商品を勝ち取る(チャージインパクト風)。
+/// 1人が商品を掴んでから grabWindow 秒以内に、もう1人が同じ商品を掴むと「掴み合い」になり、
+/// 棚の画面にゲージが出る。ゲージが最大に近いときにAで止めた方が商品を勝ち取る(チャージインパクト風)。
+/// 2人ともAを押すまで掴み合いは終わらない。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
@@ -100,12 +101,10 @@ public class TwoPlayerShop2D : MonoBehaviour
     public float removeAfterStopTime = 0.5f;
 
     [Header("掴み合い(2人が同じ商品を掴んだとき)")]
-    [Tooltip("掴んでから自分の画面へ移るまでの秒数。この間にもう1人が同じ商品を掴むと掴み合いになる。0なら掴み合いなし")]
+    [Tooltip("1人が掴んでからこの秒数以内に、もう1人が同じ場所でAを押すと掴み合いになる。0なら掴み合いなし")]
     public float grabWindow = 0.5f;
     [Tooltip("ゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
     public float clashGaugeSpeed = 1.2f;
-    [Tooltip("この秒数までにAを押さないと、ゲージ0(負け)になる")]
-    public float clashTimeLimit = 3f;
     [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
     [Range(0f, 1f)] public float clashPerfect = 0.95f;
     [Tooltip("勝ち負けを表示しておく秒数")]
@@ -133,8 +132,10 @@ public class TwoPlayerShop2D : MonoBehaviour
         public readonly List<GameObject> inBag = new List<GameObject>();     // 袋に入った商品
         public Bag bag;
         public int total;                // 袋に入った商品の合計金額
-        public GameObject grabbing;      // 棚で掴んでいる途中の商品(grabWindow 秒たつと自分の画面へ移る)
-        public float grabTimer;
+        public GameObject lastTaken;     // 最後に棚から取った商品(掴み合いの判定用)
+        public float lastTakenTime;
+        public Bounds lastTakenBounds;   // 取ったときの棚での範囲
+        public Vector3 lastTakenShelfPos;
     }
 
     // 掴み合い(2人が同じ商品を掴んだとき)
@@ -148,7 +149,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         public Player winner;
         public float resultTimer;                   // 0より大きい間は勝ち負けを表示中
         public GameObject root;
-        public readonly Transform[] fill = new Transform[2];
+        public readonly Transform[] fill = new Transform[2];   // ゲージの中身(形で切り抜く)
         public readonly SpriteRenderer[] fillSr = new SpriteRenderer[2];
         public TextMesh title, result;
     }
@@ -176,7 +177,8 @@ public class TwoPlayerShop2D : MonoBehaviour
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
     static Font labelFont;
     Clash clash;
-    const float ClashBarWidth = 6f, ClashBarHeight = 0.7f, ClashBarEdge = 7.2f;
+    const float ClashBarWidth = 6.4f, ClashBarHeight = 1.1f, ClashBarEdge = 7.6f;
+    static Sprite gaugeSprite;
     float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY;
     readonly Dictionary<Collider2D, GameObject> products = new Dictionary<Collider2D, GameObject>();
     readonly Dictionary<GameObject, Color> originalColors = new Dictionary<GameObject, Color>();
@@ -267,9 +269,11 @@ public class TwoPlayerShop2D : MonoBehaviour
         priceOf[go] = productPrices != null && i < productPrices.Length ? productPrices[i] : 0;
     }
 
-    System.Collections.IEnumerator RefillLater(ShelfSlot slot)
+    System.Collections.IEnumerator RefillLater(ShelfSlot slot, GameObject taken)
     {
         yield return new WaitForSeconds(refillDelay);
+        // 掴み合い中は、取り合っている商品が棚に戻っているので補充を待つ
+        while (clash != null && clash.product == taken) yield return null;
         PlaceProduct(slot);
     }
 
@@ -446,15 +450,11 @@ public class TwoPlayerShop2D : MonoBehaviour
             return;
         }
 
-        // 棚で掴んでいる途中はカーソルを止める
-        MoveCursor(p1, p1.grabbing != null ? Vector2.zero : GetMove1P());
-        MoveCursor(p2, p2.grabbing != null ? Vector2.zero : GetMove2P());
+        MoveCursor(p1, GetMove1P());
+        MoveCursor(p2, GetMove2P());
 
         if (press1) PressAction(p1);
         if (press2) PressAction(p2);
-
-        UpdateGrabbing(p1);
-        UpdateGrabbing(p2);
     }
 
     // Inspector で床の高さを変えたら、床を動かす
@@ -524,40 +524,39 @@ public class TwoPlayerShop2D : MonoBehaviour
 
     void TryPickUp(Player p)
     {
-        if (p.grabbing != null) return;   // 掴んでいる途中
-        Collider2D col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
-        if (col == null || !products.TryGetValue(col, out var go)) return;
-
-        if (grabWindow <= 0f) { TakeProduct(p, go); return; }
-
-        // もう1人が同じ商品を掴んでいる途中なら、掴み合い
+        // もう1人が grabWindow 秒以内に取った商品の場所なら、掴み合い
         var other = p == p1 ? p2 : p1;
-        if (other.grabbing == go)
+        if (grabWindow > 0f && other.lastTaken != null && other.held == other.lastTaken &&
+            Time.time - other.lastTakenTime <= grabWindow &&
+            other.lastTakenBounds.Contains(new Vector3(p.shopPos.x, p.shopPos.y, other.lastTakenBounds.center.z)))
         {
-            StartClash(go);
+            var taken = other.lastTaken;
+            // 取った人の画面から棚へ戻す
+            other.held = null;
+            other.inShop = true;
+            other.lastTaken = null;
+            SetLayer(taken, layerShop);
+            taken.transform.position = other.lastTakenShelfPos;
+            StartClash(taken);
             return;
         }
 
-        // grabWindow 秒たったら自分の画面へ移る。それまでは棚で自分の色に光らせる
-        p.grabbing = go;
-        p.grabTimer = grabWindow;
-        go.GetComponent<SpriteRenderer>().color = Color.Lerp(originalColors[go], p.color, 0.5f);
-        lastEvent = $"{p.name}が {go.name} を掴もうとしている…";
-    }
-
-    void UpdateGrabbing(Player p)
-    {
-        if (p.grabbing == null) return;
-        p.grabTimer -= Time.deltaTime;
-        if (p.grabTimer > 0f) return;
-        var go = p.grabbing;
-        p.grabbing = null;
+        Collider2D col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
+        if (col == null || !products.TryGetValue(col, out var go)) return;
         TakeProduct(p, go);
     }
 
     // 商品を自分の画面へ移し、カーソルも自分の画面へ
     void TakeProduct(Player p, GameObject go)
     {
+        // 掴み合いの判定用に、棚での場所を覚えておく
+        p.lastTaken = go;
+        p.lastTakenTime = Time.time;
+        p.lastTakenShelfPos = go.transform.position;
+        var cols = go.GetComponentsInChildren<Collider2D>();
+        p.lastTakenBounds = cols.Length > 0 ? cols[0].bounds : new Bounds(go.transform.position, Vector3.one);
+        foreach (var c in cols) p.lastTakenBounds.Encapsulate(c.bounds);
+
         SetLayer(go, p.layer);
         var sr = go.GetComponent<SpriteRenderer>();
         sr.color = originalColors[go];
@@ -576,7 +575,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         if (refillShelf && slotOf.TryGetValue(go, out var slot))
         {
             slotOf.Remove(go);
-            StartCoroutine(RefillLater(slot));
+            StartCoroutine(RefillLater(slot, go));
         }
 
         p.held = go;
@@ -618,7 +617,6 @@ public class TwoPlayerShop2D : MonoBehaviour
 
     void StartClash(GameObject go)
     {
-        p1.grabbing = p2.grabbing = null;
         go.GetComponent<SpriteRenderer>().color = originalColors[go];
 
         clash = new Clash { product = go };
@@ -631,29 +629,80 @@ public class TwoPlayerShop2D : MonoBehaviour
         float y = clashGaugeY;
 
         // 背景
-        MakeClashRect(t, "Panel", 0f, y + 0.6f, 17f, 3.2f, new Color(0f, 0f, 0f, 0.7f), 2000);
+        MakeClashRect(t, "Panel", 0f, y + 0.7f, 17.8f, 3.6f, new Color(0f, 0f, 0f, 0.6f), 2000);
         for (int i = 0; i < 2; i++)
         {
-            float sign = i == 0 ? -1f : 1f;   // 1Pは左、2Pは右。どちらも真ん中(VS)に向かって伸びる
-            float outer = sign * ClashBarEdge;
-            float inner = outer - sign * ClashBarWidth;
-            MakeClashRect(t, $"Bar{i + 1}", (outer + inner) / 2f, y, ClashBarWidth, ClashBarHeight, new Color(0.15f, 0.15f, 0.15f), 2001);
-            // 最大の近く(パーフェクトの範囲)を金色にする
+            // 1Pは左、2Pは右(左右反転)。どちらも真ん中(VS)に向かって太くなりながら伸びる
+            var bar = new GameObject($"Gauge{i + 1}").transform;
+            bar.SetParent(t);
+            bar.gameObject.layer = layerShop;
+            bar.position = new Vector3(i == 0 ? -ClashBarEdge : ClashBarEdge, y, 0f);
+            bar.localScale = new Vector3(i == 0 ? 1f : -1f, 1f, 1f);
+
+            // ふち(白) → 中の暗い部分 → 金色(パーフェクトの範囲) → 中身(プレイヤーの色)
+            MakeGaugeShape(bar, "Frame", -0.12f, ClashBarWidth + 0.24f, ClashBarHeight + 0.24f, new Color(0.9f, 1f, 1f), 2001);
+            MakeGaugeShape(bar, "Back", 0f, ClashBarWidth, ClashBarHeight, new Color(0.12f, 0.12f, 0.15f), 2002);
+            var mask = new GameObject("Mask");
+            mask.layer = layerShop;
+            mask.transform.SetParent(bar, false);
+            mask.transform.localScale = new Vector3(ClashBarWidth, ClashBarHeight / GetGaugeSprite().bounds.size.y, 1f);
+            mask.AddComponent<SpriteMask>().sprite = GetGaugeSprite();
+
             float perfectW = ClashBarWidth * (1f - clashPerfect);
-            MakeClashRect(t, $"Perfect{i + 1}", inner + sign * perfectW / 2f, y, perfectW, ClashBarHeight + 0.2f, new Color(1f, 0.85f, 0.2f), 2002);
-            var fill = MakeClashRect(t, $"Fill{i + 1}", outer, y, 0f, ClashBarHeight * 0.7f, i == 0 ? p1.color : p2.color, 2003);
-            clash.fill[i] = fill;
-            clash.fillSr[i] = fill.GetComponent<SpriteRenderer>();
-            MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", Color.white, 2004).transform.position = new Vector3(outer - sign * 0.6f, y + 0.8f, 0f);
+            MakeGaugeFill(bar, "Perfect", ClashBarWidth - perfectW, perfectW, new Color(1f, 0.85f, 0.2f, 0.6f), 2003);
+            var fillSr = MakeGaugeFill(bar, "Fill", 0f, 0f, i == 0 ? p1.color : p2.color, 2004);
+            clash.fill[i] = fillSr.transform;
+            clash.fillSr[i] = fillSr;
+
+            float outer = i == 0 ? -ClashBarEdge : ClashBarEdge;
+            MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", Color.white, 2006).transform.position = new Vector3(outer * 0.75f, y - 0.95f, 0f);
         }
-        MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2004).transform.position = new Vector3(0f, y, 0f);
-        clash.title = MakeText("Title", t, layerShop, "掴み合い！ 最大に近いところでA！", Color.white, 2004);
-        clash.title.transform.position = new Vector3(0f, y + 1.4f, 0f);
-        clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2005);
-        clash.result.transform.position = new Vector3(0f, y + 0.75f, 0f);
+        var vs = MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2006);
+        vs.transform.position = new Vector3(0f, y + 0.1f, 0f);
+        vs.characterSize = 0.14f;
+        clash.title = MakeText("Title", t, layerShop, "掴み合い！ 最大に近いところでA！", Color.white, 2006);
+        clash.title.transform.position = new Vector3(0f, y + 1.9f, 0f);
+        clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2007);
+        clash.result.transform.position = new Vector3(0f, y + 1.1f, 0f);
+        clash.result.characterSize = 0.12f;
 
         lastEvent = $"掴み合い！ {go.name}";
         Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    // ゲージの形(細い外側から、真ん中に向かって太くなる)。bar の中で x=from から幅 w
+    void MakeGaugeShape(Transform bar, string objName, float from, float w, float h, Color color, int order)
+    {
+        var go = new GameObject(objName);
+        go.layer = layerShop;
+        go.transform.SetParent(bar, false);
+        go.transform.localPosition = new Vector3(from, 0f, 0f);
+        go.transform.localScale = new Vector3(w, h / GetGaugeSprite().bounds.size.y, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = GetGaugeSprite();
+        sr.color = color;
+        sr.sortingOrder = order;
+    }
+
+    // ゲージの中身。四角をゲージの形で切り抜いて表示する
+    SpriteRenderer MakeGaugeFill(Transform bar, string objName, float from, float w, Color color, int order)
+    {
+        var go = new GameObject(objName);
+        go.layer = layerShop;
+        go.transform.SetParent(bar, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = GetSquareSprite();
+        sr.color = color;
+        sr.sortingOrder = order;
+        sr.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+        SetGaugeFill(go.transform, from, w);
+        return sr;
+    }
+
+    void SetGaugeFill(Transform fill, float from, float w)
+    {
+        fill.localPosition = new Vector3(from + w / 2f, 0f, 0f);
+        fill.localScale = new Vector3(w, ClashBarHeight + 0.2f, 1f);
     }
 
     Transform MakeClashRect(Transform parent, string objName, float cx, float cy, float w, float h, Color color, int order)
@@ -689,18 +738,10 @@ public class TwoPlayerShop2D : MonoBehaviour
             }
         }
 
-        // 時間切れ: 押していない方は0
-        if (c.time >= clashTimeLimit)
-            for (int i = 0; i < 2; i++)
-                if (!c.locked[i]) { c.locked[i] = true; c.value[i] = 0f; }
-
         for (int i = 0; i < 2; i++)
-        {
-            float sign = i == 0 ? -1f : 1f;
-            float w = ClashBarWidth * c.value[i];
-            SetRect(c.fill[i], sign * ClashBarEdge - sign * w / 2f, clashGaugeY, w, ClashBarHeight * 0.7f);
-        }
+            SetGaugeFill(c.fill[i], 0f, ClashBarWidth * c.value[i]);
 
+        // 2人とも押すまで終わらない
         if (!c.locked[0] || !c.locked[1]) return;
 
         // 2人とも止めた → 最大に近い方の勝ち(同じならランダム)
@@ -721,7 +762,9 @@ public class TwoPlayerShop2D : MonoBehaviour
         var c = clash;
         clash = null;
         Destroy(c.root);
-        if (c.product != null) TakeProduct(c.winner, c.product);
+        if (c.product == null) return;
+        TakeProduct(c.winner, c.product);
+        c.winner.lastTaken = null;   // 決着した商品で、すぐにまた掴み合いにならないように
     }
 
     // ---------- レジ袋 ----------
@@ -976,6 +1019,30 @@ public class TwoPlayerShop2D : MonoBehaviour
         tex.Apply();
         circleSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 64f);
         return circleSprite;
+    }
+
+    // ゲージの形: 左(外側)が細く、右(真ん中側)に向かって太くなる。両端は斜めに切る。左端の中央がピボット
+    static Sprite GetGaugeSprite()
+    {
+        if (gaugeSprite != null) return gaugeSprite;
+        const int w = 256, h = 64;
+        var tex = new Texture2D(w, h);
+        var px = new Color[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float u = (x + 0.5f) / w, v = (y + 0.5f) / h;
+                float top = Mathf.Lerp(0.55f, 1f, u);      // 上のふちは真ん中に向かって上がる
+                float bottom = Mathf.Lerp(0.2f, 0f, u);    // 下のふちは少し下がる
+                bool inside = v >= bottom && v <= top &&
+                              u >= 0.06f * (1f - v) &&           // 外側の端を斜めに切る
+                              u <= 1f - 0.08f * v;               // 真ん中側の端を斜めに切る
+                px[y * w + x] = inside ? Color.white : Color.clear;
+            }
+        tex.SetPixels(px);
+        tex.Apply();
+        gaugeSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0f, 0.5f), w);   // 幅1 x 高さ0.25
+        return gaugeSprite;
     }
 
     // 左上向きの三角形(矢印カーソル)。先端がピボット
