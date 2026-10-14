@@ -9,6 +9,7 @@ using UnityEngine.InputSystem;
 /// Aボタンを押すと商品を離し、Rigidbody2Dで自由落下する。
 /// 離した後、カーソルは商品棚へ戻る。
 /// 1P/2Pの画面にはレジ袋があり、商品が入った瞬間にその商品の金額が出て、袋の合計に足される。
+/// 袋の外に落ちた商品(床に着いた / 袋の外で止まった)は消える。
 /// コントローラーは「最初にAボタンを押した方が1P、次が2P」で割り当てる。
 /// キーボードは予備(1P: WASD+Space / 2P: 矢印+Enter)。
 /// 棚の商品は取られると、少し待ってから同じ場所に同じ商品が補充される。
@@ -91,6 +92,10 @@ public class TwoPlayerShop2D : MonoBehaviour
     public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
     public float pricePopupTime = 1f;
+    [Tooltip("ONなら、袋の外に落ちた商品を消す(床に着いたとき / 袋の外で止まったとき)")]
+    public bool removeOutsideBag = true;
+    [Tooltip("袋の外で止まってから消えるまでの秒数(袋のふちや他の商品の上に乗ったとき)")]
+    public float removeAfterStopTime = 0.5f;
 
     [Header("動作")]
     public bool arrangeCameras = true;
@@ -109,6 +114,7 @@ public class TwoPlayerShop2D : MonoBehaviour
         public bool inShop = true;       // true: 棚を操作中 / false: 自分の画面を操作中
         public GameObject held;          // 掴んでいる商品(自分の画面で持ち運び中)
         public readonly List<GameObject> dropped = new List<GameObject>();   // 自分の画面に落とした商品(まだ袋に入っていない)
+        public readonly List<GameObject> inBag = new List<GameObject>();     // 袋に入った商品
         public Bag bag;
         public int total;                // 袋に入った商品の合計金額
     }
@@ -133,6 +139,7 @@ public class TwoPlayerShop2D : MonoBehaviour
     readonly List<ShelfSlot> slots = new List<ShelfSlot>();
     readonly Dictionary<GameObject, ShelfSlot> slotOf = new Dictionary<GameObject, ShelfSlot>();
     readonly Dictionary<GameObject, int> priceOf = new Dictionary<GameObject, int>();   // 商品ごとの金額
+    readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
     static Font labelFont;
     float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY;
     readonly Dictionary<Collider2D, GameObject> products = new Dictionary<Collider2D, GameObject>();
@@ -612,6 +619,8 @@ public class TwoPlayerShop2D : MonoBehaviour
             if (c.x < left || c.x > right || c.y < bottom || c.y > top) continue;
 
             p.dropped.RemoveAt(i);
+            p.inBag.Add(go);
+            stoppedTime.Remove(go);
             priceOf.TryGetValue(go, out int price);
             p.total += price;
             p.bag.totalLabel.text = $"¥{p.total}";
@@ -620,6 +629,85 @@ public class TwoPlayerShop2D : MonoBehaviour
             lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
             Debug.Log($"[Shop2D] {lastEvent}");
         }
+
+        if (removeOutsideBag) RemoveOutsideBag(p);
+    }
+
+    // 袋の外に落ちた商品を消す
+    //  - 床に着いた商品(袋に入らなかったもの、袋からこぼれたもの)
+    //  - 袋に入らないまま、ふちや他の商品の上で止まった商品
+    // 袋からこぼれても合計は減らさない
+    void RemoveOutsideBag(Player p)
+    {
+        for (int i = p.dropped.Count - 1; i >= 0; i--)
+        {
+            var go = p.dropped[i];
+            bool remove = TouchesFloor(go);
+            if (!remove)
+            {
+                var rb = go.GetComponent<Rigidbody2D>();
+                bool stopped = rb == null || rb.linearVelocity.sqrMagnitude < 0.01f;
+                stoppedTime.TryGetValue(go, out float time);
+                time = stopped ? time + Time.deltaTime : 0f;
+                stoppedTime[go] = time;
+                remove = time >= removeAfterStopTime;
+            }
+            if (!remove) continue;
+            p.dropped.RemoveAt(i);
+            RemoveProduct(p, go);
+        }
+
+        for (int i = p.inBag.Count - 1; i >= 0; i--)
+        {
+            var go = p.inBag[i];
+            if (go == null) { p.inBag.RemoveAt(i); continue; }
+            if (!TouchesFloor(go)) continue;
+            p.inBag.RemoveAt(i);
+            RemoveProduct(p, go);
+        }
+    }
+
+    bool TouchesFloor(GameObject go)
+    {
+        foreach (var f in floors)
+        {
+            var floorCol = f.GetComponent<Collider2D>();
+            if (floorCol == null || f.gameObject.layer != go.layer) continue;
+            foreach (var c in go.GetComponentsInChildren<Collider2D>())
+                if (c.IsTouching(floorCol)) return true;
+        }
+        return false;
+    }
+
+    void RemoveProduct(Player p, GameObject go)
+    {
+        lastEvent = $"{p.name}の {go.name} は袋の外に落ちたので消えた";
+        Debug.Log($"[Shop2D] {lastEvent}");
+
+        foreach (var c in go.GetComponentsInChildren<Collider2D>())
+        {
+            products.Remove(c);
+            c.enabled = false;   // 消えている間に他の商品を支えない
+        }
+        originalColors.Remove(go);
+        priceOf.Remove(go);
+        stoppedTime.Remove(go);
+        StartCoroutine(ShrinkAndDestroy(go));
+    }
+
+    // 小さくなりながら消える
+    System.Collections.IEnumerator ShrinkAndDestroy(GameObject go)
+    {
+        var rb = go.GetComponent<Rigidbody2D>();
+        if (rb != null) rb.simulated = false;
+        Vector3 start = go.transform.localScale;
+        const float duration = 0.25f;
+        for (float time = 0f; time < duration; time += Time.deltaTime)
+        {
+            go.transform.localScale = start * (1f - time / duration);
+            yield return null;
+        }
+        Destroy(go);
     }
 
     // 金額を表示して、上へ浮かびながら消える
