@@ -23,7 +23,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.cs        設定の欄・初期化・棚・移動・掴む/離す・画面表示
 ///   TwoPlayerShop2D.Clash.cs  掴み合い
 ///   TwoPlayerShop2D.Bag.cs    レジ袋・金額・袋の外の商品を消す
-///   TwoPlayerShop2D.Sprites.cs 四角・丸・矢印・ゲージの形の自動生成
+///   TwoPlayerShop2D.Sprites.cs 商品の図形(四角・丸・三角・多角形・L字など)・矢印・ゲージの形の自動生成
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
@@ -41,6 +41,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool refillShelf = true;
     [Tooltip("自分の画面: 商品を持っている間は横にだけ動く。OFFなら上下にも動ける")]
     public bool horizontalOnlyOnOwnScreen = true;
+    [Tooltip("自分の画面: 商品を持っている間、RB で90度ずつ回せる(キーボード予備: 1P E / 2P 右Ctrl)")]
+    public bool rotateHeldProduct = true;
     [Tooltip("★自分の画面: 床と左右の壁を作る")]
     public bool createFloor = true;
     [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
@@ -140,10 +142,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ONなら、落下中に商品が回転しない")]
     public bool freezeRotation = false;
 
-    [Header("商品の画像(未設定なら四角・丸を自動生成)")]
-    [Tooltip("棚の左上から順に Product_1, 2, 3 … の画像。空の欄は四角・丸のまま")]
+    [Header("商品の形(画像が無いときのテスト用の図形)")]
+    [Tooltip("棚の左上から順に Product_1, 2, 3 … の形。四角/丸/三角/五角形/六角形/長方形/L字/T字。画像を入れた商品は画像の形が使われる")]
+    public ProductShape[] productShapes = {
+        ProductShape.Square, ProductShape.Triangle, ProductShape.Rectangle,
+        ProductShape.LShape, ProductShape.Hexagon, ProductShape.TShape
+    };
+
+    [Header("商品の画像(未設定なら上の形を自動生成)")]
+    [Tooltip("棚の左上から順に Product_1, 2, 3 … の画像。空の欄は上の「商品の形」のまま")]
     public Sprite[] productSprites = new Sprite[6];
-    [Tooltip("商品の大きさ(縦横の長いほうがこの長さになる。四角・丸も画像も同じ)。小さくすると袋にたくさん入る")]
+    [Tooltip("商品の大きさ(縦横の長いほうがこの長さになる。図形も画像も同じ)。小さくすると袋にたくさん入る")]
     public float productSize = 1.4f;
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
@@ -261,7 +270,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     class ShelfSlot
     {
         public Vector2 pos;
-        public bool circle;
+        public ProductShape shape;
         public Color color;
         public int count;   // これまでに置いた個数(名前の番号に使う)
     }
@@ -341,7 +350,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         };
         for (int i = 0; i < cols.Length; i++)
         {
-            var slot = new ShelfSlot { pos = ShelfSlotPosition(i, cols.Length), circle = i % 2 == 1, color = cols[i] };
+            var shape = productShapes != null && i < productShapes.Length ? productShapes[i] : ProductShape.Square;
+            var slot = new ShelfSlot { pos = ShelfSlotPosition(i, cols.Length), shape = shape, color = cols[i] };
             slots.Add(slot);
             PlaceProduct(slot);
         }
@@ -355,7 +365,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         string objName = slot.count == 1 ? $"Product_{index}" : $"Product_{index}_{slot.count}";
         int si = slots.IndexOf(slot);
         Sprite image = productSprites != null && si < productSprites.Length ? productSprites[si] : null;
-        var go = MakeSprite(objName, slot.pos, slot.circle, slot.color, layerShop, image);
+        var go = MakeSprite(objName, slot.pos, slot.shape, slot.color, layerShop, image);
         RegisterProduct(go);
         slotOf[go] = slot;
         int i = index - 1;
@@ -370,11 +380,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         PlaceProduct(slot);
     }
 
-    GameObject MakeSprite(string objName, Vector2 pos, bool circle, Color color, int layer, Sprite image = null)
+    GameObject MakeSprite(string objName, Vector2 pos, ProductShape shape, Color color, int layer, Sprite image = null)
     {
         var go = new GameObject(objName);
         go.transform.position = pos;
-        go.transform.localScale = new Vector3(productSize, productSize, 1f);   // 四角・丸の絵は 1x1
+        go.transform.localScale = new Vector3(productSize, productSize, 1f);   // 図形の絵は 1x1 に収まる
 
         var sr = go.AddComponent<SpriteRenderer>();
         if (image != null)
@@ -389,10 +399,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         }
         else
         {
-            sr.sprite = circle ? GetCircleSprite() : GetSquareSprite();
+            sr.sprite = GetShapeSprite(shape);
             sr.color = color;
-            if (circle) go.AddComponent<CircleCollider2D>();
-            else go.AddComponent<BoxCollider2D>();
+            if (shape == ProductShape.Circle) go.AddComponent<CircleCollider2D>();
+            else if (shape == ProductShape.Square) go.AddComponent<BoxCollider2D>();
+            else go.AddComponent<PolygonCollider2D>().points = ShapePoints(shape);   // 見た目と同じ形の当たり判定
         }
 
         go.layer = layer;
@@ -561,6 +572,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (press1) { if (p1.kick != null) LockKick(p1); else PressAction(p1); }
         if (press2) { if (p2.kick != null) LockKick(p2); else PressAction(p2); }
 
+        // RB: 持っている商品を90度回す
+        if (Rotate1PPressed()) RotateHeld(p1);
+        if (Rotate2PPressed()) RotateHeld(p2);
+
         UpdateKick(p1);
         UpdateKick(p2);
     }
@@ -710,6 +725,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         lastEvent = $"{p.name}が {go.name} を掴んだ → 画面{p.screen + 1}へ移動(Aで離す)";
         Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    // 自分の画面で持っている商品を、時計回りに90度回す(離したあとも向きはそのまま)
+    void RotateHeld(Player p)
+    {
+        if (!rotateHeldProduct || p.held == null || p.inShop) return;
+        p.held.transform.Rotate(0f, 0f, -90f);
+        lastEvent = $"{p.name}が {p.held.name} を回した({Mathf.RoundToInt(p.held.transform.eulerAngles.z)}度)";
     }
 
     void Drop(Player p)

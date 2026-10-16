@@ -1,8 +1,95 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-// 四角・丸・矢印・ゲージの形の自動生成(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
+// 商品の形(画像が無いときのテスト用)
+public enum ProductShape
+{
+    Square,     // 四角
+    Circle,     // 丸
+    Triangle,   // 三角
+    Pentagon,   // 五角形
+    Hexagon,    // 六角形
+    Rectangle,  // 長方形(横長 2:1)
+    LShape,     // L字(四角3つ)
+    TShape,     // T字(四角4つ)
+}
+
+// 商品の図形・矢印・ゲージの形の自動生成(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 public partial class TwoPlayerShop2D
 {
+    static readonly Dictionary<ProductShape, Sprite> shapeSprites = new Dictionary<ProductShape, Sprite>();
+
+    // 図形の角の点(1x1 の中、真ん中が 0。左回り)。当たり判定と絵の両方に使う
+    static Vector2[] ShapePoints(ProductShape shape)
+    {
+        const float t = 1f / 6f;   // T字の太さの半分(1/3 の半分)
+        switch (shape)
+        {
+            case ProductShape.Triangle:
+                return new[] { new Vector2(-0.5f, -0.433f), new Vector2(0.5f, -0.433f), new Vector2(0f, 0.433f) };
+            case ProductShape.Pentagon: return RegularPolygon(5);
+            case ProductShape.Hexagon: return RegularPolygon(6);
+            case ProductShape.Rectangle:
+                return new[] { new Vector2(-0.5f, -0.25f), new Vector2(0.5f, -0.25f), new Vector2(0.5f, 0.25f), new Vector2(-0.5f, 0.25f) };
+            case ProductShape.LShape:
+                return new[] { new Vector2(-0.5f, -0.5f), new Vector2(0.5f, -0.5f), new Vector2(0.5f, 0f),
+                               new Vector2(0f, 0f), new Vector2(0f, 0.5f), new Vector2(-0.5f, 0.5f) };
+            case ProductShape.TShape:
+                return new[] { new Vector2(-t, -0.5f), new Vector2(t, -0.5f), new Vector2(t, t), new Vector2(0.5f, t),
+                               new Vector2(0.5f, 0.5f), new Vector2(-0.5f, 0.5f), new Vector2(-0.5f, t), new Vector2(-t, t) };
+            default:
+                return new[] { new Vector2(-0.5f, -0.5f), new Vector2(0.5f, -0.5f), new Vector2(0.5f, 0.5f), new Vector2(-0.5f, 0.5f) };
+        }
+    }
+
+    // 正多角形(角が上。半径 0.5)
+    static Vector2[] RegularPolygon(int n)
+    {
+        var pts = new Vector2[n];
+        for (int i = 0; i < n; i++)
+        {
+            float a = Mathf.PI / 2f + i * 2f * Mathf.PI / n;
+            pts[i] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.5f;
+        }
+        return pts;
+    }
+
+    static Sprite GetShapeSprite(ProductShape shape)
+    {
+        if (shape == ProductShape.Square) return GetSquareSprite();
+        if (shape == ProductShape.Circle) return GetCircleSprite();
+        if (shapeSprites.TryGetValue(shape, out var cached) && cached != null) return cached;
+
+        const int size = 64;
+        var pts = ShapePoints(shape);
+        var tex = new Texture2D(size, size);
+        var px = new Color[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                var p = new Vector2((x + 0.5f) / size - 0.5f, (y + 0.5f) / size - 0.5f);
+                px[y * size + x] = InsidePolygon(p, pts) ? Color.white : Color.clear;
+            }
+        tex.SetPixels(px);
+        tex.Apply();
+        var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        shapeSprites[shape] = sprite;
+        return sprite;
+    }
+
+    // 点が多角形の中にあるか(へこんだ形でもよい)
+    static bool InsidePolygon(Vector2 p, Vector2[] pts)
+    {
+        bool inside = false;
+        for (int i = 0, j = pts.Length - 1; i < pts.Length; j = i++)
+        {
+            if ((pts[i].y > p.y) != (pts[j].y > p.y) &&
+                p.x < (pts[j].x - pts[i].x) * (p.y - pts[i].y) / (pts[j].y - pts[i].y) + pts[i].x)
+                inside = !inside;
+        }
+        return inside;
+    }
+
     // ---------- スプライト生成 ----------
 
     static Sprite GetSquareSprite()
