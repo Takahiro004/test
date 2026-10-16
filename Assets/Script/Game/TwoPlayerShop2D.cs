@@ -161,9 +161,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("掴み合い(2人が同じ商品を掴んだとき)")]
     [Tooltip("1人が掴んでからこの秒数以内に、もう1人が同じ場所でAを押すと掴み合いになる。0なら掴み合いなし")]
     public float grabWindow = 0.5f;
-    [Tooltip("ゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
+    [Tooltip("連打: Aボタンを連打して、先に決まった回数押した方が勝ち / タイミング: 往復するゲージを最大に近いところで止めた方が勝ち(前の方式)")]
+    public ClashMode clashMode = ClashMode.Mash;
+    [Tooltip("連打のとき、先にこの回数Aを押した方が勝ち")]
+    public int clashMashCount = 10;
+    [Tooltip("ゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数。タイミングのとき)")]
     public float clashGaugeSpeed = 1.2f;
-    [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
+    [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大。タイミングのとき)")]
     [Range(0f, 1f)] public float clashPerfect = 0.95f;
     [Tooltip("勝ち負けを表示しておく秒数")]
     public float clashResultTime = 1.2f;
@@ -530,7 +534,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         if (clash != null)
         {
-            // 掴み合い中: カーソルは止めて、Aボタンはゲージを止めるのに使う
+            // 掴み合い中: カーソルは止めて、Aボタンは連打(またはゲージを止める)に使う
             MoveCursor(p1, Vector2.zero);
             MoveCursor(p2, Vector2.zero);
             UpdateClash(press1, press2);
