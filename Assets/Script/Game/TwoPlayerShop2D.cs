@@ -28,6 +28,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
+///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
 /// </summary>
 public partial class TwoPlayerShop2D : MonoBehaviour
@@ -70,6 +71,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool autoFitShopScreen = true;
     [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
     public bool showTimerPlaceholder = true;
+    [Tooltip("棚の画面: 残りのプレイ時間(制限時間)を出す。縦のときは上の空き場所、横のときは画面の上")]
+    public bool showGameTimer = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
     public bool useKeyboard = true;
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
@@ -114,6 +117,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Sprite p2CursorSprite;
     [Tooltip("カーソルの大きさ(縦横の長いほうがこの長さになる。画像の大きさに関係なくそろう)")]
     public float cursorScale = 1.2f;
+
+    [Header("制限時間")]
+    [Tooltip("1ゲームのプレイ時間(秒)。再生を始めたときから数える。120で2分")]
+    public float gameTime = 120f;
+    [Tooltip("残りがこの秒数以下になったら、時間の文字を赤くする")]
+    public float timerWarningTime = 10f;
 
     [Header("文字")]
     [Tooltip("合計金額・「+¥」「LB: キック」などの文字の大きさ(1で前の大きさ)")]
