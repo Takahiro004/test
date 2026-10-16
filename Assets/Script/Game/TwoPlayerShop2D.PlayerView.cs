@@ -1,5 +1,12 @@
 using UnityEngine;
 
+public enum ScreenRotation
+{
+    None,    // 回さない
+    Right,   // モニターを右回り(時計回り)に90度回して置いたとき
+    Left,    // モニターを左回りに90度回して置いたとき
+}
+
 // 1P/2Pの画面(レジ袋の画面)の大きさと配置(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 // 「必ず映す範囲」(横 playerViewWidth、縦は playerViewAspect から計算)を決めておき、
 //  - カメラは、どんな形・解像度の画面でもこの範囲が全部映るように自動でズームする(余りは背景の色)
@@ -29,17 +36,26 @@ public partial class TwoPlayerShop2D
 
     // 1P/2Pのカメラを、必ず映す範囲が全部入るようにズームする
     // (DisplayTestSwitcher が決めた表示の場所・形はそのまま。ズームだけ上書きする)
+    // 回して描くときは、画面の縦がゲーム内の横になる
     void FitPlayerCameras()
     {
-        if (!autoFitPlayerScreens) return;   // OFF: ズームは DisplayTestSwitcher に任せる
         Vector2 view = PlayerViewSize();
         foreach (var p in new[] { p1, p2 })
         {
             if (p == null || p.screen < 0 || p.screen >= switcher.screens.Length) continue;
             var cam = switcher.screens[p.screen].camera;
             if (cam == null || !cam.orthographic) continue;
+
+            // 回す(モニターを右回りに置いたら、映像は左回りに回して描く)
+            var rotation = p == p1 ? p1ScreenRotation : p2ScreenRotation;
+            float angle = rotation == ScreenRotation.Right ? -90f : rotation == ScreenRotation.Left ? 90f : 0f;
+            cam.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+
+            if (!autoFitPlayerScreens) continue;   // OFF: ズームは DisplayTestSwitcher に任せる
             float aspect = Mathf.Max(0.01f, cam.aspect);   // 今の画面(表示の場所)の横:縦
-            cam.orthographicSize = Mathf.Max(view.y / 2f, view.x / 2f / aspect);
+            cam.orthographicSize = rotation == ScreenRotation.None
+                ? Mathf.Max(view.y / 2f, view.x / 2f / aspect)
+                : Mathf.Max(view.x / 2f, view.y / 2f / aspect);
         }
     }
 }

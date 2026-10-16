@@ -110,6 +110,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
     [Tooltip("レジ袋の横の位置(-0.5 で左の端、0 で真ん中、0.5 で右の端)")]
     [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
+    [Tooltip("1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方を選ぶ)")]
+    public ScreenRotation p1ScreenRotation = ScreenRotation.None;
+    [Tooltip("2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方を選ぶ)")]
+    public ScreenRotation p2ScreenRotation = ScreenRotation.None;
 
     // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
     [HideInInspector] public float dropHeight = 3.5f;
