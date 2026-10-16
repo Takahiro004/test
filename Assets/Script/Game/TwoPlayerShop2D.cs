@@ -69,6 +69,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kickShakeSelf = true;
     [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
     public bool autoFitPlayerScreens = true;
+    [Tooltip("1P/2Pの画面: 実際の画面の形いっぱいに机・袋を並べる(1Pの画面の形に合わせる)。OFFなら Player View Aspect の形の中だけに並べる(画面の形が違うと左右や上下が空く)")]
+    public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
     public bool autoFitShopScreen = true;
     [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
@@ -102,6 +104,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float playerViewWidth = 10f;
     [Tooltip("床の高さ(範囲の下の端から、範囲の高さの何割上か)")]
     [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
+    [Tooltip("机(床)の幅(範囲の横幅の何割か。1で画面の端から端まで)。左右の壁も机の端に来る")]
+    [Range(0.2f, 1f)] public float deskWidthRatio = 1f;
+    [Tooltip("机(床)の厚み(下へ。見た目だけ)")]
+    public float deskThickness = 0.5f;
     [Tooltip("商品を持って横移動する高さ(範囲の下の端から、範囲の高さの何割上か。1で上の端)")]
     [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
     [Tooltip("レジ袋の幅(範囲の横幅の何割か)")]
@@ -292,6 +298,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     readonly List<Transform> floors = new List<Transform>();   // 1P/2P画面の床
     float appliedFloorY;   // 床に今反映している高さ
     float appliedWallX;    // 壁に今反映している位置
+    float appliedDeskThickness;
     int dropOrder = 0;   // 落とした順に手前へ重ねる
     Gamepad pad1, pad2;  // 参加済みのコントローラー(Aボタンで割り当て)
 
@@ -509,8 +516,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         var floor = new GameObject("Floor");
         floor.transform.SetParent(root.transform);
         floor.layer = layer;
-        floor.transform.position = new Vector3(0f, floorY - 0.25f, 0f);
-        floor.transform.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
+        floor.transform.position = new Vector3(0f, floorY - deskThickness / 2f, 0f);
+        floor.transform.localScale = new Vector3(wallX * 2f, deskThickness, 1f);
         floors.Add(floor.transform);
         appliedFloorY = floorY;
         appliedWallX = wallX;
@@ -540,7 +547,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (switcher == null || p1 == null) return;
 
         ApplyPlayerLayout();
-        if (floorY != appliedFloorY || wallX != appliedWallX) ApplyFloorY();
+        if (floorY != appliedFloorY || wallX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
         if (createBag && p1.bag != null)
         {
             if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
@@ -589,10 +596,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         appliedFloorY = floorY;
         appliedWallX = wallX;
+        appliedDeskThickness = deskThickness;
         foreach (var f in floors)
         {
-            f.position = new Vector3(f.position.x, floorY - 0.25f, f.position.z);
-            f.localScale = new Vector3(wallX * 2f + 2f, 0.5f, 1f);
+            f.position = new Vector3(f.position.x, floorY - deskThickness / 2f, f.position.z);
+            f.localScale = new Vector3(wallX * 2f, Mathf.Max(0.05f, deskThickness), 1f);
             // 左右の壁も範囲の端へ
             var left = f.parent != null ? f.parent.Find("WallLeft") : null;
             var right = f.parent != null ? f.parent.Find("WallRight") : null;

@@ -18,7 +18,18 @@ public partial class TwoPlayerShop2D
     Vector2 PlayerViewSize()
     {
         float w = Mathf.Max(1f, playerViewWidth);
-        return new Vector2(w, w / Mathf.Clamp(playerViewAspect, 0.1f, 4f));
+        return new Vector2(w, w / Mathf.Clamp(PlayerViewAspectNow(), 0.1f, 4f));
+    }
+
+    // 範囲の横:縦。fillPlayerScreen なら、1Pの画面に実際に映る形(回しているときは縦横を入れ替える)
+    float PlayerViewAspectNow()
+    {
+        if (!fillPlayerScreen || p1 == null || switcher == null || p1.screen < 0 || p1.screen >= switcher.screens.Length)
+            return playerViewAspect;
+        var cam = switcher.screens[p1.screen].camera;
+        if (cam == null || cam.pixelHeight <= 0) return playerViewAspect;
+        float aspect = cam.aspect;
+        return p1ScreenRotation == ScreenRotation.None ? aspect : 1f / Mathf.Max(0.01f, aspect);
     }
 
     // 割合の設定から、床・壁・袋・落とす高さを計算する(値が変わったら、床や袋はそれぞれの処理で動く)
@@ -27,8 +38,8 @@ public partial class TwoPlayerShop2D
         Vector2 view = PlayerViewSize();
         float bottom = -view.y / 2f;
         floorY = bottom + view.y * floorFromBottom;
-        wallX = view.x / 2f;
-        bagWidth = view.x * bagWidthRatio;
+        wallX = view.x / 2f * deskWidthRatio;   // 机(床)の端 = 左右の壁
+        bagWidth = Mathf.Min(view.x * bagWidthRatio, wallX * 2f);   // 机からはみ出さない
         bagHeight = view.y * bagHeightRatio;
         bagX = Mathf.Clamp(view.x * bagXRatio, -wallX + bagWidth / 2f, wallX - bagWidth / 2f);   // はみ出さない
         dropHeight = bottom + view.y * dropHeightRatio;
