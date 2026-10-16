@@ -90,7 +90,7 @@ public partial class TwoPlayerShop2D
         if (timerPlaceholder == null)
             timerPlaceholder = MakeText("TimerPlaceholder", null, layerShop, "TIMER", new Color(1f, 1f, 1f, 0.35f), 5);
         Vector2 view = ShopViewSize();
-        timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && portraitTopSpace > 0f);
+        timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         timerPlaceholder.transform.position = new Vector3(0f, view.y / 2f - view.y * portraitTopSpace / 2f, 0f);
         timerPlaceholder.characterSize = 0.08f * Mathf.Max(1f, view.x / 8f);
     }
@@ -104,7 +104,8 @@ public partial class TwoPlayerShop2D
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
             portraitTopSpace != appliedTopSpace) ApplyShopLayout();
         if (timerPlaceholder != null)
-            timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && portraitTopSpace > 0f);
+            timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
+        UpdateGameTimer();
 
         if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
         var cam = switcher.screens[screenShop].camera;
