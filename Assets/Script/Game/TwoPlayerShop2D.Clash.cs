@@ -1,5 +1,11 @@
 using UnityEngine;
 
+public enum ClashMode
+{
+    Mash,     // Aボタンを連打して、先に決まった回数押した方が勝ち
+    Timing,   // ゲージが 0→最大→0 と往復し、最大に近いところで止めた方が勝ち(前の方式)
+}
+
 // 掴み合い(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 public partial class TwoPlayerShop2D
 {
@@ -11,6 +17,7 @@ public partial class TwoPlayerShop2D
         public readonly float[] value = new float[2];
         public readonly bool[] locked = new bool[2];
         public readonly float[] offset = new float[2];   // ゲージの動き出しを少しずらす
+        public readonly int[] presses = new int[2];       // 連打: 押した回数
         public Player winner;                       // null のまま結果表示が終わったら引き分け → やり直し
         public float resultTimer;                   // 0より大きい間は勝ち負けを表示中
         public GameObject root;
@@ -57,8 +64,11 @@ public partial class TwoPlayerShop2D
             mask.transform.localScale = new Vector3(ClashBarWidth, ClashBarHeight / GetGaugeSprite().bounds.size.y, 1f);
             mask.AddComponent<SpriteMask>().sprite = GetGaugeSprite();
 
-            float perfectW = ClashBarWidth * (1f - clashPerfect);
-            MakeGaugeFill(bar, "Perfect", ClashBarWidth - perfectW, perfectW, new Color(1f, 0.85f, 0.2f, 0.6f), 2003);
+            if (clashMode == ClashMode.Timing)
+            {
+                float perfectW = ClashBarWidth * (1f - clashPerfect);
+                MakeGaugeFill(bar, "Perfect", ClashBarWidth - perfectW, perfectW, new Color(1f, 0.85f, 0.2f, 0.6f), 2003);
+            }
             var fillSr = MakeGaugeFill(bar, "Fill", 0f, 0f, i == 0 ? p1.color : p2.color, 2004);
             clash.fill[i] = fillSr.transform;
             clash.fillSr[i] = fillSr;
@@ -69,7 +79,7 @@ public partial class TwoPlayerShop2D
         var vs = MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2006);
         vs.transform.position = new Vector3(0f, y + 0.1f, 0f);
         vs.characterSize = 0.14f;
-        clash.title = MakeText("Title", t, layerShop, "掴み合い！ 最大に近いところでA！", Color.white, 2006);
+        clash.title = MakeText("Title", t, layerShop, ClashTitle(), Color.white, 2006);
         clash.title.transform.position = new Vector3(0f, y + 1.9f, 0f);
         clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2007);
         clash.result.transform.position = new Vector3(0f, y + 1.1f, 0f);
@@ -137,6 +147,12 @@ public partial class TwoPlayerShop2D
             return;
         }
 
+        if (clashMode == ClashMode.Mash)
+        {
+            UpdateMash(press1, press2);
+            return;
+        }
+
         c.time += Time.deltaTime;
         bool[] pressed = { press1, press2 };
         for (int i = 0; i < 2; i++)
@@ -180,6 +196,52 @@ public partial class TwoPlayerShop2D
         Debug.Log($"[Shop2D] {lastEvent}");
     }
 
+    string ClashTitle()
+    {
+        return clashMode == ClashMode.Mash
+            ? $"掴み合い！ Aを連打！ 先に{Mathf.Max(1, clashMashCount)}回！"
+            : "掴み合い！ 最大に近いところでA！";
+    }
+
+    // 連打: Aを押すたびにゲージが伸び、先に clashMashCount 回押した方の勝ち
+    void UpdateMash(bool press1, bool press2)
+    {
+        var c = clash;
+        int goal = Mathf.Max(1, clashMashCount);
+        bool[] pressed = { press1, press2 };
+        for (int i = 0; i < 2; i++)
+        {
+            if (pressed[i]) c.presses[i] = Mathf.Min(goal, c.presses[i] + 1);
+            SetGaugeFill(c.fill[i], 0f, ClashBarWidth * c.presses[i] / goal);
+        }
+        c.title.text = $"1P {c.presses[0]}  -  {c.presses[1]} 2P   (先に{goal}回)";
+
+        bool done1 = c.presses[0] >= goal, done2 = c.presses[1] >= goal;
+        if (!done1 && !done2) return;
+
+        c.resultTimer = clashResultTime;
+        for (int i = 0; i < 2; i++)
+            if (c.presses[i] >= goal) c.fillSr[i].color = Color.white;   // 押し切ったら白く光る
+
+        // 同じフレームで2人とも押し切ったら引き分け
+        if (done1 && done2 && clashRematchOnTie)
+        {
+            c.result.text = "引き分け！ もう一回！";
+            c.result.color = Color.white;
+            lastEvent = "掴み合い(連打): 引き分け → やり直し";
+            Debug.Log($"[Shop2D] {lastEvent}");
+            return;
+        }
+
+        int win = done1 && done2 ? Random.Range(0, 2) : done1 ? 0 : 1;   // 同時(やり直しOFF)はランダム
+        c.winner = win == 0 ? p1 : p2;
+        c.result.text = $"{c.winner.name}の勝ち！";
+        c.result.color = c.winner.color;
+
+        lastEvent = $"掴み合い(連打): {c.result.text}(1P {c.presses[0]} / 2P {c.presses[1]})";
+        Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
     // 引き分けのあと: ゲージを0に戻して、もう一度
     void RestartClash()
     {
@@ -189,11 +251,12 @@ public partial class TwoPlayerShop2D
         {
             c.locked[i] = false;
             c.value[i] = 0f;
+            c.presses[i] = 0;
             c.offset[i] = Random.value;
             c.fillSr[i].color = i == 0 ? p1.color : p2.color;
             SetGaugeFill(c.fill[i], 0f, 0f);
         }
-        c.title.text = "掴み合い！ 最大に近いところでA！";
+        c.title.text = ClashTitle();
         c.result.text = "";
     }
 
