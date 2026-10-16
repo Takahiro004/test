@@ -77,6 +77,23 @@ public partial class TwoPlayerShop2D
         return k != null && k.rightShiftKey.wasPressedThisFrame;
     }
 
+    // 回す: RBボタン(キーボード予備: 1P E / 2P 右Ctrl)
+    bool Rotate1PPressed()
+    {
+        var pad = PadOf(0);
+        if (pad != null && pad.rightShoulder.wasPressedThisFrame) return true;
+        var k = Kb;
+        return k != null && k.eKey.wasPressedThisFrame;
+    }
+
+    bool Rotate2PPressed()
+    {
+        var pad = PadOf(1);
+        if (pad != null && pad.rightShoulder.wasPressedThisFrame) return true;
+        var k = Kb;
+        return k != null && k.rightCtrlKey.wasPressedThisFrame;
+    }
+
     bool Grab2PPressed()
     {
         var pad = PadOf(1);
