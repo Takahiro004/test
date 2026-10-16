@@ -575,6 +575,7 @@ MonoBehaviour:
   switcher: {fileID: 0}
   refillShelf: 1
   horizontalOnlyOnOwnScreen: 1
+  rotateHeldProduct: 1
   createFloor: 1
   createBag: 1
   showPricePopup: 1
@@ -588,8 +589,10 @@ MonoBehaviour:
   kickShakeScreen: 1
   kickShakeSelf: 1
   autoFitPlayerScreens: 1
+  fillPlayerScreen: 1
   autoFitShopScreen: 1
   showTimerPlaceholder: 1
+  showGameTimer: 1
   useKeyboard: 0
   showOverlayLabel: 1
   screenP1: 0
@@ -604,20 +607,27 @@ MonoBehaviour:
   playerViewAspect: 0.5625
   playerViewWidth: 10
   floorFromBottom: 0.04
+  deskWidthRatio: 1
+  deskThickness: 0.5
   dropHeightRatio: 0.85
-  bagWidthRatio: 0.8
-  bagHeightRatio: 0.45
+  bagWidthRatio: 0.9
+  bagHeightRatio: 0.65
   bagXRatio: 0
+  p1ScreenRotation: 1
+  p2ScreenRotation: 0
   dropHeight: 9
   p1CursorSprite: {fileID: 8957324059118975939, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   p2CursorSprite: {fileID: -863147454, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   cursorScale: 1.2
+  gameTime: 120
+  timerWarningTime: 10
   textScale: 2
   stickDeadzone: 0.2
   gravityScale: 2
   floorY: -4
   wallX: 8.9
   freezeRotation: 0
+  productShapes: 000000000200000005000000060000000400000007000000
   productSprites:
   - {fileID: 0}
   - {fileID: 0}
@@ -638,6 +648,8 @@ MonoBehaviour:
   pricePopupTime: 1
   removeAfterStopTime: 0.5
   grabWindow: 0.5
+  clashMode: 0
+  clashMashCount: 10
   clashGaugeSpeed: 1.2
   clashPerfect: 0.95
   clashResultTime: 1.2
