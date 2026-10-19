@@ -3,8 +3,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 // タイムアップのあと(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
-// 操作と点数を止めて、棚の画面を左右に分け(左 1P / 右 2P)、
-// 合計金額の多い方に「あなたの勝ち！」、少ない方に「あなたの負け！」、同じなら両方に「引き分け！」を出す。
+// 操作と点数を止めて、
+//  - 1P/2P それぞれの画面: 合計金額の多い方に「あなたの勝ち！」、少ない方に「あなたの負け！」、同じなら「引き分け！」を大きく出す
+//  - 棚の画面: 左右に分けて(左 1P / 右 2P)、1P/2P・合計金額・「Aでもう一度」を出す
 // resultRestartDelay 秒たったら、どちらかが A を押すとシーンを読み込み直して最初から
 public partial class TwoPlayerShop2D
 {
@@ -63,21 +64,18 @@ public partial class TwoPlayerShop2D
 
             var player = i == 0 ? p1 : p2;
             var nameText = MakeText($"Name{i + 1}", t, layerShop, player.name, player.color, 3002);
-            nameText.characterSize = 0.12f * size;
-            nameText.transform.position = new Vector3(cx, view.y * 0.28f, 0f);
-
-            string text = r > 0 ? "あなたの\n勝ち！" : r < 0 ? "あなたの\n負け！" : "引き\n分け！";
-            var main = MakeText($"Result{i + 1}", t, layerShop, text, r < 0 ? new Color(0.75f, 0.8f, 0.95f) : Color.white, 3002);
-            main.characterSize = 0.14f * size;
-            main.transform.position = new Vector3(cx, view.y * 0.05f, 0f);
+            nameText.characterSize = 0.18f * size;
+            nameText.transform.position = new Vector3(cx, view.y * 0.2f, 0f);
 
             var total = MakeText($"Total{i + 1}", t, layerShop, $"¥{(i == 0 ? total1 : total2):N0}", Color.white, 3002);
-            total.characterSize = 0.1f * size;
-            total.transform.position = new Vector3(cx, -view.y * 0.2f, 0f);
+            total.characterSize = 0.11f * size;
+            total.transform.position = new Vector3(cx, -view.y * 0.05f, 0f);
+
+            ShowResultOnPlayerScreen(player, r);
 
             var hint = MakeText($"Hint{i + 1}", t, layerShop, "Aで\nもう一度", new Color(1f, 1f, 1f, 0.8f), 3002);
             hint.characterSize = 0.06f * size;
-            hint.transform.position = new Vector3(cx, -view.y * 0.38f, 0f);
+            hint.transform.position = new Vector3(cx, -view.y * 0.3f, 0f);
             if (i == 0) resultHint1 = hint; else resultHint2 = hint;
         }
 
@@ -85,6 +83,25 @@ public partial class TwoPlayerShop2D
         var line = MakeBagPart("Divider", t, layerShop, Color.white, 3001, false);
         SetRect(line, 0f, 0f, 0.08f * size, view.y + 2f);
         resultTime = 0f;
+    }
+
+    // 1P/2P の画面いっぱいに、勝ち負けを大きく出す(レジ袋の画面の上にかぶせる)
+    void ShowResultOnPlayerScreen(Player p, int result)
+    {
+        var root = new GameObject($"Result_{p.name}");
+        root.layer = p.layer;
+        root.transform.SetParent(resultRoot.transform);
+        Vector2 view = PlayerViewSize();
+        float size = view.x / 8f;
+
+        Color bg = result > 0 ? new Color(0.95f, 0.72f, 0.15f, 0.92f) : result < 0 ? new Color(0.15f, 0.15f, 0.2f, 0.92f) : new Color(0.35f, 0.38f, 0.5f, 0.92f);
+        var panel = MakeBagPart("Panel", root.transform, p.layer, bg, 3000, false);
+        SetRect(panel, 0f, 0f, view.x * 3f, view.y * 3f);   // 画面の形が違っても全部おおう
+
+        string text = result > 0 ? "あなたの\n勝ち！" : result < 0 ? "あなたの\n負け！" : "引き分け！";
+        var main = MakeText("Result", root.transform, p.layer, text, result < 0 ? new Color(0.75f, 0.8f, 0.95f) : Color.white, 3002);
+        main.characterSize = 0.22f * size;
+        main.transform.position = Vector3.zero;   // 画面の真ん中(合計金額は棚の画面に出す)
     }
 
     // どちらかのコントローラー(参加していないものも)、またはキーボード(Space / Enter)で A
