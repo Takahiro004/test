@@ -582,8 +582,8 @@ MonoBehaviour:
   removeOutsideBag: 1
   subtractSpilledFromTotal: 1
   clashEnabled: 1
-  clashRematchOnTie: 1
-  clashGaugeCentered: 1
+  clashRematchOnTie: 0
+  clashGaugeCentered: 0
   kickEnabled: 1
   kickShakeBag: 1
   kickShakeScreen: 1
@@ -591,12 +591,13 @@ MonoBehaviour:
   autoFitPlayerScreens: 1
   fillPlayerScreen: 1
   autoFitShopScreen: 1
-  showTimerPlaceholder: 1
-  showGameTimer: 1
+  showTimerPlaceholder: 0
+  showGameTimer: 0
+  showResultOnTimeUp: 1
   useKeyboard: 0
-  showOverlayLabel: 1
+  showOverlayLabel: 0
   screenP1: 0
-  screenShop: 1
+  screenShop: 8
   screenP2: 2
   layerP1: 8
   layerShop: 9
@@ -613,7 +614,7 @@ MonoBehaviour:
   bagWidthRatio: 0.9
   bagHeightRatio: 0.65
   bagXRatio: 0
-  p1ScreenRotation: 1
+  p1ScreenRotation: 0
   p2ScreenRotation: 0
   dropHeight: 9
   p1CursorSprite: {fileID: 8957324059118975939, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
@@ -621,6 +622,7 @@ MonoBehaviour:
   cursorScale: 1.2
   gameTime: 120
   timerWarningTime: 10
+  resultRestartDelay: 1.5
   textScale: 2
   stickDeadzone: 0.2
   gravityScale: 2
