@@ -573,6 +573,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   switcher: {fileID: 0}
+  monitorMode: 0
+  shopScreenRotation: 0
+  portraitLayout:
+    playerViewWidth: 10
+    floorFromBottom: 0.04
+    deskWidthRatio: 1
+    deskThickness: 0.5
+    dropHeightRatio: 0.85
+    bagWidthRatio: 0.9
+    bagHeightRatio: 0.65
+    bagXRatio: 0
+    productSize: 1.4
+    cursorScale: 1.2
+    textScale: 2
+  landscapeLayout:
+    playerViewWidth: 17.8
+    floorFromBottom: 0.06
+    deskWidthRatio: 1
+    deskThickness: 0.5
+    dropHeightRatio: 0.85
+    bagWidthRatio: 0.5
+    bagHeightRatio: 0.6
+    bagXRatio: 0
+    productSize: 1.4
+    cursorScale: 1.2
+    textScale: 2
   refillShelf: 1
   horizontalOnlyOnOwnScreen: 1
   rotateHeldProduct: 1
@@ -592,12 +618,12 @@ MonoBehaviour:
   fillPlayerScreen: 1
   autoFitShopScreen: 1
   showTimerPlaceholder: 0
-  showGameTimer: 0
+  showGameTimer: 1
   showResultOnTimeUp: 1
   useKeyboard: 0
   showOverlayLabel: 0
   screenP1: 0
-  screenShop: 8
+  screenShop: 1
   screenP2: 2
   layerP1: 8
   layerShop: 9
