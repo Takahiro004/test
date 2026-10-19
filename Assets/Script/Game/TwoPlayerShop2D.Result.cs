@@ -71,7 +71,7 @@ public partial class TwoPlayerShop2D
             total.characterSize = 0.11f * size;
             total.transform.position = new Vector3(cx, -view.y * 0.05f, 0f);
 
-            ShowResultOnPlayerScreen(player, r, i == 0 ? total1 : total2);
+            ShowResultOnPlayerScreen(player, r);
 
             var hint = MakeText($"Hint{i + 1}", t, layerShop, "Aで\nもう一度", new Color(1f, 1f, 1f, 0.8f), 3002);
             hint.characterSize = 0.06f * size;
@@ -86,7 +86,7 @@ public partial class TwoPlayerShop2D
     }
 
     // 1P/2P の画面いっぱいに、勝ち負けを大きく出す(レジ袋の画面の上にかぶせる)
-    void ShowResultOnPlayerScreen(Player p, int result, int total)
+    void ShowResultOnPlayerScreen(Player p, int result)
     {
         var root = new GameObject($"Result_{p.name}");
         root.layer = p.layer;
@@ -101,11 +101,7 @@ public partial class TwoPlayerShop2D
         string text = result > 0 ? "あなたの\n勝ち！" : result < 0 ? "あなたの\n負け！" : "引き分け！";
         var main = MakeText("Result", root.transform, p.layer, text, result < 0 ? new Color(0.75f, 0.8f, 0.95f) : Color.white, 3002);
         main.characterSize = 0.22f * size;
-        main.transform.position = new Vector3(0f, view.y * 0.08f, 0f);
-
-        var sub = MakeText("Total", root.transform, p.layer, $"¥{total:N0}", Color.white, 3002);
-        sub.characterSize = 0.1f * size;
-        sub.transform.position = new Vector3(0f, -view.y * 0.2f, 0f);
+        main.transform.position = Vector3.zero;   // 画面の真ん中(合計金額は棚の画面に出す)
     }
 
     // どちらかのコントローラー(参加していないものも)、またはキーボード(Space / Enter)で A
