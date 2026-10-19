@@ -145,48 +145,62 @@ public partial class TwoPlayerShop2D
         }
         Destroy(foot);
 
-        if (kickShakeBag) ShakeBag(target, power, true);
+        // 蹴った向き: 1Pが蹴ると右へ、2Pが蹴ると左へ
+        float toTarget = from == p1 ? 1f : -1f;
+
+        // レジ袋は「蹴られた」揺れ方: 蹴られた向きへぐっと押されて、揺れながら戻る
+        if (kickShakeBag) ShakeBag(target, toTarget, power, true);
         // 同じ机なので、蹴った人のレジ袋も少し揺れる
-        if (kickShakeBag && kickShakeSelf && kickSelfShake > 0f) ShakeBag(from, power * kickSelfShake, false);
+        if (kickShakeBag && kickShakeSelf && kickSelfShake > 0f) ShakeBag(from, toTarget, power * kickSelfShake, false);
 
         // 画面も揺らす(棚の画面は揺らさない)
-        //  蹴った人の画面は相手の側へ、蹴られた人の画面は蹴られた向き(蹴った人と反対の側)へずれる
-        //  1Pが蹴ると、どちらの画面も右へ。2Pが蹴ると、どちらも左へ
-        float toTarget = from == p1 ? 1f : -1f;
-        if (kickShakeScreen) ShakeScreen(target, toTarget, power);
-        if (kickShakeScreen && kickShakeSelf && kickSelfShake > 0f) ShakeScreen(from, toTarget, power * kickSelfShake);
+        //  蹴られた人の画面: 蹴られた向きへドンと押されて、ガタガタ揺れながら戻る
+        //  蹴った人の画面: 相手の側へグッと踏み込んで、すっと戻る(蹴った動き)
+        if (kickShakeScreen) ShakeScreen(target, toTarget, power, false);
+        if (kickShakeScreen && kickShakeSelf && kickSelfShake > 0f) ShakeScreen(from, toTarget, power * kickSelfShake, true);
         lastEvent = $"{target.name}のレジ袋が揺れた(威力 {Mathf.RoundToInt(power * 100)})";
     }
 
-    void ShakeBag(Player target, float power, bool kicked)
+    void ShakeBag(Player target, float direction, float power, bool kicked)
     {
         if (target.bag == null || target.bag.body == null) return;
         if (target.shakeRoutine != null) StopCoroutine(target.shakeRoutine);
-        target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, power));
+        target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, direction, power));
         if (kicked)
             StartCoroutine(Popup(target.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
     }
 
     // プレイヤーの画面(カメラ)を、direction(+1 右 / -1 左)へ押されたように揺らす
-    void ShakeScreen(Player p, float direction, float power)
+    void ShakeScreen(Player p, float direction, float power, bool kicker)
     {
         if (kickScreenShake <= 0f || p.screen < 0 || p.screen >= switcher.screens.Length) return;
         var cam = switcher.screens[p.screen].camera;
         if (cam == null) return;
         if (!p.hasCameraBase) { p.cameraBase = cam.transform.position; p.hasCameraBase = true; }
         if (p.screenShakeRoutine != null) StopCoroutine(p.screenShakeRoutine);
-        p.screenShakeRoutine = StartCoroutine(ShakeScreenRoutine(p, cam, direction, power));
+        p.screenShakeRoutine = StartCoroutine(ShakeScreenRoutine(p, cam, direction, power, kicker));
     }
 
-    IEnumerator ShakeScreenRoutine(Player p, Camera cam, float direction, float power)
+    IEnumerator ShakeScreenRoutine(Player p, Camera cam, float direction, float power, bool kicker)
     {
         float amplitude = kickScreenShake * power;
         float duration = Mathf.Max(0.01f, kickScreenShakeTime);
         for (float time = 0f; time < duration; time += Time.deltaTime)
         {
-            // 最初に direction の側へぐっとずれて、行き来しながら戻る
-            float fade = 1f - time / duration;
-            float shift = direction * amplitude * fade * Mathf.Sin(time / duration * Mathf.PI * 5f);
+            float t = time / duration;
+            float shift;
+            if (kicker)
+            {
+                // 蹴った動き: すばやく相手の側へ踏み込み(最初の2割)、ゆっくり戻る。行き来はしない
+                float push = t < 0.2f ? Mathf.Sin(t / 0.2f * Mathf.PI / 2f) : 1f - Mathf.SmoothStep(0f, 1f, (t - 0.2f) / 0.8f);
+                shift = direction * amplitude * push;
+            }
+            else
+            {
+                // 蹴られた動き: いきなり押されて、ガタガタ行き来しながら小さくなる
+                float fade = (1f - t) * (1f - t);
+                shift = direction * amplitude * 1.3f * fade * Mathf.Sin(t * Mathf.PI * 7f);
+            }
             // 画面の中身を右へずらす = カメラを左へ動かす
             cam.transform.position = p.cameraBase + new Vector3(-shift, 0f, 0f);
             yield return null;
@@ -196,7 +210,7 @@ public partial class TwoPlayerShop2D
     }
 
     // レジ袋を左右に揺らす。威力が大きいほど大きく揺れる。中の商品は袋に押されて動く(こぼれたら消える)
-    IEnumerator ShakeBagRoutine(Player target, float power)
+    IEnumerator ShakeBagRoutine(Player target, float direction, float power)
     {
         var body = target.bag.body;
         foreach (var go in target.inBag)   // 袋の中で止まっている商品を起こす
@@ -211,7 +225,7 @@ public partial class TwoPlayerShop2D
         {
             float fade = 1f - time / Mathf.Max(0.01f, kickShakeTime);
             float wave = time * kickShakeFrequency * Mathf.PI * 2f;
-            float x = amplitude * fade * Mathf.Sin(wave);                 // 左右
+            float x = direction * amplitude * fade * Mathf.Sin(wave);     // 左右(最初は蹴られた向きへ)
             float y = up * fade * Mathf.Abs(Mathf.Sin(wave));             // 上に跳ねる
             body.MovePosition(new Vector2(x, y));
             yield return new WaitForFixedUpdate();

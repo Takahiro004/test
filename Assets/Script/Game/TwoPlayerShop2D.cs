@@ -27,6 +27,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
+///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
@@ -77,6 +78,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showTimerPlaceholder = true;
     [Tooltip("棚の画面: 残りのプレイ時間(制限時間)を出す。縦のときは上の空き場所、横のときは画面の上")]
     public bool showGameTimer = true;
+    [Tooltip("タイムアップ: 操作を止めて、棚の画面を左右2つに分けて勝ち負けを出す。Aボタンでもう一度。OFFなら「タイムアップ！」と出るだけで続けられる")]
+    public bool showResultOnTimeUp = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
     public bool useKeyboard = true;
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
@@ -135,6 +138,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float gameTime = 120f;
     [Tooltip("残りがこの秒数以下になったら、時間の文字を赤くする")]
     public float timerWarningTime = 10f;
+    [Tooltip("勝ち負けを出してから、Aボタンでもう一度遊べるようになるまでの秒数(連打でうっかり始まらないように)")]
+    public float resultRestartDelay = 1.5f;
 
     [Header("文字")]
     [Tooltip("合計金額・「+¥」「LB: キック」などの文字の大きさ(1で前の大きさ)")]
@@ -308,6 +313,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
+        RestorePads();   // もう一度遊ぶとき、前のゲームのコントローラーの割り当てを戻す
 
         SetupPhysicsLayers();
         CreateProducts();
@@ -548,6 +554,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         ApplyPlayerLayout();
         if (floorY != appliedFloorY || wallX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
+
+        // タイムアップ: 操作と点数を止めて、勝ち負けを出す(Aでもう一度)
+        if (showResultOnTimeUp && IsTimeUp) { UpdateResult(); return; }
         if (createBag && p1.bag != null)
         {
             if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
@@ -629,8 +638,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             if (g == pad1 || g == pad2) continue;
             if (!g.buttonSouth.wasPressedThisFrame && !g.startButton.wasPressedThisFrame) continue;
 
-            if (pad1 == null) { pad1 = g; joined1 = true; Debug.Log($"[Shop2D] 1Pに割り当て: {g.displayName}"); }
-            else if (pad2 == null) { pad2 = g; joined2 = true; Debug.Log($"[Shop2D] 2Pに割り当て: {g.displayName}"); }
+            if (pad1 == null) { pad1 = keptPad1 = g; joined1 = true; Debug.Log($"[Shop2D] 1Pに割り当て: {g.displayName}"); }
+            else if (pad2 == null) { pad2 = keptPad2 = g; joined2 = true; Debug.Log($"[Shop2D] 2Pに割り当て: {g.displayName}"); }
         }
     }
 
