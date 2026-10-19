@@ -29,7 +29,7 @@ public partial class TwoPlayerShop2D
         var cam = switcher.screens[p1.screen].camera;
         if (cam == null || cam.pixelHeight <= 0) return playerViewAspect;
         float aspect = cam.aspect;
-        return p1ScreenRotation == ScreenRotation.None ? aspect : 1f / Mathf.Max(0.01f, aspect);
+        return RotationOf(p1) == ScreenRotation.None ? aspect : 1f / Mathf.Max(0.01f, aspect);
     }
 
     // 割合の設定から、床・壁・袋・落とす高さを計算する(値が変わったら、床や袋はそれぞれの処理で動く)
@@ -58,7 +58,7 @@ public partial class TwoPlayerShop2D
             if (cam == null || !cam.orthographic) continue;
 
             // 回す(モニターを右回りに置いたら、映像は左回りに回して描く)
-            var rotation = p == p1 ? p1ScreenRotation : p2ScreenRotation;
+            var rotation = RotationOf(p);
             float angle = rotation == ScreenRotation.Right ? -90f : rotation == ScreenRotation.Left ? 90f : 0f;
             cam.transform.rotation = Quaternion.Euler(0f, 0f, angle);
 

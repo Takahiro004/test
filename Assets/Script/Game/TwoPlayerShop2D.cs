@@ -27,6 +27,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
+///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
 ///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
@@ -36,6 +37,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 {
     [Header("参照")]
     public DisplayTestSwitcher switcher;
+
+    [Header("モニターの置き方(縦型モニター用 / 横型モニター用を切り替える)")]
+    [Tooltip("縦型モニター: 本番 / 横型(縦と同じ見た目): 横のモニターの真ん中に本番と同じ縦長の画面を出す / 横型(横いっぱい): 横のモニターに合わせて並べ直す。再生中に変えてもすぐ反映(商品・カーソルの大きさは新しく出たものから)")]
+    public MonitorMode monitorMode = MonitorMode.Portrait;
+    [Tooltip("縦型モニターのとき、棚の画面を90度回して描くか(Windows は横のまま棚のモニターだけ倒したとき用。逆さならもう一方)。1P/2P は「1P/2Pの画面」の P1/P2 Screen Rotation")]
+    public ScreenRotation shopScreenRotation = ScreenRotation.None;
+    [Tooltip("縦の配置(縦型モニター・横型(縦と同じ見た目)で使う)")]
+    public LayoutProfile portraitLayout = LayoutProfile.PortraitDefault();
+    [Tooltip("横の配置(横型(横いっぱい)で使う)")]
+    public LayoutProfile landscapeLayout = LayoutProfile.LandscapeDefault();
 
     [Header("機能のON/OFF(チェックを外すとその機能が止まる。★は再生前に決める)")]
     [Tooltip("棚: 取られた商品を同じ場所に補充する")]
@@ -70,8 +81,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kickShakeSelf = true;
     [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
     public bool autoFitPlayerScreens = true;
-    [Tooltip("1P/2Pの画面: 実際の画面の形いっぱいに机・袋を並べる(1Pの画面の形に合わせる)。OFFなら Player View Aspect の形の中だけに並べる(画面の形が違うと左右や上下が空く)")]
-    public bool fillPlayerScreen = true;
+    [HideInInspector] public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
     public bool autoFitShopScreen = true;
     [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
@@ -100,28 +110,21 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color p1Color = new Color(1f, 0.3f, 0.3f);
     public Color p2Color = new Color(0.3f, 0.5f, 1f);
 
-    [Header("1P/2Pの画面(レジ袋の画面)の大きさと配置")]
-    [Tooltip("必ず映す範囲の横:縦の比率(縦型 9:16 なら 0.5625)。どんな形・解像度の画面でも、この範囲が全部映るようにカメラが自動でズームする")]
+    [Header("1P/2Pの画面(レジ袋の画面)。袋・机などの大きさは「モニターの置き方」の配置で変える")]
+    [Tooltip("縦の画面の横:縦の比率(9:16 なら 0.5625)。横型(縦と同じ見た目)のときは、この形を横のモニターの真ん中に出す")]
     public float playerViewAspect = 9f / 16f;
-    [Tooltip("必ず映す範囲の横幅(ゲーム内の長さ)。小さくすると、商品・手・袋などが全部まとめて大きく映る")]
-    public float playerViewWidth = 10f;
-    [Tooltip("床の高さ(範囲の下の端から、範囲の高さの何割上か)")]
-    [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
-    [Tooltip("机(床)の幅(範囲の横幅の何割か。1で画面の端から端まで)。左右の壁も机の端に来る")]
-    [Range(0.2f, 1f)] public float deskWidthRatio = 1f;
-    [Tooltip("机(床)の厚み(下へ。見た目だけ)")]
-    public float deskThickness = 0.5f;
-    [Tooltip("商品を持って横移動する高さ(範囲の下の端から、範囲の高さの何割上か。1で上の端)")]
-    [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
-    [Tooltip("レジ袋の幅(範囲の横幅の何割か)")]
-    [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
-    [Tooltip("レジ袋の高さ(範囲の高さの何割か)")]
-    [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
-    [Tooltip("レジ袋の横の位置(-0.5 で左の端、0 で真ん中、0.5 で右の端)")]
-    [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
-    [Tooltip("1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方を選ぶ)")]
+    // 下の8つは「モニターの置き方」で選んだ配置(portraitLayout / landscapeLayout)から毎フレーム入る
+    [HideInInspector] public float playerViewWidth = 10f;
+    [HideInInspector] [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
+    [HideInInspector] [Range(0.2f, 1f)] public float deskWidthRatio = 1f;
+    [HideInInspector] public float deskThickness = 0.5f;
+    [HideInInspector] [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
+    [HideInInspector] [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
+    [HideInInspector] [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
+    [HideInInspector] [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
+    [Tooltip("縦型モニターのとき、1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
     public ScreenRotation p1ScreenRotation = ScreenRotation.None;
-    [Tooltip("2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方を選ぶ)")]
+    [Tooltip("縦型モニターのとき、2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
     public ScreenRotation p2ScreenRotation = ScreenRotation.None;
 
     // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
@@ -130,8 +133,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("カーソル画像(未設定なら矢印を自動生成)")]
     public Sprite p1CursorSprite;
     public Sprite p2CursorSprite;
-    [Tooltip("カーソルの大きさ(縦横の長いほうがこの長さになる。画像の大きさに関係なくそろう)")]
-    public float cursorScale = 1.2f;
+    [HideInInspector] public float cursorScale = 1.2f;
 
     [Header("制限時間")]
     [Tooltip("1ゲームのプレイ時間(秒)。再生を始めたときから数える。120で2分")]
@@ -141,9 +143,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("勝ち負けを出してから、Aボタンでもう一度遊べるようになるまでの秒数(連打でうっかり始まらないように)")]
     public float resultRestartDelay = 1.5f;
 
-    [Header("文字")]
-    [Tooltip("合計金額・「+¥」「LB: キック」などの文字の大きさ(1で前の大きさ)")]
-    public float textScale = 2f;
+    [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
 
     [Header("コントローラー")]
     [Tooltip("スティックの遊び(これ未満は無視)")]
@@ -167,8 +167,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("商品の画像(未設定なら上の形を自動生成)")]
     [Tooltip("棚の左上から順に Product_1, 2, 3 … の画像。空の欄は上の「商品の形」のまま")]
     public Sprite[] productSprites = new Sprite[6];
-    [Tooltip("商品の大きさ(縦横の長いほうがこの長さになる。図形も画像も同じ)。小さくすると袋にたくさん入る")]
-    public float productSize = 1.4f;
+    [HideInInspector] public float productSize = 1.4f;
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
     [Header("棚の補充")]
@@ -237,9 +236,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("相手のレジ袋が揺れる秒数")]
     public float kickShakeTime = 1f;
 
-    [Header("棚の画面(画面2)の向き")]
-    [Tooltip("横: 今までどおり / 縦: 縦長の配置(横のモニターでは真ん中に縦長で表示) / 縦(右回り・左回り): Windows は横のままモニターだけ90度回したとき用(逆さに見えたらもう一方)。再生中に変えてもすぐ反映")]
-    public ShopOrientation shopOrientation = ShopOrientation.Landscape;
+    [Header("棚の画面(画面2)。縦/横は「モニターの置き方」で決まる")]
+    [HideInInspector] public ShopOrientation shopOrientation = ShopOrientation.Landscape;
     [Tooltip("縦のときの画面の横:縦の比率(9:16なら0.5625)。モニターが決まったら合わせる")]
     public float portraitAspect = 9f / 16f;
     [Tooltip("縦のときに映る横幅。小さいほど棚が大きく映る")]
@@ -313,6 +311,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
+        ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
         RestorePads();   // もう一度遊ぶとき、前のゲームのコントローラーの割り当てを戻す
 
         SetupPhysicsLayers();
@@ -552,6 +551,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     {
         if (switcher == null || p1 == null) return;
 
+        ApplyMonitorMode();
         ApplyPlayerLayout();
         if (floorY != appliedFloorY || wallX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
