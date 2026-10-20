@@ -73,6 +73,21 @@ public partial class TwoPlayerShop2D
         Vector2 view = ShopViewSize();
         float size = view.x / 8f;   // 文字の大きさの基準(縦の棚の幅 8 で 1)
 
+        // 結果発表の棒グラフを出していたら、棚の画面はそのまま(棒・レジ袋・金額を残す)。
+        // 1P/2P の画面に勝ち負けを出し、棚の画面には「Aでもう一度」だけ足す
+        if (barsRoot != null)
+        {
+            ShowResultOnPlayerScreen(p1, result1);
+            ShowResultOnPlayerScreen(p2, -result1);
+            float s2 = Mathf.Min(view.x, view.y) / 8f;
+            var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3004);
+            hint.characterSize = 0.07f * s2;
+            hint.transform.position = new Vector3(0f, view.y * 0.47f, 0f);   // いちばん上(下は 1P/2P の名前)
+            resultHint1 = resultHint2 = hint;
+            resultTime = 0f;
+            return;
+        }
+
         for (int i = 0; i < 2; i++)
         {
             int r = i == 0 ? result1 : -result1;
@@ -172,8 +187,7 @@ public partial class TwoPlayerShop2D
 
         if (barsTime >= Mathf.Max(0.1f, resultBarGrowTime) + Mathf.Max(0f, resultBarHoldTime))
         {
-            barsDone = true;
-            Destroy(barsRoot);
+            barsDone = true;   // 棒グラフは消さずに残し、そのまま勝ち負けの画面へ(ShowResult)
         }
     }
 
