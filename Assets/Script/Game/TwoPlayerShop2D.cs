@@ -126,6 +126,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
     [HideInInspector] [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
     [HideInInspector] [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
+    [Tooltip("机(床)と見えない壁を、画面の外まで何倍に広げるか(2で画面に見えている机の2倍。左右に半分ずつはみ出す)。商品は画面の外へ飛び出せる。カーソルと袋は画面の中のまま")]
+    [Range(1f, 4f)] public float deskExtend = 2f;
     [Tooltip("縦型モニターのとき、1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
     public ScreenRotation p1ScreenRotation = ScreenRotation.None;
     [Tooltip("縦型モニターのとき、2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
@@ -157,7 +159,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("重力の強さ(大きいほど速く落ちる)")]
     public float gravityScale = 2f;
     [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
-    [HideInInspector] public float wallX = 8.9f;     // 自動で計算(範囲の左右の端)
+    [HideInInspector] public float wallX = 8.9f;     // 自動で計算(画面に見えている机の端。カーソル・袋はこの中)
+    float DeskOuterX => wallX * Mathf.Max(1f, deskExtend);   // 本当の机の端と見えない壁(画面の外まで続く)
     [Tooltip("ONなら、落下中に商品が回転しない")]
     public bool freezeRotation = false;
 
@@ -528,10 +531,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         floor.transform.SetParent(root.transform);
         floor.layer = layer;
         floor.transform.position = new Vector3(0f, floorY - deskThickness / 2f, 0f);
-        floor.transform.localScale = new Vector3(wallX * 2f, deskThickness, 1f);
+        floor.transform.localScale = new Vector3(DeskOuterX * 2f, deskThickness, 1f);
         floors.Add(floor.transform);
         appliedFloorY = floorY;
-        appliedWallX = wallX;
+        appliedWallX = DeskOuterX;
         var sr = floor.AddComponent<SpriteRenderer>();
         sr.sprite = GetSquareSprite();
         sr.color = new Color(0.2f, 0.2f, 0.2f, 0.9f);
@@ -545,7 +548,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             var wall = new GameObject(i == 0 ? "WallLeft" : "WallRight");
             wall.transform.SetParent(root.transform);
             wall.layer = layer;
-            wall.transform.position = new Vector3(sign * (wallX + 0.5f), 0f, 0f);
+            wall.transform.position = new Vector3(sign * (DeskOuterX + 0.5f), 0f, 0f);
             wall.transform.localScale = new Vector3(1f, 40f, 1f);
             wall.AddComponent<BoxCollider2D>().size = Vector2.one;
         }
@@ -559,7 +562,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         ApplyMonitorMode();
         ApplyPlayerLayout();
-        if (floorY != appliedFloorY || wallX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
+        if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
         // タイムアップ: 操作と点数を止めて、勝ち負けを出す(Aでもう一度)
         if (showResultOnTimeUp && IsTimeUp) { UpdateResult(); return; }
@@ -610,17 +613,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void ApplyFloorY()
     {
         appliedFloorY = floorY;
-        appliedWallX = wallX;
+        appliedWallX = DeskOuterX;
         appliedDeskThickness = deskThickness;
         foreach (var f in floors)
         {
             f.position = new Vector3(f.position.x, floorY - deskThickness / 2f, f.position.z);
-            f.localScale = new Vector3(wallX * 2f, Mathf.Max(0.05f, deskThickness), 1f);
+            f.localScale = new Vector3(DeskOuterX * 2f, Mathf.Max(0.05f, deskThickness), 1f);
             // 左右の壁も範囲の端へ
             var left = f.parent != null ? f.parent.Find("WallLeft") : null;
             var right = f.parent != null ? f.parent.Find("WallRight") : null;
-            if (left != null) left.position = new Vector3(-(wallX + 0.5f), 0f, 0f);
-            if (right != null) right.position = new Vector3(wallX + 0.5f, 0f, 0f);
+            if (left != null) left.position = new Vector3(-(DeskOuterX + 0.5f), 0f, 0f);
+            if (right != null) right.position = new Vector3(DeskOuterX + 0.5f, 0f, 0f);
         }
 
         // 床の上で止まっている商品を起こす(床を下げたとき宙に浮いたままにならないように)
