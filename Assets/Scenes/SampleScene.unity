@@ -601,27 +601,30 @@ MonoBehaviour:
     textScale: 2
   refillShelf: 1
   horizontalOnlyOnOwnScreen: 1
-  rotateHeldProduct: 1
+  rotateHeldProduct: 0
   createFloor: 1
   createBag: 1
-  showPricePopup: 1
-  removeOutsideBag: 1
-  subtractSpilledFromTotal: 1
-  clashEnabled: 1
+  showPricePopup: 0
+  removeOutsideBag: 0
+  subtractSpilledFromTotal: 0
+  clashEnabled: 0
   clashRematchOnTie: 0
+  clashGaugeDiagonal: 0
   clashGaugeCentered: 0
-  kickEnabled: 1
-  kickShakeBag: 1
-  kickShakeScreen: 1
-  kickShakeSelf: 1
+  showClashWinLose: 0
+  kickEnabled: 0
+  kickShakeBag: 0
+  kickShakeScreen: 0
+  kickShakeSelf: 0
   autoFitPlayerScreens: 1
   fillPlayerScreen: 1
   autoFitShopScreen: 1
   showTimerPlaceholder: 0
-  showGameTimer: 1
-  showResultOnTimeUp: 1
+  showGameTimer: 0
+  showResultOnTimeUp: 0
+  showResultBars: 0
   useKeyboard: 0
-  showOverlayLabel: 0
+  showOverlayLabel: 1
   screenP1: 0
   screenShop: 1
   screenP2: 2
@@ -640,6 +643,7 @@ MonoBehaviour:
   bagWidthRatio: 0.9
   bagHeightRatio: 0.65
   bagXRatio: 0
+  deskExtend: 2
   p1ScreenRotation: 0
   p2ScreenRotation: 0
   dropHeight: 9
@@ -649,6 +653,10 @@ MonoBehaviour:
   gameTime: 120
   timerWarningTime: 10
   resultRestartDelay: 1.5
+  resultBarScreenAmount: 10000
+  resultBarGrowTime: 2.5
+  resultBarOverviewTime: 1
+  resultBarHoldTime: 1.5
   textScale: 2
   stickDeadzone: 0.2
   gravityScale: 2
@@ -681,6 +689,7 @@ MonoBehaviour:
   clashGaugeSpeed: 1.2
   clashPerfect: 0.95
   clashResultTime: 1.2
+  clashWinLoseTime: 2
   clashGaugeY: -3.6
   kickGaugeSpeed: 1.2
   kickPerfect: 0.95
