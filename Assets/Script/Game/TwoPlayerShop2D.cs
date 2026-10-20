@@ -94,6 +94,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showGameTimer = true;
     [Tooltip("タイムアップ: 操作を止めて、棚の画面を左右2つに分けて勝ち負けを出す。Aボタンでもう一度。OFFなら「タイムアップ！」と出るだけで続けられる")]
     public bool showResultOnTimeUp = true;
+    [Tooltip("タイムアップ: 勝ち負けの前に、棚の画面で合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる結果発表を出す")]
+    public bool showResultBars = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
     public bool useKeyboard = true;
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
@@ -148,6 +150,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float timerWarningTime = 10f;
     [Tooltip("勝ち負けを出してから、Aボタンでもう一度遊べるようになるまでの秒数(連打でうっかり始まらないように)")]
     public float resultRestartDelay = 1.5f;
+    [Tooltip("結果発表: 棒グラフが伸びきるまでの秒数(多い方の棒がこの秒数で伸びきる)")]
+    public float resultBarGrowTime = 2.5f;
+    [Tooltip("結果発表: 棒グラフが伸びきってから、勝ち負けの画面になるまでの秒数")]
+    public float resultBarHoldTime = 1.5f;
 
     [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
 
