@@ -30,6 +30,18 @@ public partial class TwoPlayerShop2D
         return new Vector2(w, w / Mathf.Clamp(portraitAspect, 0.1f, 1f));
     }
 
+    // 棚の画面に実際に映っている範囲(ゲーム内の横幅・縦幅)。カメラのズームと画面の形から計算する
+    // (ShopViewSize は「並べるための範囲」。画面の形によっては、まわりにもう少し映っている)
+    Vector2 ShopVisibleSize()
+    {
+        if (switcher == null || screenShop < 0 || screenShop >= switcher.screens.Length) return ShopViewSize();
+        var cam = switcher.screens[screenShop].camera;
+        if (cam == null || !cam.orthographic) return ShopViewSize();
+        float h = cam.orthographicSize * 2f, w = h * cam.aspect;   // 画面の縦・横
+        bool rotated = shopOrientation == ShopOrientation.PortraitRotatedRight || shopOrientation == ShopOrientation.PortraitRotatedLeft;
+        return rotated ? new Vector2(h, w) : new Vector2(w, h);    // 回しているときは縦横が入れ替わる
+    }
+
     // 棚の i 番目(0始まり)の場所
     Vector2 ShelfSlotPosition(int i, int count)
     {
