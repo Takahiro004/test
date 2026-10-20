@@ -241,6 +241,7 @@ public partial class TwoPlayerShop2D
 
         int win = score1 > score2 ? 0 : score2 > score1 ? 1 : Random.Range(0, 2);   // 同点(やり直しOFF)はランダム
         c.winner = win == 0 ? p1 : p2;
+        ShowClashWinLose(c.winner);
         bool perfect = c.value[win] >= clashPerfect;
         c.result.text = $"{c.winner.name}の勝ち！" + (perfect ? " パーフェクト！！" : "");
         c.result.color = c.winner.color;
@@ -288,6 +289,7 @@ public partial class TwoPlayerShop2D
 
         int win = done1 && done2 ? Random.Range(0, 2) : done1 ? 0 : 1;   // 同時(やり直しOFF)はランダム
         c.winner = win == 0 ? p1 : p2;
+        ShowClashWinLose(c.winner);
         c.result.text = $"{c.winner.name}の勝ち！";
         c.result.color = c.winner.color;
 
@@ -311,6 +313,37 @@ public partial class TwoPlayerShop2D
         }
         c.title.text = ClashTitle();
         c.result.text = "";
+    }
+
+    // 掴み合いが決着したら、勝った人の画面に「勝ち」、負けた人の画面に「負け」を大きく出す(clashWinLoseTime 秒)
+    void ShowClashWinLose(Player winner)
+    {
+        if (!showClashWinLose) return;
+        foreach (var p in new[] { p1, p2 })
+        {
+            bool win = p == winner;
+            StartCoroutine(BigWord(p.layer, win ? "勝ち" : "負け",
+                win ? new Color(1f, 0.85f, 0.2f) : new Color(0.55f, 0.65f, 0.95f), clashWinLoseTime));
+        }
+    }
+
+    // 画面の真ん中に大きな文字を出す。最初に少し大きく出て縮み、最後の2割で消える
+    System.Collections.IEnumerator BigWord(int layer, string word, Color color, float duration)
+    {
+        Vector2 view = PlayerViewSize();
+        var label = MakeText("BigWord", null, layer, word, color, 2500);   // 商品・カーソルより手前
+        float size = 0.3f * Mathf.Min(view.x, view.y) / 8f;
+        duration = Mathf.Max(0.1f, duration);
+        for (float time = 0f; time < duration; time += Time.deltaTime)
+        {
+            if (label == null) yield break;
+            float t = time / duration;
+            label.transform.position = Vector3.zero;
+            label.characterSize = size * (t < 0.1f ? Mathf.Lerp(1.4f, 1f, t / 0.1f) : 1f);
+            label.color = new Color(color.r, color.g, color.b, t < 0.8f ? 1f : 1f - (t - 0.8f) / 0.2f);
+            yield return null;
+        }
+        if (label != null) Destroy(label.gameObject);
     }
 
     void EndClash()

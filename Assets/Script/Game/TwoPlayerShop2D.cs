@@ -73,6 +73,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool clashGaugeDiagonal = true;
     [Tooltip("掴み合い: 横に2本の形のとき、ゲージを棚の画面の真ん中に出す(連打式でもタイミング式でも効く)")]
     public bool clashGaugeCentered = true;
+    [Tooltip("掴み合い: 決着したら、勝った人の画面の真ん中に「勝ち」、負けた人の画面の真ん中に「負け」を大きく出す(秒数は Clash Win Lose Time)")]
+    public bool showClashWinLose = true;
     [Tooltip("キック: 棚を操作中(商品を持っていないとき)にLBでキックできる")]
     public bool kickEnabled = true;
     [Tooltip("キック: 足が届いたら相手のレジ袋を揺らす")]
@@ -205,6 +207,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float clashPerfect = 0.95f;
     [Tooltip("勝ち負けを表示しておく秒数")]
     public float clashResultTime = 1.2f;
+    [Tooltip("掴み合いが決着したとき、1P/2Pの画面に「勝ち」「負け」を出しておく秒数")]
+    public float clashWinLoseTime = 2f;
     [Tooltip("真ん中にしないときのゲージの高さ(横の棚の画面。中心が0、下の端が-5。縦のときは画面の下)")]
     public float clashGaugeY = -3.6f;
 
