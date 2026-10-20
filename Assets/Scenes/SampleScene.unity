@@ -625,8 +625,8 @@ MonoBehaviour:
   showResultBars: 0
   useKeyboard: 0
   showOverlayLabel: 1
-  screenP1: 0
-  screenShop: 1
+  screenP1: 1
+  screenShop: 0
   screenP2: 2
   layerP1: 8
   layerShop: 9
