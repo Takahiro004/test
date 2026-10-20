@@ -601,30 +601,30 @@ MonoBehaviour:
     textScale: 2
   refillShelf: 1
   horizontalOnlyOnOwnScreen: 1
-  rotateHeldProduct: 1
+  rotateHeldProduct: 0
   createFloor: 1
   createBag: 1
-  showPricePopup: 1
-  removeOutsideBag: 1
-  subtractSpilledFromTotal: 1
-  clashEnabled: 1
+  showPricePopup: 0
+  removeOutsideBag: 0
+  subtractSpilledFromTotal: 0
+  clashEnabled: 0
   clashRematchOnTie: 0
-  clashGaugeDiagonal: 1
-  clashGaugeCentered: 1
-  showClashWinLose: 1
-  kickEnabled: 1
-  kickShakeBag: 1
-  kickShakeScreen: 1
-  kickShakeSelf: 1
+  clashGaugeDiagonal: 0
+  clashGaugeCentered: 0
+  showClashWinLose: 0
+  kickEnabled: 0
+  kickShakeBag: 0
+  kickShakeScreen: 0
+  kickShakeSelf: 0
   autoFitPlayerScreens: 1
   fillPlayerScreen: 1
   autoFitShopScreen: 1
   showTimerPlaceholder: 0
-  showGameTimer: 1
-  showResultOnTimeUp: 1
-  showResultBars: 1
+  showGameTimer: 0
+  showResultOnTimeUp: 0
+  showResultBars: 0
   useKeyboard: 0
-  showOverlayLabel: 0
+  showOverlayLabel: 1
   screenP1: 0
   screenShop: 1
   screenP2: 2
