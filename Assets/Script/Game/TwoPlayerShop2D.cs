@@ -69,7 +69,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool clashEnabled = true;
     [Tooltip("掴み合い: 引き分けならやり直す。OFFならランダムで勝ちを決める")]
     public bool clashRematchOnTie = true;
-    [Tooltip("掴み合い: ゲージを棚の画面の真ん中に出す")]
+    [Tooltip("掴み合い: ゲージを、画面を大きく使う斜めの形にする(左下から1P・右上から2Pが真ん中のVSへ伸びる)。OFFなら横に2本の形")]
+    public bool clashGaugeDiagonal = true;
+    [Tooltip("掴み合い: 横に2本の形のとき、ゲージを棚の画面の真ん中に出す(連打式でもタイミング式でも効く)")]
     public bool clashGaugeCentered = true;
     [Tooltip("キック: 棚を操作中(商品を持っていないとき)にLBでキックできる")]
     public bool kickEnabled = true;
