@@ -5,7 +5,9 @@ using UnityEngine.SceneManagement;
 // タイムアップのあと(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 // 操作と点数を止めて、
 //  0. 結果発表(showResultBars): 棚の画面で、合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる。上にレジ袋と金額
-//     2本は同じ速さで伸び、少ない方が先に止まる → 伸びきって resultBarHoldTime 秒たったら、下の勝ち負けの画面へ
+//     2本は同じ速さで伸び、少ない方が先に止まる。画面の上の端 = resultBarScreenAmount(1万)。
+//     超えたら画面が上へ進んだように、棒は下の端からもう一度伸びる(低い方の棒は画面の下へ流れて見えなくなる)
+//     → 伸び終わったら、全体が見えるように縮めて見せる → resultBarHoldTime 秒たったら、棒グラフを残したまま勝ち負けの画面へ
 //  - 1P/2P それぞれの画面: 合計金額の多い方に「あなたの勝ち！」、少ない方に「あなたの負け！」、同じなら「引き分け！」を大きく出す
 //  - 棚の画面: 左右に分けて(左 1P / 右 2P)、1P/2P・合計金額・「Aでもう一度」を出す
 // resultRestartDelay 秒たったら、どちらかが A を押すとシーンを読み込み直して最初から
@@ -26,6 +28,12 @@ public partial class TwoPlayerShop2D
     readonly Transform[] barBags = new Transform[2];
     readonly TextMesh[] barTexts = new TextMesh[2];
     float barBaseY, barMaxHeight, barWidth;
+    float barMoney;                 // 今伸びている金額(2本共通)
+    float overviewTime = -1f;       // 全体を見せる動きの経過(-1 = まだ)
+    readonly float[] overviewFrom = new float[2];
+    TextMesh barTopLabel, barBottomLabel;
+    Transform barTopLine;
+    GameObject barGrid;
 
     // Start で呼ぶ: 前のゲームの割り当てを戻す
     void RestorePads()
@@ -82,7 +90,7 @@ public partial class TwoPlayerShop2D
             float s2 = Mathf.Min(view.x, view.y) / 8f;
             var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3004);
             hint.characterSize = 0.07f * s2;
-            hint.transform.position = new Vector3(0f, view.y * 0.47f, 0f);   // いちばん上(下は 1P/2P の名前)
+            hint.transform.position = new Vector3(0f, -view.y * 0.46f, 0f);   // いちばん下(1P/2P の名前の下)
             resultHint1 = resultHint2 = hint;
             resultTime = 0f;
             return;
@@ -132,63 +140,146 @@ public partial class TwoPlayerShop2D
         var t = barsRoot.transform;
         Vector2 view = ShopViewSize();
         float size = Mathf.Min(view.x, view.y) / 8f;
+        var ink = new Color(0.2f, 0.2f, 0.25f);
 
         // 背景(白)と見出し
         var panel = MakeBagPart("Panel", t, layerShop, new Color(0.97f, 0.97f, 0.97f), 3000, false);
         SetRect(panel, 0f, 0f, view.x + 2f, view.y + 2f);
-        var title = MakeText("Title", t, layerShop, "結果発表", new Color(0.2f, 0.2f, 0.25f), 3004);
-        title.characterSize = 0.12f * size;
-        title.transform.position = new Vector3(0f, view.y * 0.4f, 0f);
+        var title = MakeText("Title", t, layerShop, "結果発表", ink, 3004);
+        title.characterSize = 0.08f * size;
+        title.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
 
-        barBaseY = -view.y * 0.42f;
-        barMaxHeight = view.y * 0.55f;
-        barWidth = Mathf.Min(view.x, view.y) * 0.13f;
+        // 棒の下の端と、上の端(= resultBarScreenAmount)。上はレジ袋と金額が入るぶん空ける
+        barBaseY = -view.y * 0.36f;
+        barMaxHeight = view.y * 0.62f;
+        barWidth = Mathf.Min(view.x, view.y) * 0.19f;
         for (int i = 0; i < 2; i++)
         {
-            float x = (i == 0 ? -1f : 1f) * barWidth * 0.95f;
+            float x = (i == 0 ? -1f : 1f) * barWidth * 1.15f;   // 2本の間は棒1本ぶんより少し広く
             Color c = i == 0 ? new Color(0.93f, 0.11f, 0.14f) : new Color(0f, 0.64f, 0.9f);
             bars[i] = MakeBagPart($"Bar{i + 1}", t, layerShop, c, 3001, false);
             SetRect(bars[i], x, barBaseY, barWidth, 0f);
 
-            barBags[i] = MakeResultBagIcon(t, $"Bag{i + 1}", barWidth * 1.3f);
-            barTexts[i] = MakeText($"Total{i + 1}", t, layerShop, "¥0", new Color(0.2f, 0.2f, 0.25f), 3004);
+            barBags[i] = MakeResultBagIcon(t, $"Bag{i + 1}", barWidth * 1.2f);
+            barTexts[i] = MakeText($"Total{i + 1}", t, layerShop, "¥0", ink, 3004);
             barTexts[i].characterSize = 0.07f * size;
 
             var nameText = MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", c, 3004);
-            nameText.characterSize = 0.09f * size;
-            nameText.transform.position = new Vector3(x, barBaseY - barWidth * 0.7f, 0f);
+            nameText.characterSize = 0.08f * size;
+            nameText.transform.position = new Vector3(x, barBaseY - view.y * 0.04f, 0f);
         }
+
+        // 上の端の線と、上の端・下の端の金額(画面が上へ進んだとき、今どの金額のところかを見せる)
+        barTopLine = MakeBagPart("TopLine", t, layerShop, new Color(0.75f, 0.75f, 0.8f), 3001, false);
+        SetRect(barTopLine, 0f, barBaseY + barMaxHeight, view.x, 0.03f * size);
+        barTopLabel = MakeText("TopLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3004);
+        barTopLabel.characterSize = 0.05f * size;
+        barTopLabel.anchor = TextAnchor.LowerLeft;
+        barTopLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + barMaxHeight + 0.05f, 0f);
+        barBottomLabel = MakeText("BottomLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3004);
+        barBottomLabel.characterSize = 0.05f * size;
+        barBottomLabel.anchor = TextAnchor.LowerLeft;
+        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + 0.05f, 0f);
+
+        barMoney = 0f;
+        overviewTime = -1f;
         barsTime = 0f;
         lastEvent = "結果発表…";
     }
 
     void UpdateResultBars()
     {
-        barsTime += Time.deltaTime;
-        int[] totals = { p1.total, p2.total };
-        int max = Mathf.Max(1, Mathf.Max(totals[0], totals[1]));
-        // 2本は同じ速さで伸びる(多い方が resultBarGrowTime 秒で伸びきる)。少ない方が先に止まる
-        float grown = Mathf.Clamp01(barsTime / Mathf.Max(0.1f, resultBarGrowTime));
-        float height = barMaxHeight * Mathf.SmoothStep(0f, 1f, grown);
+        int[] totals = { Mathf.Max(0, p1.total), Mathf.Max(0, p2.total) };
+        float screenAmount = Mathf.Max(1, resultBarScreenAmount);
+        float maxTotal = Mathf.Max(totals[0], totals[1]);
 
+        if (overviewTime < 0f)
+        {
+            // 伸びている途中: 1画面(下の端〜上の端)ぶんを resultBarGrowTime 秒で伸びる。2本は同じ速さ
+            barMoney = Mathf.Min(maxTotal, barMoney + screenAmount / Mathf.Max(0.1f, resultBarGrowTime) * Time.deltaTime);
+            // 今の画面が何周目か(上の端を超えるたびに 1 つ進む)
+            int lap = barMoney > 0f ? Mathf.FloorToInt((barMoney - 0.001f) / screenAmount) : 0;
+            float bottom = lap * screenAmount;
+            for (int i = 0; i < 2; i++)
+            {
+                float money = Mathf.Min(barMoney, totals[i]);
+                float h = Mathf.Clamp(money - bottom, 0f, screenAmount) / screenAmount * barMaxHeight;   // 画面の下へ流れたら 0
+                PlaceBar(i, h, money, h > 0f || lap == 0);
+            }
+            barTopLabel.text = $"¥{bottom + screenAmount:N0}";
+            barBottomLabel.text = lap > 0 ? $"¥{bottom:N0}" : "";
+
+            if (barMoney >= maxTotal)
+            {
+                // 伸び終わり → 全体を見せる動きへ
+                overviewTime = 0f;
+                for (int i = 0; i < 2; i++) overviewFrom[i] = bars[i].localScale.y;
+                barTopLabel.gameObject.SetActive(false);
+                barBottomLabel.gameObject.SetActive(false);
+                barTopLine.gameObject.SetActive(false);
+                if (maxTotal > screenAmount) MakeBarGrid(screenAmount, maxTotal);
+            }
+            return;
+        }
+
+        // 全体を見せる: 一番多い金額(1万に届かなければ 1万)が上の端に来るように縮める
+        overviewTime += Time.deltaTime;
+        float k = Mathf.SmoothStep(0f, 1f, overviewTime / Mathf.Max(0.05f, resultBarOverviewTime));
+        float fullAmount = Mathf.Max(screenAmount, maxTotal);
         for (int i = 0; i < 2; i++)
         {
-            float target = barMaxHeight * Mathf.Max(0, totals[i]) / max;
-            float h = Mathf.Min(height, target);
-            float x = bars[i].position.x;
-            SetRect(bars[i], x, barBaseY + h / 2f, barWidth, h);
-            float top = barBaseY + h;
-            float bagH = barBags[i].localScale.y;
-            barBags[i].position = new Vector3(x, top + bagH * 0.6f, 0f);
-            barTexts[i].transform.position = new Vector3(x, top + bagH * 1.35f, 0f);
-            int shown = target > 0f ? Mathf.RoundToInt(Mathf.Max(0, totals[i]) * h / target) : 0;
-            barTexts[i].text = $"¥{shown:N0}";
+            float target = totals[i] / fullAmount * barMaxHeight;
+            PlaceBar(i, Mathf.Lerp(overviewFrom[i], target, k), totals[i], true);
         }
+        if (barGrid != null)
+            foreach (Transform g in barGrid.transform)
+                SetAlpha(g, k);
 
-        if (barsTime >= Mathf.Max(0.1f, resultBarGrowTime) + Mathf.Max(0f, resultBarHoldTime))
-        {
+        if (overviewTime >= Mathf.Max(0.05f, resultBarOverviewTime) + Mathf.Max(0f, resultBarHoldTime))
             barsDone = true;   // 棒グラフは消さずに残し、そのまま勝ち負けの画面へ(ShowResult)
+    }
+
+    // 棒 i を高さ h にして、上にレジ袋と金額を乗せる
+    void PlaceBar(int i, float h, float money, bool showTop)
+    {
+        float x = bars[i].position.x;
+        SetRect(bars[i], x, barBaseY + h / 2f, barWidth, h);
+        float top = barBaseY + h;
+        float bagH = barBags[i].localScale.y;
+        barBags[i].position = new Vector3(x, top + bagH * 0.6f, 0f);
+        barTexts[i].transform.position = new Vector3(x, top + bagH * 1.35f, 0f);
+        barTexts[i].text = $"¥{Mathf.RoundToInt(money):N0}";
+        barBags[i].gameObject.SetActive(showTop);
+        barTexts[i].gameObject.SetActive(showTop);
+    }
+
+    // 全体を見せるときの目盛り(1万ごとの横線と金額)
+    void MakeBarGrid(float screenAmount, float maxTotal)
+    {
+        barGrid = new GameObject("Grid");
+        barGrid.layer = layerShop;
+        barGrid.transform.SetParent(barsRoot.transform);
+        Vector2 view = ShopViewSize();
+        float size = Mathf.Min(view.x, view.y) / 8f;
+        float fullAmount = Mathf.Max(screenAmount, maxTotal);
+        for (float m = screenAmount; m <= maxTotal + 0.5f; m += screenAmount)
+        {
+            float y = barBaseY + m / fullAmount * barMaxHeight;
+            var line = MakeBagPart("Line", barGrid.transform, layerShop, new Color(0.75f, 0.75f, 0.8f, 0f), 3001, false);
+            SetRect(line, 0f, y, view.x, 0.03f * size);
+            var label = MakeText("Label", barGrid.transform, layerShop, $"¥{m:N0}", new Color(0.5f, 0.5f, 0.55f, 0f), 3004);
+            label.characterSize = 0.05f * size;
+            label.anchor = TextAnchor.LowerLeft;
+            label.transform.position = new Vector3(-view.x / 2f + 0.15f, y + 0.05f, 0f);
         }
+    }
+
+    static void SetAlpha(Transform tr, float a)
+    {
+        var sr = tr.GetComponent<SpriteRenderer>();
+        if (sr != null) { var c = sr.color; c.a = a; sr.color = c; }
+        var tm = tr.GetComponent<TextMesh>();
+        if (tm != null) { var c = tm.color; c.a = a; tm.color = c; }
     }
 
     // 棒の上に乗せるレジ袋。袋の画像(Bag Sprite)があればそれ、無ければ四角と持ち手の仮の形

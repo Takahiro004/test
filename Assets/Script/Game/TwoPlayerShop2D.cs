@@ -150,9 +150,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float timerWarningTime = 10f;
     [Tooltip("勝ち負けを出してから、Aボタンでもう一度遊べるようになるまでの秒数(連打でうっかり始まらないように)")]
     public float resultRestartDelay = 1.5f;
-    [Tooltip("結果発表: 棒グラフが伸びきるまでの秒数(多い方の棒がこの秒数で伸びきる)")]
+    [Tooltip("結果発表: 画面の上の端が表す金額。これを超えたら、棒は下の端からもう一度伸びる(画面が上へ進むように)")]
+    public int resultBarScreenAmount = 10000;
+    [Tooltip("結果発表: 棒が下の端から上の端まで(Result Bar Screen Amount ぶん)伸びる秒数")]
     public float resultBarGrowTime = 2.5f;
-    [Tooltip("結果発表: 棒グラフが伸びきってから、勝ち負けの画面になるまでの秒数")]
+    [Tooltip("結果発表: 伸び終わってから、全体が見えるように縮めるまでの秒数(縮める動き自体の秒数)")]
+    public float resultBarOverviewTime = 1f;
+    [Tooltip("結果発表: 全体を見せてから、勝ち負けの画面になるまでの秒数")]
     public float resultBarHoldTime = 1.5f;
 
     [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
