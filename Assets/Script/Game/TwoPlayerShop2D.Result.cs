@@ -27,7 +27,7 @@ public partial class TwoPlayerShop2D
     readonly Transform[] bars = new Transform[2];
     readonly Transform[] barBags = new Transform[2];
     readonly TextMesh[] barTexts = new TextMesh[2];
-    float barBaseY, barMaxHeight, barWidth;
+    float barBaseY, barMaxHeight, barWidth, barTopEdge;
     float barMoney;                 // 今伸びている金額(2本共通)
     float overviewTime = -1f;       // 全体を見せる動きの経過(-1 = まだ)
     readonly float[] overviewFrom = new float[2];
@@ -87,10 +87,14 @@ public partial class TwoPlayerShop2D
         {
             ShowResultOnPlayerScreen(p1, result1);
             ShowResultOnPlayerScreen(p2, -result1);
-            float s2 = Mathf.Min(view.x, view.y) / 8f;
-            var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3004);
+            // 「結果発表」の見出しの場所(画面のいちばん上)に「Aでもう一度」を出す
+            Vector2 vis = ShopVisibleSize();
+            float s2 = Mathf.Min(vis.x, vis.y) / 8f;
+            var titleTr = barsRoot.transform.Find("Title");
+            if (titleTr != null) titleTr.gameObject.SetActive(false);
+            var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3005);
             hint.characterSize = 0.07f * s2;
-            hint.transform.position = new Vector3(0f, -view.y * 0.46f, 0f);   // いちばん下(1P/2P の名前の下)
+            hint.transform.position = new Vector3(0f, vis.y * 0.46f, 0f);
             resultHint1 = resultHint2 = hint;
             resultTime = 0f;
             return;
@@ -138,7 +142,7 @@ public partial class TwoPlayerShop2D
         barsRoot = new GameObject("ResultBars");
         barsRoot.layer = layerShop;
         var t = barsRoot.transform;
-        Vector2 view = ShopViewSize();
+        Vector2 view = ShopVisibleSize();   // 実際に映っている範囲(棒は画面の下の端から上の端まで使う)
         float size = Mathf.Min(view.x, view.y) / 8f;
         var ink = new Color(0.2f, 0.2f, 0.25f);
 
@@ -149,9 +153,10 @@ public partial class TwoPlayerShop2D
         title.characterSize = 0.08f * size;
         title.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
 
-        // 棒の下の端と、上の端(= resultBarScreenAmount)。上はレジ袋と金額が入るぶん空ける
-        barBaseY = -view.y * 0.36f;
-        barMaxHeight = view.y * 0.62f;
+        // 棒は映っている画面の下の端から伸び、上の端 = resultBarScreenAmount(1万)
+        barBaseY = -view.y / 2f;
+        barMaxHeight = view.y;
+        barTopEdge = view.y / 2f;
         barWidth = Mathf.Min(view.x, view.y) * 0.19f;
         for (int i = 0; i < 2; i++)
         {
@@ -166,7 +171,8 @@ public partial class TwoPlayerShop2D
 
             var nameText = MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", c, 3004);
             nameText.characterSize = 0.08f * size;
-            nameText.transform.position = new Vector3(x, barBaseY - view.y * 0.04f, 0f);
+            nameText.color = ink;   // 棒の上に重なっても読めるように黒っぽい字
+            nameText.transform.position = new Vector3(x, barBaseY + view.y * 0.04f, 0f);   // 画面の下の端の近く
         }
 
         // 上の端の線と、上の端・下の端の金額(画面が上へ進んだとき、今どの金額のところかを見せる)
@@ -175,11 +181,12 @@ public partial class TwoPlayerShop2D
         barTopLabel = MakeText("TopLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3004);
         barTopLabel.characterSize = 0.05f * size;
         barTopLabel.anchor = TextAnchor.LowerLeft;
-        barTopLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + barMaxHeight + 0.05f, 0f);
+        barTopLabel.anchor = TextAnchor.UpperLeft;   // 上の端の線の下に出す(線は画面の上の端)
+        barTopLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + barMaxHeight - 0.05f, 0f);
         barBottomLabel = MakeText("BottomLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3004);
         barBottomLabel.characterSize = 0.05f * size;
         barBottomLabel.anchor = TextAnchor.LowerLeft;
-        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + 0.05f, 0f);
+        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + view.y * 0.08f, 0f);
 
         barMoney = 0f;
         overviewTime = -1f;
@@ -246,8 +253,11 @@ public partial class TwoPlayerShop2D
         SetRect(bars[i], x, barBaseY + h / 2f, barWidth, h);
         float top = barBaseY + h;
         float bagH = barBags[i].localScale.y;
-        barBags[i].position = new Vector3(x, top + bagH * 0.6f, 0f);
-        barTexts[i].transform.position = new Vector3(x, top + bagH * 1.35f, 0f);
+        // 金額とレジ袋は棒の上に乗せる。上の端に近づいたら、画面からはみ出さないように棒に重ねる
+        float textY = Mathf.Min(top + bagH * 1.35f, barTopEdge - bagH * 0.3f);
+        float bagY = Mathf.Min(top + bagH * 0.6f, textY - bagH * 0.75f);
+        barBags[i].position = new Vector3(x, bagY, 0f);
+        barTexts[i].transform.position = new Vector3(x, textY, 0f);
         barTexts[i].text = $"¥{Mathf.RoundToInt(money):N0}";
         barBags[i].gameObject.SetActive(showTop);
         barTexts[i].gameObject.SetActive(showTop);
@@ -259,7 +269,7 @@ public partial class TwoPlayerShop2D
         barGrid = new GameObject("Grid");
         barGrid.layer = layerShop;
         barGrid.transform.SetParent(barsRoot.transform);
-        Vector2 view = ShopViewSize();
+        Vector2 view = ShopVisibleSize();
         float size = Mathf.Min(view.x, view.y) / 8f;
         float fullAmount = Mathf.Max(screenAmount, maxTotal);
         for (float m = screenAmount; m <= maxTotal + 0.5f; m += screenAmount)
