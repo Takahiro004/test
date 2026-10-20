@@ -41,38 +41,24 @@ public partial class TwoPlayerShop2D
 
         clash.root = new GameObject("Clash");
         clash.root.layer = layerShop;
-        var t = clash.root.transform;
+
+        if (clashGaugeDiagonal) BuildDiagonalClash(clash.root.transform);
+        else BuildHorizontalClash(clash.root.transform);
+
+        lastEvent = $"掴み合い！ {go.name}";
+        Debug.Log($"[Shop2D] {lastEvent}");
+    }
+
+    // 横に2本(前の形): 1Pは左、2Pは右。どちらも真ん中(VS)に向かって太くなりながら伸びる
+    void BuildHorizontalClash(Transform t)
+    {
         float y = clashGaugeY;
 
         // 背景
         MakeClashRect(t, "Panel", 0f, y + 0.7f, 17.8f, 3.6f, new Color(0f, 0f, 0f, 0.6f), 2000);
         for (int i = 0; i < 2; i++)
         {
-            // 1Pは左、2Pは右(左右反転)。どちらも真ん中(VS)に向かって太くなりながら伸びる
-            var bar = new GameObject($"Gauge{i + 1}").transform;
-            bar.SetParent(t);
-            bar.gameObject.layer = layerShop;
-            bar.position = new Vector3(i == 0 ? -ClashBarEdge : ClashBarEdge, y, 0f);
-            bar.localScale = new Vector3(i == 0 ? 1f : -1f, 1f, 1f);
-
-            // ふち(白) → 中の暗い部分 → 金色(パーフェクトの範囲) → 中身(プレイヤーの色)
-            MakeGaugeShape(bar, "Frame", -0.12f, ClashBarWidth + 0.24f, ClashBarHeight + 0.24f, new Color(0.9f, 1f, 1f), 2001);
-            MakeGaugeShape(bar, "Back", 0f, ClashBarWidth, ClashBarHeight, new Color(0.12f, 0.12f, 0.15f), 2002);
-            var mask = new GameObject("Mask");
-            mask.layer = layerShop;
-            mask.transform.SetParent(bar, false);
-            mask.transform.localScale = new Vector3(ClashBarWidth, ClashBarHeight / GetGaugeSprite().bounds.size.y, 1f);
-            mask.AddComponent<SpriteMask>().sprite = GetGaugeSprite();
-
-            if (clashMode == ClashMode.Timing)
-            {
-                float perfectW = ClashBarWidth * (1f - clashPerfect);
-                MakeGaugeFill(bar, "Perfect", ClashBarWidth - perfectW, perfectW, new Color(1f, 0.85f, 0.2f, 0.6f), 2003);
-            }
-            var fillSr = MakeGaugeFill(bar, "Fill", 0f, 0f, i == 0 ? p1.color : p2.color, 2004);
-            clash.fill[i] = fillSr.transform;
-            clash.fillSr[i] = fillSr;
-
+            BuildClashBar(t, i, new Vector3(i == 0 ? -ClashBarEdge : ClashBarEdge, y, 0f), 0f, new Vector3(i == 0 ? 1f : -1f, 1f, 1f));
             float outer = i == 0 ? -ClashBarEdge : ClashBarEdge;
             MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", Color.white, 2006).transform.position = new Vector3(outer * 0.75f, y - 0.95f, 0f);
         }
@@ -85,10 +71,77 @@ public partial class TwoPlayerShop2D
         clash.result.transform.position = new Vector3(0f, y + 1.1f, 0f);
         clash.result.characterSize = 0.12f;
 
-        FitToShopView(clash.root.transform, clashGaugeY);   // 真ん中に出す / 縦の画面でもはみ出さないように縮める
+        FitToShopView(t, clashGaugeY);   // 真ん中に出す / 縦の画面でもはみ出さないように縮める
+    }
 
-        lastEvent = $"掴み合い！ {go.name}";
-        Debug.Log($"[Shop2D] {lastEvent}");
+    // 斜めに2本(画面を大きく使う形): 1P は左下から、2P は右上から、真ん中の VS に向かって太くなりながら伸びる
+    void BuildDiagonalClash(Transform t)
+    {
+        Vector2 view = ShopViewSize();
+        float size = Mathf.Min(view.x, view.y) / 8f;   // 文字の大きさの基準(縦の棚の幅 8 で 1)
+
+        // 画面全体を少し暗くする
+        MakeClashRect(t, "Panel", 0f, 0f, view.x + 2f, view.y + 2f, new Color(0f, 0f, 0f, 0.55f), 2000);
+
+        // 1P の外側の端(左下)。2P は真ん中をはさんで反対(右上)
+        Vector2 start = new Vector2(-view.x * 0.32f, -view.y * 0.36f);
+        float gap = Mathf.Min(view.x, view.y) * 0.12f;                  // 真ん中(VS)とのすき間
+        float length = Mathf.Max(1f, start.magnitude - gap);
+        float thickness = Mathf.Min(view.x, view.y) * 0.28f;            // 真ん中側の太さ
+        float angle = Mathf.Atan2(-start.y, -start.x) * Mathf.Rad2Deg;  // 真ん中へ向かう向き
+        var scale = new Vector3(length / ClashBarWidth, thickness / ClashBarHeight, 1f);
+
+        for (int i = 0; i < 2; i++)
+        {
+            Vector2 s = i == 0 ? start : -start;
+            BuildClashBar(t, i, s, i == 0 ? angle : angle + 180f, scale);
+
+            // 名前はゲージの外側の端の横(ゲージの無い側)
+            var nameText = MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", i == 0 ? p1.color : p2.color, 2006);
+            nameText.characterSize = 0.12f * size;
+            nameText.transform.position = s + (i == 0 ? Vector2.right : Vector2.left) * (thickness * 0.9f);
+        }
+
+        var vs = MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2006);
+        vs.transform.position = Vector3.zero;
+        vs.characterSize = 0.2f * size;
+
+        // 回数は画面の下の端、勝ち負けは画面の上の端(ゲージの細い先とぶつからない高さ)
+        clash.title = MakeText("Title", t, layerShop, ClashTitle(), Color.white, 2006);
+        clash.title.characterSize = 0.06f * size;
+        clash.title.transform.position = new Vector3(0f, -view.y * 0.46f, 0f);
+        clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2007);
+        clash.result.characterSize = 0.12f * size;
+        clash.result.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
+    }
+
+    // ゲージ1本を作る。bar の中では、外側の端が x=0、真ん中側の端が x=ClashBarWidth
+    void BuildClashBar(Transform t, int i, Vector3 position, float angle, Vector3 scale)
+    {
+        var bar = new GameObject($"Gauge{i + 1}").transform;
+        bar.SetParent(t);
+        bar.gameObject.layer = layerShop;
+        bar.position = position;
+        bar.rotation = Quaternion.Euler(0f, 0f, angle);
+        bar.localScale = scale;
+
+        // ふち(白) → 中の暗い部分 → 金色(パーフェクトの範囲) → 中身(プレイヤーの色)
+        MakeGaugeShape(bar, "Frame", -0.12f, ClashBarWidth + 0.24f, ClashBarHeight + 0.24f, new Color(0.9f, 1f, 1f), 2001);
+        MakeGaugeShape(bar, "Back", 0f, ClashBarWidth, ClashBarHeight, new Color(0.12f, 0.12f, 0.15f), 2002);
+        var mask = new GameObject("Mask");
+        mask.layer = layerShop;
+        mask.transform.SetParent(bar, false);
+        mask.transform.localScale = new Vector3(ClashBarWidth, ClashBarHeight / GetGaugeSprite().bounds.size.y, 1f);
+        mask.AddComponent<SpriteMask>().sprite = GetGaugeSprite();
+
+        if (clashMode == ClashMode.Timing)
+        {
+            float perfectW = ClashBarWidth * (1f - clashPerfect);
+            MakeGaugeFill(bar, "Perfect", ClashBarWidth - perfectW, perfectW, new Color(1f, 0.85f, 0.2f, 0.6f), 2003);
+        }
+        var fillSr = MakeGaugeFill(bar, "Fill", 0f, 0f, i == 0 ? p1.color : p2.color, 2004);
+        clash.fill[i] = fillSr.transform;
+        clash.fillSr[i] = fillSr;
     }
 
     // ゲージの形(細い外側から、真ん中に向かって太くなる)。bar の中で x=from から幅 w
