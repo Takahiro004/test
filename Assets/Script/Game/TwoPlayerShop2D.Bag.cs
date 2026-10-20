@@ -79,6 +79,14 @@ public partial class TwoPlayerShop2D
             SetRect(b.left, bagX - bagWidth / 2f + t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.right, bagX + bagWidth / 2f - t / 2f, floorY + bagHeight / 2f, t, bagHeight);
             SetRect(b.bottom, bagX, floorY + t / 2f, bagWidth, t);
+            // 底の当たり判定だけ下へ厚くする(見た目はそのまま)。商品をたくさん積んでも底を突き抜けにくくする
+            var bottomCol = b.bottom.GetComponent<BoxCollider2D>();
+            if (bottomCol != null)
+            {
+                float extra = 0.8f / Mathf.Max(0.01f, t);   // 下へ 0.8 ぶん(ローカルの長さ)
+                bottomCol.size = new Vector2(1f, 1f + extra);
+                bottomCol.offset = new Vector2(0f, -extra / 2f);
+            }
             b.totalLabel.characterSize = HudTextSize;
             b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
         }
@@ -95,15 +103,16 @@ public partial class TwoPlayerShop2D
     {
         float t = bagWallThickness;
         float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
-        float bottom = floorY + t, top = floorY + bagHeight;
+        float top = floorY + bagHeight;
 
         for (int i = p.dropped.Count - 1; i >= 0; i--)
         {
             var go = p.dropped[i];
             if (go == null) { p.dropped.RemoveAt(i); continue; }
 
+            // 袋の幅の中で、袋の口より下なら「入った」(底に少しめり込んでいても入ったことにする)
             Vector2 c = go.transform.position;
-            if (c.x < left || c.x > right || c.y < bottom || c.y > top) continue;
+            if (c.x < left || c.x > right || c.y > top) continue;
 
             p.dropped.RemoveAt(i);
             p.inBag.Add(go);
@@ -155,7 +164,8 @@ public partial class TwoPlayerShop2D
 
             Vector2 c = go.transform.position;
             bool outside = c.x < left || c.x > right;
-            bool remove = TouchesFloor(go) || c.y < floorY - 3f;
+            // 袋の幅の中にある商品は消さない(積み重なって底にめり込み、床に触れても、袋の中は袋の中)
+            bool remove = (outside && TouchesFloor(go)) || c.y < floorY - 3f;
             if (!remove)
             {
                 var rb = go.GetComponent<Rigidbody2D>();
