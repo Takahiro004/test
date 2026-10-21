@@ -28,6 +28,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
+///   TwoPlayerShop2D.Screens.cs 1P/棚/2P をどのカメラ(ディスプレイ)に映すかの割り当て・入れ替え
 ///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
@@ -101,10 +102,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
     public bool showOverlayLabel = true;
 
-    [Header("画面の割り当て(0始まり)")]
-    public int screenP1 = 0;     // ディスプレイ1 = 1P
-    public int screenShop = 1;   // ディスプレイ2 = 商品棚
-    public int screenP2 = 2;     // ディスプレイ3 = 2P
+    [Header("画面の割り当て(0始まり。DisplayTestSwitcher の Screens の番号)")]
+    [Tooltip("1Pの画面を、Screens の何番のカメラに映すか(0, 1, 2)。再生中に入れ替えてもすぐ反映。3つは別々の番号にする")]
+    public int screenP1 = 0;     // 初期: ディスプレイ1 = 1P
+    [Tooltip("棚の画面を、Screens の何番のカメラに映すか。棚をメインディスプレイに出すなら、そのカメラの番号にする")]
+    public int screenShop = 1;   // 初期: ディスプレイ2 = 商品棚
+    [Tooltip("2Pの画面を、Screens の何番のカメラに映すか")]
+    public int screenP2 = 2;     // 初期: ディスプレイ3 = 2P
+    [Tooltip("背景の色は、画面の番号ではなく役割について回る(入れ替えても 1P は赤のまま)")]
+    public Color p1BackColor = new Color(0.45f, 0.12f, 0.12f);
+    public Color shopBackColor = new Color(0.12f, 0.40f, 0.15f);
+    public Color p2BackColor = new Color(0.12f, 0.20f, 0.50f);
 
     [Header("表示用レイヤー番号(名前の登録は不要)")]
     public int layerP1 = 8;
@@ -340,7 +348,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         p1 = CreatePlayer("1P", screenP1, layerP1, p1Color, p1CursorSprite, new Vector2(-4f, -3f));
         p2 = CreatePlayer("2P", screenP2, layerP2, p2Color, p2CursorSprite, new Vector2(4f, -3f));
 
-        SetupCullingMasks();
+        ApplyScreenAssignment();   // 1P/棚/2P をどのカメラに映すか(背景の色・映すもの)
         ApplyShopLayout();
         ApplyPlayerLayout();   // 床・袋・落とす高さを、1P/2Pの画面の範囲から計算する
 
@@ -495,12 +503,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void ArrangeCameras()
     {
-        Color[] bg = {
-            new Color(0.45f, 0.12f, 0.12f),   // 画面1: 赤
-            new Color(0.12f, 0.40f, 0.15f),   // 画面2: 緑
-            new Color(0.12f, 0.20f, 0.50f)    // 画面3: 青
-        };
-
         for (int i = 0; i < switcher.screens.Length; i++)
         {
             var cam = switcher.screens[i].camera;
@@ -511,22 +513,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.transform.rotation = Quaternion.identity;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            if (i < bg.Length) cam.backgroundColor = bg[i];
-        }
-    }
-
-    void SetupCullingMasks()
-    {
-        for (int i = 0; i < switcher.screens.Length; i++)
-        {
-            var cam = switcher.screens[i].camera;
-            if (cam == null) continue;
-
-            int mask = 1 << 0;   // Default は全画面
-            if (i == screenP1) mask |= 1 << layerP1;
-            if (i == screenShop) mask |= 1 << layerShop;
-            if (i == screenP2) mask |= 1 << layerP2;
-            cam.cullingMask = mask;
         }
     }
 
