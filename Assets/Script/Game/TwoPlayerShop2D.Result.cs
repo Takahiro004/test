@@ -34,6 +34,12 @@ public partial class TwoPlayerShop2D
     float barMoney;                 // 今伸びている金額(2本共通)
     float overviewTime = -1f;       // ズームアウトの経過(-1 = まだ)
     float zoomFromBottom;           // ズームアウトを始めたときの、画面の下の端の金額
+    float barChartScale = 1f;       // 今のグラフの縮み具合(1 = 1万が画面の高さ)
+    float barBagSize;               // レジ袋の高さ(画面の上での大きさ。ズームしても変えない)
+    readonly Transform[] barNames = new Transform[2];
+    readonly System.Collections.Generic.List<Transform> gridLines = new System.Collections.Generic.List<Transform>();
+    readonly System.Collections.Generic.List<Transform> gridLabels = new System.Collections.Generic.List<Transform>();
+    float barViewWidth, barTextSize;
     TextMesh barTopLabel, barBottomLabel;
 
     // Start で呼ぶ: 前のゲームの割り当てを戻す
@@ -178,15 +184,21 @@ public partial class TwoPlayerShop2D
             float x = (i == 0 ? -1f : 1f) * barWidth * 1.15f;   // 2本の間は棒1本ぶんより少し広く
             Color c = i == 0 ? new Color(0.93f, 0.11f, 0.14f) : new Color(0f, 0.64f, 0.9f);
             bars[i] = MakeBagPart($"Bar{i + 1}", barChart, layerShop, c, 3001, false);
-            barBags[i] = MakeResultBagIcon(barChart, $"Bag{i + 1}", barWidth * 1.2f);
+            barBagSize = barWidth * 1.2f;
+            barBags[i] = MakeResultBagIcon(barChart, $"Bag{i + 1}", barBagSize);
             barTexts[i] = MakeText($"Total{i + 1}", barChart, layerShop, "¥0", ink, 3004);
             barTexts[i].characterSize = 0.07f * size;
 
             var nameText = MakeText($"Name{i + 1}", barChart, layerShop, i == 0 ? "1P" : "2P", ink, 3004);
             nameText.characterSize = 0.08f * size;
             nameText.transform.localPosition = new Vector3(x, view.y * 0.04f, 0f);   // 画面の下の端の近く(棒に重なっても読める黒っぽい字)
+            barNames[i] = nameText.transform;
             bars[i].localPosition = new Vector3(x, 0f, 0f);
         }
+        barViewWidth = view.x;
+        barTextSize = size;
+        gridLines.Clear();
+        gridLabels.Clear();
         MakeBarGrid(view, size);
 
         barMoney = 0f;
@@ -229,8 +241,9 @@ public partial class TwoPlayerShop2D
         // 最後は、下の端 = ¥0、上の端 = 一番多い金額(+ レジ袋と金額が入る余白)
         overviewTime += Time.deltaTime;
         float k = Mathf.SmoothStep(0f, 1f, overviewTime / Mathf.Max(0.05f, resultBarOverviewTime));
-        float headroom = (barBags[0].localScale.y * 1.9f) / barMaxHeight * screenAmount;   // レジ袋と金額のぶん(金額に直す)
-        float fullAmount = Mathf.Max(screenAmount, maxTotal + headroom);
+        // レジ袋と金額は画面の上での大きさが変わらないので、その高さのぶん(画面の割合)だけ上を空ける
+        float headroomRatio = Mathf.Clamp(barBagSize * 1.9f / barMaxHeight, 0f, 0.6f);
+        float fullAmount = Mathf.Max(screenAmount, maxTotal / (1f - headroomRatio));
         float windowBottom = Mathf.Lerp(zoomFromBottom, 0f, k);
         float windowSize = Mathf.Lerp(screenAmount, fullAmount, k);
         for (int i = 0; i < 2; i++)
@@ -247,8 +260,28 @@ public partial class TwoPlayerShop2D
     {
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
         float scale = screenAmount / Mathf.Max(1f, windowSize);
+        barChartScale = scale;
         barChart.localScale = new Vector3(scale, scale, 1f);
         barChart.position = new Vector3(0f, barBaseY - windowBottom / screenAmount * barMaxHeight * scale, 0f);
+
+        // 縮めるのは棒だけ。レジ袋・金額・名前・目盛りの線の太さと文字は、画面の上での大きさを変えない
+        float inv = 1f / scale;
+        for (int i = 0; i < 2; i++)
+        {
+            barBags[i].localScale = new Vector3(inv, inv, 1f);
+            barTexts[i].transform.localScale = new Vector3(inv, inv, 1f);
+            barNames[i].localScale = new Vector3(inv, inv, 1f);
+            var np = barNames[i].localPosition;
+            barNames[i].localPosition = new Vector3(np.x, barMaxHeight * 0.04f * inv + windowBottom / screenAmount * barMaxHeight, 0f);   // いつも画面の下の端の近く
+        }
+        foreach (var line in gridLines)
+            line.localScale = new Vector3(barViewWidth * 2f * inv, 0.03f * barTextSize * inv, 1f);
+        foreach (var label in gridLabels)
+        {
+            label.localScale = new Vector3(inv, inv, 1f);
+            var lp = label.localPosition;
+            label.localPosition = new Vector3((-barViewWidth / 2f + 0.15f) * inv, lp.y, 0f);   // いつも画面の左の端
+        }
     }
 
     // 棒 i を金額 money の高さにして、上にレジ袋と金額を乗せる(グラフの中の座標)
@@ -261,7 +294,7 @@ public partial class TwoPlayerShop2D
         bars[i].localPosition = new Vector3(x, h / 2f, 0f);
         bars[i].localScale = new Vector3(barWidth, h, 1f);
 
-        float bagH = barBags[i].localScale.y;
+        float bagH = barBagSize / Mathf.Max(0.01f, barChartScale);   // 画面の上で同じ大きさに見える、グラフの中の高さ
         float edge = clampMoney == float.MaxValue ? float.MaxValue : clampMoney / screenAmount * barMaxHeight;
         float textY = Mathf.Min(h + bagH * 1.35f, edge - bagH * 0.3f);
         float bagY = Mathf.Min(h + bagH * 0.6f, textY - bagH * 0.75f);
@@ -280,11 +313,13 @@ public partial class TwoPlayerShop2D
             float y = m / screenAmount * barMaxHeight;
             var line = MakeBagPart("GridLine", barChart, layerShop, new Color(0.8f, 0.8f, 0.85f), 3000, false);
             line.localPosition = new Vector3(0f, y, 0f);
-            line.localScale = new Vector3(view.x * 6f, 0.03f * size, 1f);   // 引いたときも横いっぱいに見えるよう長めに
+            line.localScale = new Vector3(view.x * 2f, 0.03f * size, 1f);
+            gridLines.Add(line);
             var label = MakeText("GridLabel", barChart, layerShop, $"¥{m:N0}", new Color(0.55f, 0.55f, 0.6f), 3004);
             label.characterSize = 0.05f * size;
             label.anchor = TextAnchor.LowerLeft;
             label.transform.localPosition = new Vector3(-view.x / 2f + 0.15f, y + 0.05f, 0f);
+            gridLabels.Add(label.transform);
         }
     }
 
@@ -294,11 +329,10 @@ public partial class TwoPlayerShop2D
         var root = new GameObject(objName);
         root.layer = layerShop;
         root.transform.SetParent(parent);
-        root.transform.localScale = new Vector3(1f, size, 1f);   // 高さを y に覚えておく(位置合わせ用)
+        // (作っている間は root を世界の原点に置いたまま。中の形は原点からの位置で置く)
         var holder = new GameObject("Icon");
         holder.layer = layerShop;
         holder.transform.SetParent(root.transform, false);
-        holder.transform.localScale = new Vector3(1f, 1f / size, 1f);   // 中は元の大きさに戻す
 
         if (bagSprite != null)
         {
@@ -307,7 +341,7 @@ public partial class TwoPlayerShop2D
             sr.sortingOrder = 3002;
             Vector2 b = bagSprite.bounds.size;
             float k = size / Mathf.Max(b.x, b.y, 0.01f);
-            holder.transform.localScale = new Vector3(k, k / size, 1f);
+            holder.transform.localScale = new Vector3(k, k, 1f);
         }
         else
         {
