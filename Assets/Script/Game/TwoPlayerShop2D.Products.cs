@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // 商品1つぶんの設定(Inspector の「商品の一覧」の1行)
@@ -155,5 +156,129 @@ public partial class TwoPlayerShop2D
             tag.alignment = TextAlignment.Center;
             tag.transform.position = new Vector3(x, rowTop - 0.1f, 0f);
         }
+    }
+
+    // ---------- 画像の商品の当たり判定 ----------
+    // Unity が画像から自動で作る形は、細かい画像(すぱげてぃ など)だと点が何百にもなり、
+    // 積み重なると物理の計算がとても重くなる。点の数を imageColliderMaxPoints 以下に減らした形を使う(画像ごとに1回だけ計算)
+    readonly Dictionary<Sprite, Vector2[]> outlineCache = new Dictionary<Sprite, Vector2[]>();
+
+    Vector2[] SimpleOutline(Sprite sprite)
+    {
+        if (outlineCache.TryGetValue(sprite, out var cached)) return cached;
+
+        // 画像の形(Physics Shape)。いちばん大きいかたまりを使う
+        var all = new List<Vector2>();
+        List<Vector2> best = null;
+        float bestArea = 0f, totalArea = 0f;
+        for (int i = 0; i < sprite.GetPhysicsShapeCount(); i++)
+        {
+            var path = new List<Vector2>();
+            sprite.GetPhysicsShape(i, path);
+            all.AddRange(path);
+            float area = Mathf.Abs(PolygonArea(path));
+            totalArea += area;
+            if (area > bestArea) { bestArea = area; best = path; }
+        }
+
+        Vector2[] result;
+        // 形が無い・小さいかたまりに分かれている(細い麺など)ときは、全部を包む形(凸包)にする
+        if (best == null || best.Count < 3 || bestArea < totalArea * 0.5f)
+        {
+            if (all.Count < 3) all.AddRange(sprite.vertices);
+            result = ConvexHull(all);
+        }
+        else result = best.ToArray();
+
+        // 点を減らす(上限を超えていたら、大まかさを少しずつ上げてやり直す)
+        float size = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+        float eps = size * imageColliderDetail;
+        var simple = result;
+        for (int n = 0; n < 20; n++)
+        {
+            simple = SimplifyClosed(result, eps);
+            if (simple.Length <= Mathf.Max(4, imageColliderMaxPoints)) break;
+            eps *= 1.5f;
+        }
+        if (simple.Length < 3) simple = ConvexHull(new List<Vector2>(result));
+        outlineCache[sprite] = simple;
+        return simple;
+    }
+
+    static float PolygonArea(List<Vector2> pts)
+    {
+        float a = 0f;
+        for (int i = 0; i < pts.Count; i++)
+        {
+            Vector2 p = pts[i], q = pts[(i + 1) % pts.Count];
+            a += p.x * q.y - q.x * p.y;
+        }
+        return a / 2f;
+    }
+
+    // 点を全部包む、いちばん小さい凸の形
+    static Vector2[] ConvexHull(List<Vector2> pts)
+    {
+        pts.Sort((a, b) => a.x != b.x ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y));
+        var hull = new List<Vector2>();
+        for (int pass = 0; pass < 2; pass++)   // 下側 → 上側
+        {
+            int start = hull.Count;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                var p = pass == 0 ? pts[i] : pts[pts.Count - 1 - i];
+                while (hull.Count >= start + 2 && Cross(hull[hull.Count - 2], hull[hull.Count - 1], p) <= 0f) hull.RemoveAt(hull.Count - 1);
+                hull.Add(p);
+            }
+            hull.RemoveAt(hull.Count - 1);
+        }
+        return hull.ToArray();
+    }
+
+    static float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+    // 閉じた形の点を減らす(形からのずれが eps 以下の点を消す。ダグラス・ポイカー法)
+    static Vector2[] SimplifyClosed(Vector2[] pts, float eps)
+    {
+        if (pts.Length <= 4) return pts;
+        // いちばん離れた2点で2本の線に分けて、それぞれ減らす
+        int far = 0;
+        float farDist = 0f;
+        for (int i = 1; i < pts.Length; i++)
+        {
+            float d = (pts[i] - pts[0]).sqrMagnitude;
+            if (d > farDist) { farDist = d; far = i; }
+        }
+        var keep = new bool[pts.Length];
+        keep[0] = keep[far] = true;
+        Mark(pts, 0, far, eps, keep);
+        Mark(pts, far, pts.Length, eps, keep);   // pts.Length は 0 番に戻る
+        var list = new List<Vector2>();
+        for (int i = 0; i < pts.Length; i++) if (keep[i]) list.Add(pts[i]);
+        return list.ToArray();
+    }
+
+    static void Mark(Vector2[] pts, int from, int to, float eps, bool[] keep)
+    {
+        if (to - from < 2) return;
+        Vector2 a = pts[from], b = pts[to % pts.Length];
+        int idx = -1;
+        float max = eps;
+        for (int i = from + 1; i < to; i++)
+        {
+            float d = DistanceToSegment(pts[i], a, b);
+            if (d > max) { max = d; idx = i; }
+        }
+        if (idx < 0) return;
+        keep[idx] = true;
+        Mark(pts, from, idx, eps, keep);
+        Mark(pts, idx, to, eps, keep);
+    }
+
+    static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+    {
+        Vector2 ab = b - a;
+        float t = ab.sqrMagnitude < 1e-8f ? 0f : Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
+        return Vector2.Distance(p, a + ab * t);
     }
 }
