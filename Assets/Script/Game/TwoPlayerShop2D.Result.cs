@@ -6,8 +6,9 @@ using UnityEngine.SceneManagement;
 // 操作と点数を止めて、
 //  0. 結果発表(showResultBars): 棚の画面で、合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる。上にレジ袋と金額
 //     2本は同じ速さで伸び、少ない方が先に止まる。画面の上の端 = resultBarScreenAmount(1万)。
-//     超えたら画面が上へ進んだように、棒は下の端からもう一度伸びる(低い方の棒は画面の下へ流れて見えなくなる)
-//     → 伸び終わったら、全体が見えるように縮めて見せる → resultBarHoldTime 秒たったら、棒グラフを残したまま勝ち負けの画面へ
+//     棒の先が画面の resultBarFollowHeight の高さまで来たら、カメラが棒の先を追いかけて上へ進む(低い方の棒は画面の下へ流れて見えなくなる)
+//     → 伸び終わったら、カメラが引いて全体を見せる(棒も文字もレジ袋も全部一緒に小さくなる)
+//     → resultBarHoldTime 秒たったら、棒グラフを残したまま勝ち負けの画面へ
 //  - 1P/2P それぞれの画面: 合計金額の多い方に「あなたの勝ち！」、少ない方に「あなたの負け！」、同じなら「引き分け！」を大きく出す
 //  - 棚の画面: 左右に分けて(左 1P / 右 2P)、1P/2P・合計金額・「Aでもう一度」を出す
 // resultRestartDelay 秒たったら、どちらかが A を押すとシーンを読み込み直して最初から
@@ -22,7 +23,7 @@ public partial class TwoPlayerShop2D
 
     // 結果発表(棒グラフ)
     // 棒・レジ袋・金額・名前・目盛りは「グラフ」(barChart)の中に、本当の高さ(1万 = 画面の高さ)で作り、
-    // グラフ全体を動かす・縮めることで「カメラが上へ進む」「カメラがズームアウトする」ように見せる
+    // グラフ全体を動かす・縮めることで「カメラが棒を追いかけて上へ進む」「カメラが引く」ように見せる
     GameObject barsRoot;
     Transform barChart;
     float barsTime;
@@ -34,13 +35,11 @@ public partial class TwoPlayerShop2D
     float barMoney;                 // 今伸びている金額(2本共通)
     float overviewTime = -1f;       // ズームアウトの経過(-1 = まだ)
     float zoomFromBottom;           // ズームアウトを始めたときの、画面の下の端の金額
-    float barChartScale = 1f;       // 今のグラフの縮み具合(1 = 1万が画面の高さ)
-    float barBagSize;               // レジ袋の高さ(画面の上での大きさ。ズームしても変えない)
+    float barBagSize;               // レジ袋の高さ(グラフの中の大きさ。カメラが引くと一緒に小さく見える)
     readonly Transform[] barNames = new Transform[2];
     readonly System.Collections.Generic.List<Transform> gridLines = new System.Collections.Generic.List<Transform>();
     readonly System.Collections.Generic.List<Transform> gridLabels = new System.Collections.Generic.List<Transform>();
     float barViewWidth, barTextSize, barNameY;
-    TextMesh barTopLabel, barBottomLabel;
 
     // Start で呼ぶ: 前のゲームの割り当てを戻す
     void RestorePads()
@@ -156,7 +155,7 @@ public partial class TwoPlayerShop2D
         var sub = new Color(0.3f, 0.32f, 0.4f);     // 目盛りなどの小さい文字
         float ts = Mathf.Max(0.3f, resultBarTextScale);
 
-        // 画面に止まっているもの: 背景(上下で色が変わる)・見出し・上の端/下の端の金額
+        // 画面に止まっているもの: 背景(上下で色が変わる)・見出し
         MakeResultBackground(t, view);
         var title = MakeText("Title", t, layerShop, "結果発表", ink, 3006);
         title.characterSize = 0.08f * size * ts;
@@ -166,17 +165,8 @@ public partial class TwoPlayerShop2D
         barBaseY = -view.y * 0.36f;  // 棒の伸び始める位置(下に 1P/2P の名前を出すぶん空ける)
         barTopEdge = view.y / 2f;    // 映っている画面の上の端
         barMaxHeight = barTopEdge - barBaseY;   // 伸び始める位置〜画面の上の端 = resultBarScreenAmount(1万)
-        barNameY = -view.y * 0.05f;  // 名前は伸び始める位置の少し下(画面の上での長さ)
+        barNameY = -view.y * 0.05f;  // 名前は伸び始める位置の少し下(グラフの中の位置。カメラが進むと一緒に下へ流れる)
         barWidth = Mathf.Min(view.x, view.y) * 0.19f;
-
-        barTopLabel = MakeText("TopLabel", t, layerShop, "", sub, 3006);
-        barTopLabel.characterSize = 0.05f * size * ts;
-        barTopLabel.anchor = TextAnchor.UpperLeft;
-        barTopLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barTopEdge - 0.05f, 0f);
-        barBottomLabel = MakeText("BottomLabel", t, layerShop, "", sub, 3006);
-        barBottomLabel.characterSize = 0.05f * size * ts;
-        barBottomLabel.anchor = TextAnchor.LowerLeft;
-        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + 0.05f, 0f);
 
         // グラフ(動かす・縮めるもの)。グラフの中では、下の端が y=0、1万 = barMaxHeight
         barChart = new GameObject("Chart").transform;
@@ -228,38 +218,36 @@ public partial class TwoPlayerShop2D
             float a = Mathf.Clamp01(barsTime / Mathf.Max(0.05f, resultBarAccelTime));
             float speedRate = Mathf.Lerp(Mathf.Max(0.01f, resultBarStartSpeed), Mathf.Max(0.01f, resultBarEndSpeed), a * a);   // a*a: 加速が後になるほど強い
             barMoney = Mathf.Min(maxTotal, barMoney + screenAmount / Mathf.Max(0.1f, resultBarGrowTime) * speedRate * Time.deltaTime);
-            // 上の端を超えるたびに、カメラが1画面ぶん上へ進む(棒は下の端からもう一度伸びて見える)
-            int lap = barMoney > 0f ? Mathf.FloorToInt((barMoney - 0.001f) / screenAmount) : 0;
-            float bottom = lap * screenAmount;
+            // 棒の先が画面の resultBarFollowHeight の高さを超えたら、カメラが棒の先を追いかけて上へ進む
+            float followMoney = screenAmount * Mathf.Clamp(resultBarFollowHeight, 0.1f, 1f);
+            float bottom = Mathf.Max(0f, barMoney - followMoney);
             for (int i = 0; i < 2; i++)
-                PlaceBar(i, Mathf.Min(barMoney, totals[i]), float.MaxValue);   // レジ袋と金額も棒の先に乗ったまま、画面の上の端を超えていく
+                PlaceBar(i, Mathf.Min(barMoney, totals[i]));
             SetChartView(bottom, screenAmount);
-            barTopLabel.text = $"¥{bottom + screenAmount:N0}";
-            barBottomLabel.text = lap > 0 ? $"¥{bottom:N0}" : "";
 
             if (barMoney >= maxTotal)
             {
                 // 伸び終わり → ズームアウトへ
                 overviewTime = 0f;
                 zoomFromBottom = bottom;
-                barTopLabel.gameObject.SetActive(false);
-                barBottomLabel.gameObject.SetActive(false);
             }
             return;
         }
 
         // ズームアウト: カメラが引いていくように、グラフ全体(棒の太さ・レジ袋・文字・間隔も)を同じ割合で縮める。
-        // 最後は、下の端 = ¥0、上の端 = 一番多い金額(+ レジ袋と金額が入る余白)
+        // 最後は、伸び始める位置 = ¥0、上の端 = 一番多い金額(+ レジ袋と金額が入る余白)
         overviewTime += Time.deltaTime;
         float k = Mathf.SmoothStep(0f, 1f, overviewTime / Mathf.Max(0.05f, resultBarOverviewTime));
-        // レジ袋と金額は画面の上での大きさが変わらないので、その高さのぶん(画面の割合)だけ上を空ける
+        // レジ袋と金額のぶん(画面の割合)だけ上を空ける(一緒に縮むので、割合はいつも同じ)
         float headroomRatio = Mathf.Clamp(barBagSize * 1.9f / barMaxHeight, 0f, 0.6f);
         float fullAmount = Mathf.Max(screenAmount, maxTotal / (1f - headroomRatio));
-        float windowBottom = Mathf.Lerp(zoomFromBottom, 0f, k);
-        // 映す範囲は掛け算で広げる(何倍ずつ広がるかが一定になり、カメラが一定の速さで引いて見える)
+        // 映す範囲は掛け算で広げる(何倍ずつ広がるかが一定になり、カメラが一定の速さで引いて見える)。
+        // 上の端も同じように動かし、引いている途中で棒の先が画面の外へ出ないようにする
         float windowSize = Mathf.Exp(Mathf.Lerp(Mathf.Log(screenAmount), Mathf.Log(fullAmount), k));
+        float windowTop = Mathf.Exp(Mathf.Lerp(Mathf.Log(zoomFromBottom + screenAmount), Mathf.Log(fullAmount), k));
+        float windowBottom = Mathf.Max(0f, windowTop - windowSize);
         for (int i = 0; i < 2; i++)
-            PlaceBar(i, totals[i], float.MaxValue);   // ズーム中は金額を上の端で止めない
+            PlaceBar(i, totals[i]);
         SetChartView(windowBottom, windowSize);
 
         if (overviewTime >= Mathf.Max(0.05f, resultBarOverviewTime) + Mathf.Max(0f, resultBarHoldTime))
@@ -267,35 +255,21 @@ public partial class TwoPlayerShop2D
     }
 
     // カメラが「金額 windowBottom 〜 windowBottom + windowSize」を映しているように、グラフを動かして縮める
-    // (画面の下の端が windowBottom、上の端が windowBottom + windowSize。横は画面の真ん中を中心に縮む)
+    // (伸び始める位置が windowBottom、上の端が windowBottom + windowSize。
+    //  本当のカメラと同じように、縦も横も・棒も文字もレジ袋も全部同じ割合で縮む。横は画面の真ん中に向かって縮む)
     void SetChartView(float windowBottom, float windowSize)
     {
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
         float scale = screenAmount / Mathf.Max(1f, windowSize);
-        barChartScale = scale;
-        // 縮めるのは縦だけ。棒の太さ・2本の間隔(横)は変えない
-        barChart.localScale = new Vector3(1f, scale, 1f);
+        barChart.localScale = new Vector3(scale, scale, 1f);
         barChart.position = new Vector3(0f, barBaseY - windowBottom / screenAmount * barMaxHeight * scale, 0f);
-
-        // レジ袋・金額・名前・目盛りの線の太さと文字は、画面の上での大きさを変えない(縦に縮んだぶんを戻す)
-        float inv = 1f / scale;
-        for (int i = 0; i < 2; i++)
-        {
-            barBags[i].localScale = new Vector3(1f, inv, 1f);
-            barTexts[i].transform.localScale = new Vector3(1f, inv, 1f);
-            barNames[i].localScale = new Vector3(1f, inv, 1f);
-            var np = barNames[i].localPosition;
-            barNames[i].localPosition = new Vector3(np.x, barNameY * inv + windowBottom / screenAmount * barMaxHeight, 0f);   // いつも伸び始める位置の少し下
-        }
+        // 目盛りの線は、縮んでも画面の横いっぱいに見えるように長くする
         foreach (var line in gridLines)
-            line.localScale = new Vector3(barViewWidth * 2f, 0.03f * barTextSize * inv, 1f);
-        foreach (var label in gridLabels)
-            label.localScale = new Vector3(1f, inv, 1f);   // 横の位置は画面の左の端のまま
+            line.localScale = new Vector3(barViewWidth * 2f / scale, line.localScale.y, 1f);
     }
 
     // 棒 i を金額 money の高さにして、上にレジ袋と金額を乗せる(グラフの中の座標)
-    // clampMoney: 金額とレジ袋がこの金額の高さを超えないように、棒に重ねる(float.MaxValue なら止めない)
-    void PlaceBar(int i, float money, float clampMoney)
+    void PlaceBar(int i, float money)
     {
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
         float h = money / screenAmount * barMaxHeight;
@@ -303,10 +277,9 @@ public partial class TwoPlayerShop2D
         bars[i].localPosition = new Vector3(x, h / 2f, 0f);
         bars[i].localScale = new Vector3(barWidth, h, 1f);
 
-        float bagH = barBagSize / Mathf.Max(0.01f, barChartScale);   // 画面の上で同じ大きさに見える、グラフの中の高さ
-        float edge = clampMoney == float.MaxValue ? float.MaxValue : clampMoney / screenAmount * barMaxHeight;
-        float textY = Mathf.Min(h + bagH * 1.35f, edge - bagH * 0.3f);
-        float bagY = Mathf.Min(h + bagH * 0.6f, textY - bagH * 0.75f);
+        float bagH = barBagSize;
+        float textY = h + bagH * 1.35f;
+        float bagY = h + bagH * 0.6f;
         barBags[i].localPosition = new Vector3(x, bagY, 0f);
         barTexts[i].transform.localPosition = new Vector3(x, textY, 0f);
         SetTextWithShadow(barTexts[i], $"¥{Mathf.RoundToInt(money):N0}");
