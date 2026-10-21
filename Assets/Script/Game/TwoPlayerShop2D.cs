@@ -222,6 +222,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public float productSize = 1.4f;
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
+    [Header("画像の商品の当たり判定(画像の形を、点の数を減らして簡単にする。細かすぎると物理の計算が重くなる)")]
+    [Tooltip("形をどれだけ大まかにするか(画像の大きさに対する割合)。小さいほど画像の形に近いが重くなる")]
+    [Range(0.005f, 0.1f)] public float imageColliderDetail = 0.02f;
+    [Tooltip("当たり判定の点の数の上限。多いほど画像の形に近いが重くなる")]
+    [Range(4, 64)] public int imageColliderMaxPoints = 24;
+
     [Header("割れる商品(どれが割れるか・どのくらいの重さで割れるかは、商品の一覧の Fragile / Break Load)")]
     [Tooltip("重さが Break Load を超えた状態がこの秒数続いたら割れる(落ちてきた瞬間の衝撃では割れないように)")]
     public float breakHoldTime = 0.3f;
@@ -490,13 +496,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         var sr = go.AddComponent<SpriteRenderer>();
         if (image != null)
         {
-            // 用意した画像: 色はそのまま、当たり判定は画像の形に合わせる
+            // 用意した画像: 色はそのまま、当たり判定は画像の形を簡単にしたもの(TwoPlayerShop2D.Products.cs)
+            // (当たり判定は画像を入れる前に付ける。先に画像を入れると、Unity が細かすぎる形を自動で作って重くなる)
+            go.AddComponent<PolygonCollider2D>().points = SimpleOutline(image);
             sr.sprite = image;
             sr.color = Color.white;
             Vector2 size = image.bounds.size;
             float scale = productSize / Mathf.Max(size.x, size.y, 0.01f);
             go.transform.localScale = new Vector3(scale, scale, 1f);
-            go.AddComponent<PolygonCollider2D>();
         }
         else
         {
