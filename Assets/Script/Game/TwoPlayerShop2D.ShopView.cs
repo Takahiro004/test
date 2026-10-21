@@ -8,7 +8,7 @@ public enum ShopOrientation
     PortraitRotatedLeft,  // 縦。Windows は横のまま、モニターを左回りに90度回したとき
 }
 
-// 棚の画面(画面2)の向き・棚の並べ方・カメラ(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
+// 棚の画面(画面2)の向き・カメラ(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 // 縦のときは、DisplayTestSwitcher が決めた表示範囲の中に、縦長の画面を収める(LateUpdate で毎フレーム)
 public partial class TwoPlayerShop2D
 {
@@ -42,20 +42,7 @@ public partial class TwoPlayerShop2D
         return rotated ? new Vector2(h, w) : new Vector2(w, h);    // 回しているときは縦横が入れ替わる
     }
 
-    // 棚の i 番目(0始まり)の場所
-    Vector2 ShelfSlotPosition(int i, int count)
-    {
-        if (!IsPortrait) return new Vector2(-4f + (i % 3) * 4f, 1.5f - (i / 3) * 3f);   // 横: 今までどおり 3列 x 2段
-
-        // 縦: 上を空けて、残りに portraitColumns 列で並べる
-        Vector2 view = ShopViewSize();
-        int cols = Mathf.Max(1, portraitColumns);
-        int rows = Mathf.Max(1, Mathf.CeilToInt(count / (float)cols));
-        float top = view.y / 2f - view.y * portraitTopSpace;
-        float cellW = view.x / cols;
-        float cellH = (top + view.y / 2f) / rows;
-        return new Vector2(-view.x / 2f + cellW * (i % cols + 0.5f), top - cellH * (i / cols + 0.5f));
-    }
+    // 棚の並べ方(段と列・商品を置く場所)と棚の見た目は TwoPlayerShop2D.Shelf.cs
 
     Vector2 ClampToShopView(Vector2 v)
     {
@@ -91,9 +78,11 @@ public partial class TwoPlayerShop2D
         appliedColumns = portraitColumns;
         appliedTopSpace = portraitTopSpace;
 
-        for (int i = 0; i < slots.Count; i++) slots[i].pos = ShelfSlotPosition(i, slots.Count);
+        if (slots.Count != ShelfCount) RebuildShelfProducts();   // 段・列で商品の数が変わった(TwoPlayerShop2D.Shelf.cs)
+        for (int i = 0; i < slots.Count; i++) slots[i].pos = ShelfSlotPosition(i);
         foreach (var kv in slotOf)   // 棚に置いてある商品だけ動かす
-            if (kv.Key != null) kv.Key.transform.position = kv.Value.pos;
+            if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
+        BuildShelfVisual();
 
         foreach (var p in new[] { p1, p2 })
             if (p != null) p.shopPos = ClampToShopView(p.shopPos);
@@ -110,6 +99,7 @@ public partial class TwoPlayerShop2D
     void LateUpdate()
     {
         if (switcher == null || p1 == null) return;
+        UpdateShelfIfChanged();   // 段・列・棚の見た目を再生中に変えた
         if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();

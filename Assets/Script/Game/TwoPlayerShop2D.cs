@@ -25,7 +25,8 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Bag.cs    レジ袋・金額・袋の外の商品を消す
 ///   TwoPlayerShop2D.Sprites.cs 商品の図形(四角・丸・三角・多角形・L字など)・矢印・ゲージの形の自動生成
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
-///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・棚の並べ方・カメラ
+///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
+///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
 ///   TwoPlayerShop2D.Screens.cs 1P/棚/2P をどのカメラ(ディスプレイ)に映すかの割り当て・入れ替え
@@ -87,6 +88,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
     public bool autoFitPlayerScreens = true;
     [HideInInspector] public bool fillPlayerScreen = true;
+    [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
+    public bool showShelf = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
     public bool autoFitShopScreen = true;
     [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
@@ -274,10 +277,36 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float portraitAspect = 9f / 16f;
     [Tooltip("縦のときに映る横幅。小さいほど棚が大きく映る")]
     public float portraitViewWidth = 8f;
-    [Tooltip("縦のときの棚の列の数")]
-    public int portraitColumns = 2;
     [Tooltip("縦のとき、上を空ける割合(タイマー用。0.2なら上の2割)")]
     [Range(0f, 0.5f)] public float portraitTopSpace = 0.2f;
+
+    [Header("棚の段と列(商品の数 = 段 x 列。再生中に変えてもすぐ反映)")]
+    [Tooltip("縦のときの棚の列の数(横に並ぶ数)")]
+    public int portraitColumns = 2;
+    [Tooltip("縦のときの棚の段の数(縦に並ぶ数)")]
+    public int portraitRows = 3;
+    [Tooltip("横のときの棚の列の数")]
+    public int landscapeColumns = 3;
+    [Tooltip("横のときの棚の段の数")]
+    public int landscapeRows = 2;
+
+    [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
+    [Tooltip("仮の棚の背板の色")]
+    public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
+    [Tooltip("仮の棚の柱・段の板の色")]
+    public Color shelfBoardColor = new Color(0.62f, 0.45f, 0.28f);
+    [Tooltip("段の板の厚さ(商品はこの上に乗る)")]
+    public float shelfBoardThickness = 0.25f;
+    [Tooltip("棚の画像。入れると仮の棚の代わりに、棚の範囲いっぱいに引き伸ばして出す。商品の位置は段と列で決まるので、絵の板の位置と段の数を合わせる")]
+    public Sprite shelfSprite;
+    [Tooltip("棚の3Dモデル(プレハブ)。入れると仮の棚・画像の代わりに、棚の範囲に収まる大きさで商品の奥に出す。暗く・黒く見えたらマテリアルを Unlit にする")]
+    public GameObject shelfModel;
+    [Tooltip("3Dモデルの位置のずらし")]
+    public Vector3 shelfModelOffset = Vector3.zero;
+    [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える(例: Y を 180)")]
+    public Vector3 shelfModelRotation = Vector3.zero;
+    [Tooltip("3Dモデルの大きさ(1なら棚の範囲にちょうど収まる)")]
+    public float shelfModelScale = 1f;
 
     [Header("動作")]
     public bool arrangeCameras = true;
@@ -396,10 +425,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             new Color(1f, 0.5f, 0.2f), new Color(0.3f, 0.8f, 1f), new Color(0.9f, 0.9f, 0.3f),
             new Color(0.8f, 0.4f, 0.9f), new Color(0.4f, 0.9f, 0.5f), new Color(0.9f, 0.9f, 0.9f)
         };
-        for (int i = 0; i < cols.Length; i++)
+        int count = ShelfCount;   // 段 x 列(TwoPlayerShop2D.Shelf.cs)
+        for (int i = 0; i < count; i++)
         {
-            var shape = productShapes != null && i < productShapes.Length ? productShapes[i] : ProductShape.Square;
-            var slot = new ShelfSlot { pos = ShelfSlotPosition(i, cols.Length), shape = shape, color = cols[i] };
+            // 形・色・画像・金額の欄が商品の数より少ないときは、最初から繰り返す
+            var shape = productShapes != null && productShapes.Length > 0 ? productShapes[i % productShapes.Length] : ProductShape.Square;
+            var slot = new ShelfSlot { pos = ShelfSlotPosition(i), shape = shape, color = cols[i % cols.Length] };
             slots.Add(slot);
             PlaceProduct(slot);
         }
@@ -411,13 +442,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         slot.count++;
         int index = slots.IndexOf(slot) + 1;
         string objName = slot.count == 1 ? $"Product_{index}" : $"Product_{index}_{slot.count}";
-        int si = slots.IndexOf(slot);
-        Sprite image = productSprites != null && si < productSprites.Length ? productSprites[si] : null;
+        int i = index - 1;
+        Sprite image = productSprites != null && productSprites.Length > 0 ? productSprites[i % productSprites.Length] : null;
         var go = MakeSprite(objName, slot.pos, slot.shape, slot.color, layerShop, image);
+        PutOnShelf(go, slot);   // 棚を出すときは板の上に乗せる
         RegisterProduct(go);
         slotOf[go] = slot;
-        int i = index - 1;
-        priceOf[go] = productPrices != null && i < productPrices.Length ? productPrices[i] : 0;
+        priceOf[go] = productPrices != null && productPrices.Length > 0 ? productPrices[i % productPrices.Length] : 0;
     }
 
     System.Collections.IEnumerator RefillLater(ShelfSlot slot, GameObject taken)
@@ -425,6 +456,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         yield return new WaitForSeconds(refillDelay);
         // 掴み合い中は、取り合っている商品が棚に戻っているので補充を待つ
         while (clash != null && clash.product == taken) yield return null;
+        if (!slots.Contains(slot)) yield break;   // 待っている間に段・列が変わって、この場所が無くなった
         PlaceProduct(slot);
     }
 
@@ -743,10 +775,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         go.transform.rotation = Quaternion.identity;
 
         // 棚から取ったので、その場所に補充する(1回だけ)
-        if (refillShelf && slotOf.TryGetValue(go, out var slot))
+        // (補充しないときも、棚の商品の一覧からは外す。並べ直しで棚へ戻されないように)
+        if (slotOf.TryGetValue(go, out var slot))
         {
             slotOf.Remove(go);
-            StartCoroutine(RefillLater(slot, go));
+            if (refillShelf) StartCoroutine(RefillLater(slot, go));
         }
 
         p.held = go;
