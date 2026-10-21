@@ -3,7 +3,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // コントローラーの 1P/2P の登録(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「機能のON/OFF」→ Fixed Pad Assignment)
-// キーボードの F2 で登録を始める → 1P用のコントローラーで A → 2P用のコントローラーで A。
+// 登録を始める: キーボードの F2(ノートパソコンは Fn + F2 のことがある)/ どれかのコントローラーのビューボタン(□が2つのボタン)を1.5秒長押し /
+//              Inspector で TwoPlayerShop2D を右クリック →「コントローラー登録を始める」
+// → 1P用のコントローラーで A → 2P用のコントローラーで A。
 // 登録はパソコンに保存され(PlayerPrefs)、ゲームを閉じても残る。次からは登録したコントローラーが必ず 1P/2P になる
 // (ボタンを押さなくても、つながっていれば最初から割り当てる)。登録していないコントローラーは使わない。
 // 登録が無いときは、前と同じ「最初に A を押した方が 1P」。
@@ -18,6 +20,9 @@ public partial class TwoPlayerShop2D
     int padRegisterStep;          // 0: 登録していない / 1: 1P用の A を待っている / 2: 2P用の A を待っている
     string registeredPad1;        // 登録の途中で 1P に選んだコントローラー
     TextMesh[] padRegisterLabels;
+    Transform[] padRegisterPanels;
+    float padRegisterHold;        // ビューボタンを長押ししている秒数
+    bool padRegisterRequested;    // Inspector の右クリックから始めた
 
     static string SavedPadId(int playerIndex) => PlayerPrefs.GetString(playerIndex == 0 ? Pad1Key : Pad2Key, "");
     bool HasPadRegistration => fixedPadAssignment && (SavedPadId(0) != "" || SavedPadId(1) != "");
@@ -45,7 +50,16 @@ public partial class TwoPlayerShop2D
         var kb = Keyboard.current;
         if (padRegisterStep == 0)
         {
-            if (kb == null || !kb.f2Key.wasPressedThisFrame) return false;
+            // ビューボタンの長押し(どれかのコントローラー)
+            bool holding = false;
+            foreach (var g in Gamepad.all) if (g.selectButton.isPressed) holding = true;
+            padRegisterHold = holding ? padRegisterHold + Time.deltaTime : 0f;
+
+            bool start = (kb != null && kb.f2Key.wasPressedThisFrame) || padRegisterHold >= 1.5f || padRegisterRequested;
+            if (!start) return false;
+            padRegisterRequested = false;
+            padRegisterHold = 0f;
+            Debug.Log("[Shop2D] コントローラー登録を始めた");
             padRegisterStep = 1;
             registeredPad1 = null;
             ShowPadRegisterMessage("コントローラー登録\n1P用のコントローラーで A\n(Esc でやめる)");
@@ -86,23 +100,34 @@ public partial class TwoPlayerShop2D
         return true;
     }
 
-    // 登録の案内を、3つの画面の真ん中に出す(null で消す)
+    [ContextMenu("コントローラー登録を始める")]
+    void RequestPadRegistration() => padRegisterRequested = true;   // 再生中に、Inspector の右クリックから
+
+    // 登録の案内を、3つの画面の真ん中に、黒い板の上に出す(null で消す)
     void ShowPadRegisterMessage(string text)
     {
         if (padRegisterLabels == null)
         {
             int[] layers = { layerP1, layerShop, layerP2 };
             padRegisterLabels = new TextMesh[layers.Length];
+            padRegisterPanels = new Transform[layers.Length];
             for (int i = 0; i < layers.Length; i++)
             {
+                padRegisterPanels[i] = MakeBagPart("PadRegisterPanel", null, layers[i], new Color(0f, 0f, 0f, 0.8f), 4999, false);
                 padRegisterLabels[i] = MakeText("PadRegister", null, layers[i], "", new Color(1f, 0.95f, 0.4f), 5000);
-                padRegisterLabels[i].characterSize = HudTextSize * 1.2f;
             }
         }
-        foreach (var label in padRegisterLabels)
+        // 画面の大きさに合わせる(どの画面でも真ん中に、横幅の8割)
+        Vector2 view = ShopViewSize();
+        float w = Mathf.Min(view.x, PlayerViewSize().x) * 0.9f;
+        for (int i = 0; i < padRegisterLabels.Length; i++)
         {
-            label.gameObject.SetActive(text != null);
-            if (text != null) label.text = text;
+            padRegisterLabels[i].gameObject.SetActive(text != null);
+            padRegisterPanels[i].gameObject.SetActive(text != null);
+            if (text == null) continue;
+            padRegisterLabels[i].text = text;
+            padRegisterLabels[i].characterSize = w / 90f;   // 1行 14文字くらいが板に入る大きさ
+            SetRect(padRegisterPanels[i], 0f, 0f, w, w * 0.45f);
         }
     }
 

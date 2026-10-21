@@ -107,7 +107,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showResultOnTimeUp = true;
     [Tooltip("タイムアップ: 勝ち負けの前に、棚の画面で合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる結果発表を出す")]
     public bool showResultBars = true;
-    [Tooltip("コントローラー: F2 で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
+    [Tooltip("コントローラー: F2(またはビューボタン長押し)で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
     public bool fixedPadAssignment = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
     public bool useKeyboard = true;
@@ -877,6 +877,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         string wait = HasPadRegistration ? "未接続(登録したコントローラーをつなぐ)" : "未参加(コントローラーのAボタンを押す)";
         GUI.Label(new Rect(10, 82, 1100, 24),
             "1P: " + (pad1 != null ? PadLabel(pad1) : wait) + " / 2P: " + (pad2 != null ? PadLabel(pad2) : wait) +
-            (HasPadRegistration ? "(登録済み。F2 で登録し直す)" : "(F2 でコントローラー登録)"));
+            (HasPadRegistration ? "(登録済み。F2 かビューボタン長押しで登録し直す)" : "(F2 かビューボタン長押しでコントローラー登録)"));
     }
 }
