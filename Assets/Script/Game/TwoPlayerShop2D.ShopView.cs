@@ -110,6 +110,8 @@ public partial class TwoPlayerShop2D
     void LateUpdate()
     {
         if (switcher == null || p1 == null) return;
+        if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
+            ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
