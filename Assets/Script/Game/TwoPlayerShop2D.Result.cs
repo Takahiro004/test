@@ -39,7 +39,7 @@ public partial class TwoPlayerShop2D
     readonly Transform[] barNames = new Transform[2];
     readonly System.Collections.Generic.List<Transform> gridLines = new System.Collections.Generic.List<Transform>();
     readonly System.Collections.Generic.List<Transform> gridLabels = new System.Collections.Generic.List<Transform>();
-    float barViewWidth, barTextSize;
+    float barViewWidth, barTextSize, barNameY;
     TextMesh barTopLabel, barBottomLabel;
 
     // Start で呼ぶ: 前のゲームの割り当てを戻す
@@ -160,9 +160,10 @@ public partial class TwoPlayerShop2D
         title.characterSize = 0.08f * size;
         title.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
 
-        barBaseY = -view.y / 2f;     // 画面の下の端
-        barMaxHeight = view.y;       // 画面の下の端〜上の端 = resultBarScreenAmount(1万)
-        barTopEdge = view.y / 2f;
+        barBaseY = -view.y * 0.36f;  // 棒の伸び始める位置(下に 1P/2P の名前を出すぶん空ける)
+        barTopEdge = view.y / 2f;    // 映っている画面の上の端
+        barMaxHeight = barTopEdge - barBaseY;   // 伸び始める位置〜画面の上の端 = resultBarScreenAmount(1万)
+        barNameY = -view.y * 0.05f;  // 名前は伸び始める位置の少し下(画面の上での長さ)
         barWidth = Mathf.Min(view.x, view.y) * 0.19f;
 
         barTopLabel = MakeText("TopLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3006);
@@ -172,7 +173,7 @@ public partial class TwoPlayerShop2D
         barBottomLabel = MakeText("BottomLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3006);
         barBottomLabel.characterSize = 0.05f * size;
         barBottomLabel.anchor = TextAnchor.LowerLeft;
-        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + view.y * 0.08f, 0f);
+        barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + 0.05f, 0f);
 
         // グラフ(動かす・縮めるもの)。グラフの中では、下の端が y=0、1万 = barMaxHeight
         barChart = new GameObject("Chart").transform;
@@ -191,7 +192,7 @@ public partial class TwoPlayerShop2D
 
             var nameText = MakeText($"Name{i + 1}", barChart, layerShop, i == 0 ? "1P" : "2P", ink, 3004);
             nameText.characterSize = 0.08f * size;
-            nameText.transform.localPosition = new Vector3(x, view.y * 0.04f, 0f);   // 画面の下の端の近く(棒に重なっても読める黒っぽい字)
+            nameText.transform.localPosition = new Vector3(x, barNameY, 0f);   // 伸び始める位置の少し下
             barNames[i] = nameText.transform;
             bars[i].localPosition = new Vector3(x, 0f, 0f);
         }
@@ -272,7 +273,7 @@ public partial class TwoPlayerShop2D
             barTexts[i].transform.localScale = new Vector3(inv, inv, 1f);
             barNames[i].localScale = new Vector3(inv, inv, 1f);
             var np = barNames[i].localPosition;
-            barNames[i].localPosition = new Vector3(np.x, barMaxHeight * 0.04f * inv + windowBottom / screenAmount * barMaxHeight, 0f);   // いつも画面の下の端の近く
+            barNames[i].localPosition = new Vector3(np.x, barNameY * inv + windowBottom / screenAmount * barMaxHeight, 0f);   // いつも伸び始める位置の少し下
         }
         foreach (var line in gridLines)
             line.localScale = new Vector3(barViewWidth * 2f * inv, 0.03f * barTextSize * inv, 1f);
