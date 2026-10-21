@@ -604,6 +604,7 @@ MonoBehaviour:
   rotateHeldProduct: 1
   createFloor: 1
   createBag: 1
+  showBagTotal: 0
   showPricePopup: 1
   removeOutsideBag: 1
   breakFragile: 1
@@ -620,12 +621,16 @@ MonoBehaviour:
   autoFitPlayerScreens: 1
   fillPlayerScreen: 1
   showShelf: 1
+  shelfSlide: 1
+  randomRefill: 1
   showPriceTags: 1
   autoFitShopScreen: 1
   showTimerPlaceholder: 0
   showGameTimer: 1
   showResultOnTimeUp: 1
   showResultBars: 1
+  showEntryScreen: 1
+  fixedPadAssignment: 1
   useKeyboard: 1
   showOverlayLabel: 0
   screenP1: 1
@@ -657,6 +662,8 @@ MonoBehaviour:
   p2CursorSprite: {fileID: -863147454, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   cursorScale: 1.2
   gameTime: 120
+  entryCountdown: 3
+  entryTitle: "\u8A70\u3081\u653E\u984C\u30D0\u30C8\u30EB"
   timerWarningTime: 10
   resultRestartDelay: 1.5
   resultBarScreenAmount: 10000
@@ -735,8 +742,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
-    size: 1.8
+    sprite: {fileID: 7272636619451920036, guid: 77160bda02b35df41a788a1676783df1, type: 3}
+    size: 1.5
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3079\u30FC\u3053\u3093"
@@ -1411,6 +1418,30 @@ MonoBehaviour:
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+  - name: "\u30AB\u30C3\u30D7\u9EBA"
+    rank: 1
+    price: 100
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: -8810456238035203612, guid: 9cc08e6f1cb8ba94e9ef00ff3f9cfd15, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+  - name: "\u9577\u30CD\u30AE"
+    rank: 1
+    price: 100
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 6149342204815154439, guid: e71a68e01f116cd47a4182603d6dec57, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
   productShapes: 000000000200000005000000060000000400000007000000
   productSprites:
   - {fileID: 0}
@@ -1464,6 +1495,7 @@ MonoBehaviour:
   portraitRows: 3
   landscapeColumns: 3
   landscapeRows: 2
+  shelfScrollSpeed: 0.4
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
