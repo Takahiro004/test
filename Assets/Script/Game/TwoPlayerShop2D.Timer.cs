@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 制限時間(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
-// 再生を始めたときから gameTime 秒を数え、棚の画面に残り時間を出す。0 になったら「タイムアップ！」
+// ゲーム開始(エントリー画面のカウントダウンが終わったとき。エントリー画面が無ければ再生したとき)から gameTime 秒を数え、棚の画面に残り時間を出す。0 になったら「タイムアップ！」
 public partial class TwoPlayerShop2D
 {
     TextMesh timerText;
@@ -14,7 +14,7 @@ public partial class TwoPlayerShop2D
     {
         // 時間は表示を消していても数える
         if (timeLeft < 0f) timeLeft = Mathf.Max(0f, gameTime);
-        timeLeft = Mathf.Max(0f, timeLeft - Time.deltaTime);
+        if (!InEntry && entryPhase != -1) timeLeft = Mathf.Max(0f, timeLeft - Time.deltaTime);   // エントリー中は数えない(TwoPlayerShop2D.Entry.cs)
 
         if (timerText == null)
             timerText = MakeText("GameTimer", null, layerShop, "", Color.white, 1500);
