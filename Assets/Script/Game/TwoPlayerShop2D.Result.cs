@@ -222,8 +222,12 @@ public partial class TwoPlayerShop2D
 
         if (overviewTime < 0f)
         {
-            // 伸びている途中: 1画面(下の端〜上の端)ぶんを resultBarGrowTime 秒で伸びる。2本は同じ速さ
-            barMoney = Mathf.Min(maxTotal, barMoney + screenAmount / Mathf.Max(0.1f, resultBarGrowTime) * Time.deltaTime);
+            // 伸びている途中: 最初はゆっくり、だんだん速くなる。2本は同じ速さ
+            // 速さの基準は「1画面(下の端〜上の端)ぶんを resultBarGrowTime 秒」。これに Start Speed → End Speed を掛ける
+            barsTime += Time.deltaTime;
+            float a = Mathf.Clamp01(barsTime / Mathf.Max(0.05f, resultBarAccelTime));
+            float speedRate = Mathf.Lerp(Mathf.Max(0.01f, resultBarStartSpeed), Mathf.Max(0.01f, resultBarEndSpeed), a * a);   // a*a: 加速が後になるほど強い
+            barMoney = Mathf.Min(maxTotal, barMoney + screenAmount / Mathf.Max(0.1f, resultBarGrowTime) * speedRate * Time.deltaTime);
             // 上の端を超えるたびに、カメラが1画面ぶん上へ進む(棒は下の端からもう一度伸びて見える)
             int lap = barMoney > 0f ? Mathf.FloorToInt((barMoney - 0.001f) / screenAmount) : 0;
             float bottom = lap * screenAmount;
@@ -252,7 +256,8 @@ public partial class TwoPlayerShop2D
         float headroomRatio = Mathf.Clamp(barBagSize * 1.9f / barMaxHeight, 0f, 0.6f);
         float fullAmount = Mathf.Max(screenAmount, maxTotal / (1f - headroomRatio));
         float windowBottom = Mathf.Lerp(zoomFromBottom, 0f, k);
-        float windowSize = Mathf.Lerp(screenAmount, fullAmount, k);
+        // 映す範囲は掛け算で広げる(何倍ずつ広がるかが一定になり、カメラが一定の速さで引いて見える)
+        float windowSize = Mathf.Exp(Mathf.Lerp(Mathf.Log(screenAmount), Mathf.Log(fullAmount), k));
         for (int i = 0; i < 2; i++)
             PlaceBar(i, totals[i], float.MaxValue);   // ズーム中は金額を上の端で止めない
         SetChartView(windowBottom, windowSize);
