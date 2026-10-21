@@ -24,6 +24,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Clash.cs  掴み合い
 ///   TwoPlayerShop2D.Bag.cs    レジ袋・金額・袋の外の商品を消す
 ///   TwoPlayerShop2D.Sprites.cs 商品の図形(四角・丸・三角・多角形・L字など)・矢印・ゲージの形の自動生成
+///   TwoPlayerShop2D.Pads.cs   コントローラーの 1P/2P の登録(F2。パソコンに保存して、次からも同じ側にする)
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
@@ -106,6 +107,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showResultOnTimeUp = true;
     [Tooltip("タイムアップ: 勝ち負けの前に、棚の画面で合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる結果発表を出す")]
     public bool showResultBars = true;
+    [Tooltip("コントローラー: F2 で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
+    public bool fixedPadAssignment = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
     public bool useKeyboard = true;
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
@@ -635,7 +638,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             CheckBag(p2);
         }
 
-        // 参加(Aボタンを押したコントローラーを1P→2Pの順に割り当てる)
+        // コントローラー登録中(F2)はゲームを止める(TwoPlayerShop2D.Pads.cs)
+        if (UpdatePadRegistration()) return;
+
+        // 参加(登録したコントローラーを 1P/2P に。登録が無ければ A ボタンを押した順に 1P→2P)
         TryAssignPads(out bool joined1, out bool joined2);
 
         bool press1 = !joined1 && Grab1PPressed();   // 参加したフレームのAボタンは「掴む」として扱わない
@@ -703,13 +709,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (pad1 != null && !pad1.added) pad1 = null;
         if (pad2 != null && !pad2.added) pad2 = null;
 
+        if (HasPadRegistration) AssignRegisteredPads();   // 登録したコントローラー(TwoPlayerShop2D.Pads.cs)
+        bool fixed1 = HasPadRegistration && SavedPadId(0) != "", fixed2 = HasPadRegistration && SavedPadId(1) != "";
+
         foreach (var g in Gamepad.all)
         {
-            if (g == pad1 || g == pad2) continue;
+            if (g == pad1 || g == pad2 || IsRegisteredPad(g)) continue;   // 登録したものは、決まった方にだけ入る
             if (!g.buttonSouth.wasPressedThisFrame && !g.startButton.wasPressedThisFrame) continue;
 
-            if (pad1 == null) { pad1 = keptPad1 = g; joined1 = true; Debug.Log($"[Shop2D] 1Pに割り当て: {g.displayName}"); }
-            else if (pad2 == null) { pad2 = keptPad2 = g; joined2 = true; Debug.Log($"[Shop2D] 2Pに割り当て: {g.displayName}"); }
+            if (pad1 == null && !fixed1) { pad1 = keptPad1 = g; joined1 = true; Debug.Log($"[Shop2D] 1Pに割り当て: {g.displayName}"); }
+            else if (pad2 == null && !fixed2) { pad2 = keptPad2 = g; joined2 = true; Debug.Log($"[Shop2D] 2Pに割り当て: {g.displayName}"); }
         }
     }
 
@@ -865,8 +874,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));
         GUI.Label(new Rect(10, 34, 1100, 24), $"{lastEvent}");
         GUI.Label(new Rect(10, 58, 1100, 24), $"接続中のコントローラー: {PadCount}台");
+        string wait = HasPadRegistration ? "未接続(登録したコントローラーをつなぐ)" : "未参加(コントローラーのAボタンを押す)";
         GUI.Label(new Rect(10, 82, 1100, 24),
-            "1P: " + (pad1 != null ? pad1.displayName : "未参加(コントローラーのAボタンを押す)") +
-            " / 2P: " + (pad2 != null ? pad2.displayName : (pad1 != null ? "未参加(2台目のAボタンを押す)" : "未参加")));
+            "1P: " + (pad1 != null ? PadLabel(pad1) : wait) + " / 2P: " + (pad2 != null ? PadLabel(pad2) : wait) +
+            (HasPadRegistration ? "(登録済み。F2 で登録し直す)" : "(F2 でコントローラー登録)"));
     }
 }

@@ -6,7 +6,7 @@ public partial class TwoPlayerShop2D
 {
     // ---------- 入力(コントローラー優先 + キーボード予備) ----------
 
-    // 1P = 最初にAボタンを押したコントローラー、2P = 次に押したコントローラー
+    // 1P/2P のコントローラー。F2 で登録したものがあればそれ、無ければ最初に A を押した方が 1P(TwoPlayerShop2D.Pads.cs)
     Gamepad PadOf(int playerIndex)
     {
         return playerIndex == 0 ? pad1 : pad2;
