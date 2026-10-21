@@ -163,10 +163,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float resultRestartDelay = 1.5f;
     [Tooltip("結果発表: 画面の上の端が表す金額。これを超えたら、棒は下の端からもう一度伸びる(画面が上へ進むように)")]
     public int resultBarScreenAmount = 10000;
-    [Tooltip("結果発表: 棒が下の端から上の端まで(Result Bar Screen Amount ぶん)伸びる秒数")]
+    [Tooltip("結果発表: 速さの基準。棒が下の端から上の端まで(Result Bar Screen Amount ぶん)伸びる秒数。実際の速さは、これに下の Start/End Speed を掛ける")]
     public float resultBarGrowTime = 2.5f;
-    [Tooltip("結果発表: 伸び終わってから、全体が見えるように縮めるまでの秒数(縮める動き自体の秒数)")]
-    public float resultBarOverviewTime = 1f;
+    [Tooltip("結果発表: 伸び始めの速さ(Grow Time の速さを1として。0.2なら5分の1のゆっくり)")]
+    public float resultBarStartSpeed = 0.2f;
+    [Tooltip("結果発表: いちばん速くなったときの速さ(Grow Time の速さを1として)")]
+    public float resultBarEndSpeed = 2.5f;
+    [Tooltip("結果発表: 伸び始めの速さから、いちばん速い速さになるまでの秒数(最初はゆっくり、だんだん速くなる)")]
+    public float resultBarAccelTime = 3f;
+    [Tooltip("結果発表: 伸び終わってから、全体が見えるように縮める(カメラが引く)動きの秒数。大きいほどゆっくり")]
+    public float resultBarOverviewTime = 2.5f;
     [Tooltip("結果発表: 全体を見せてから、勝ち負けの画面になるまでの秒数")]
     public float resultBarHoldTime = 1.5f;
     [Tooltip("結果発表: 背景の色(上が上の色、下が下の色で、なめらかにつなぐ)")]
