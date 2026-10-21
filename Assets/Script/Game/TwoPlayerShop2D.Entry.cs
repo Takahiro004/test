@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // エントリー画面(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「機能のON/OFF」→ Show Entry Screen と「エントリー画面」)
-// 再生するとまずエントリー画面。1P/2P それぞれ A で参加(B で取り消し)。両方そろったらカウントダウン(3・2・1・スタート！)してゲーム開始。
+// 再生するとまずエントリー画面。1P/2P それぞれ A で参加(B で取り消し)。両方そろったらカウントダウン(3・2・1・スタート！。棚の画面だけに大きく)してゲーム開始。
 // 制限時間はゲーム開始から数える。
 //  - 先に A を押したコントローラーが 1P、次が 2P。ただし前に登録したコントローラー(TwoPlayerShop2D.Pads.cs)は、登録した側に入る
 //  - 両方そろったら、その割り当てを登録として保存する(次の試合・次に起動したときも同じ側)
@@ -132,11 +132,12 @@ public partial class TwoPlayerShop2D
         if (entryRoot == null) return;
         if (entryPhase == 2)
         {
-            // カウントダウン(3つの画面に同じ数字)
-            string n = Mathf.CeilToInt(entryCountdownLeft).ToString();
-            entryShopStatus.text = n;
-            entryShopStatus.characterSize = ShopViewSize().x / 30f;
-            for (int i = 0; i < 2; i++) { entryPlayerText[i].text = n; entryPlayerText[i].color = Color.white; }
+            // カウントダウンは棚の画面だけに、大きく出す(1P/2P の画面の文字は消す)
+            entryShopTitle.gameObject.SetActive(false);
+            entryShopStatus.text = Mathf.CeilToInt(entryCountdownLeft).ToString();
+            entryShopStatus.characterSize = ShopViewSize().x / 12f;
+            entryShopStatus.transform.position = Vector3.zero;
+            for (int i = 0; i < 2; i++) entryPlayerText[i].gameObject.SetActive(false);
             return;
         }
 
@@ -158,9 +159,9 @@ public partial class TwoPlayerShop2D
         if (entryRoot == null) yield break;
         foreach (var r in entryRoot.GetComponentsInChildren<SpriteRenderer>()) r.enabled = false;   // 暗い板を消す
         entryShopTitle.gameObject.SetActive(false);
-        entryShopStatus.text = "スタート！";
+        entryShopStatus.text = "スタート！";   // 棚の画面だけ
         entryShopStatus.color = new Color(1f, 0.85f, 0.3f);
-        for (int i = 0; i < 2; i++) { entryPlayerText[i].text = "スタート！"; entryPlayerText[i].color = new Color(1f, 0.85f, 0.3f); }
+        entryShopStatus.characterSize = ShopViewSize().x / 36f;
         yield return new WaitForSeconds(0.8f);
         Destroy(entryRoot);
         entryRoot = null;
