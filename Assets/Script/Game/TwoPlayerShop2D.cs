@@ -166,6 +166,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float resultBarOverviewTime = 1f;
     [Tooltip("結果発表: 全体を見せてから、勝ち負けの画面になるまでの秒数")]
     public float resultBarHoldTime = 1.5f;
+    [Tooltip("結果発表: 背景の色(上が上の色、下が下の色で、なめらかにつなぐ)")]
+    public Color resultBarBackTop = new Color(0.86f, 0.9f, 0.96f);
+    public Color resultBarBackBottom = new Color(0.97f, 0.93f, 0.84f);
+    [Tooltip("結果発表: 文字(金額・名前・見出し・目盛り)の大きさ。1で前の大きさ")]
+    public float resultBarTextScale = 1.5f;
 
     [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
 
