@@ -222,7 +222,7 @@ public partial class TwoPlayerShop2D
             int lap = barMoney > 0f ? Mathf.FloorToInt((barMoney - 0.001f) / screenAmount) : 0;
             float bottom = lap * screenAmount;
             for (int i = 0; i < 2; i++)
-                PlaceBar(i, Mathf.Min(barMoney, totals[i]), bottom + screenAmount);
+                PlaceBar(i, Mathf.Min(barMoney, totals[i]), float.MaxValue);   // レジ袋と金額も棒の先に乗ったまま、画面の上の端を超えていく
             SetChartView(bottom, screenAmount);
             barTopLabel.text = $"¥{bottom + screenAmount:N0}";
             barBottomLabel.text = lap > 0 ? $"¥{bottom:N0}" : "";
@@ -262,31 +262,28 @@ public partial class TwoPlayerShop2D
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
         float scale = screenAmount / Mathf.Max(1f, windowSize);
         barChartScale = scale;
-        barChart.localScale = new Vector3(scale, scale, 1f);
+        // 縮めるのは縦だけ。棒の太さ・2本の間隔(横)は変えない
+        barChart.localScale = new Vector3(1f, scale, 1f);
         barChart.position = new Vector3(0f, barBaseY - windowBottom / screenAmount * barMaxHeight * scale, 0f);
 
-        // 縮めるのは棒だけ。レジ袋・金額・名前・目盛りの線の太さと文字は、画面の上での大きさを変えない
+        // レジ袋・金額・名前・目盛りの線の太さと文字は、画面の上での大きさを変えない(縦に縮んだぶんを戻す)
         float inv = 1f / scale;
         for (int i = 0; i < 2; i++)
         {
-            barBags[i].localScale = new Vector3(inv, inv, 1f);
-            barTexts[i].transform.localScale = new Vector3(inv, inv, 1f);
-            barNames[i].localScale = new Vector3(inv, inv, 1f);
+            barBags[i].localScale = new Vector3(1f, inv, 1f);
+            barTexts[i].transform.localScale = new Vector3(1f, inv, 1f);
+            barNames[i].localScale = new Vector3(1f, inv, 1f);
             var np = barNames[i].localPosition;
             barNames[i].localPosition = new Vector3(np.x, barNameY * inv + windowBottom / screenAmount * barMaxHeight, 0f);   // いつも伸び始める位置の少し下
         }
         foreach (var line in gridLines)
-            line.localScale = new Vector3(barViewWidth * 2f * inv, 0.03f * barTextSize * inv, 1f);
+            line.localScale = new Vector3(barViewWidth * 2f, 0.03f * barTextSize * inv, 1f);
         foreach (var label in gridLabels)
-        {
-            label.localScale = new Vector3(inv, inv, 1f);
-            var lp = label.localPosition;
-            label.localPosition = new Vector3((-barViewWidth / 2f + 0.15f) * inv, lp.y, 0f);   // いつも画面の左の端
-        }
+            label.localScale = new Vector3(1f, inv, 1f);   // 横の位置は画面の左の端のまま
     }
 
     // 棒 i を金額 money の高さにして、上にレジ袋と金額を乗せる(グラフの中の座標)
-    // clampMoney: 金額とレジ袋がこの金額の高さ(= 今の画面の上の端)を超えないように、棒に重ねる
+    // clampMoney: 金額とレジ袋がこの金額の高さを超えないように、棒に重ねる(float.MaxValue なら止めない)
     void PlaceBar(int i, float money, float clampMoney)
     {
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
