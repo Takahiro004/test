@@ -147,8 +147,9 @@ public partial class TwoPlayerShop2D
         for (int i = 0; i < slots.Count; i++)
         {
             var info = ProductFor(i);
-            float x = area.xMin + cellW * (i % ShelfColumns + 0.5f);
-            float rowTop = area.yMax - cellH * (i / ShelfColumns);
+            int j = i % ShelfCount;   // フェーズの棚の中で何番目か(フェーズの棚は右へ並ぶ)
+            float x = area.xMin + cellW * (j % ShelfColumns + 0.5f) + (i / ShelfCount) * ShelfSectionWidth;
+            float rowTop = area.yMax - cellH * (j / ShelfColumns);
             var tag = MakeText($"PriceTag{i + 1}", shelfRoot, layerShop, $"{info.name}\n¥{info.price:N0}",
                                info.menuIngredient ? new Color(1f, 0.92f, 0.4f) : Color.white, -15);
             tag.characterSize = 0.012f * size;
