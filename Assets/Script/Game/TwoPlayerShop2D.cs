@@ -165,6 +165,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public int resultBarScreenAmount = 10000;
     [Tooltip("結果発表: 棒の先がこの高さ(伸び始める位置〜画面の上の端を1として)まで来たら、カメラが棒の先を追いかけて上へ進む。1なら上の端(レジ袋と金額は画面の外になる)。0.7くらいならレジ袋と金額も見える")]
     [Range(0.1f, 1f)] public float resultBarFollowHeight = 0.7f;
+    [Tooltip("結果発表: カメラが引いたとき、棒の太さ(と2本の間隔)はここまでしか細くならない(引く前を1として。0.5なら半分まで)")]
+    [Range(0.05f, 1f)] public float resultBarMinWidth = 0.6f;
+    [Tooltip("結果発表: カメラが引いたとき、金額・レジ袋・名前・目盛りの文字はここまでしか小さくならない(引く前を1として)")]
+    [Range(0.05f, 1f)] public float resultBarMinTextSize = 0.7f;
     [Tooltip("結果発表: 速さの基準。棒が下の端から上の端まで(Result Bar Screen Amount ぶん)伸びる秒数。実際の速さは、これに下の Start/End Speed を掛ける")]
     public float resultBarGrowTime = 2.5f;
     [Tooltip("結果発表: 伸び始めの速さ(Grow Time の速さを1として。0.2なら5分の1のゆっくり)")]
