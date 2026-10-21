@@ -64,6 +64,13 @@ public partial class TwoPlayerShop2D
                     min = Mathf.Min(min, go.transform.TransformPoint(pt + poly.offset).y);
             return min;
         }
+        var model = go.transform.Find("Model");   // 3Dモデルの商品(TwoPlayerShop2D.Products.cs)
+        if (model != null)
+        {
+            float min = float.MaxValue;
+            foreach (var r in model.GetComponentsInChildren<Renderer>()) min = Mathf.Min(min, r.bounds.min.y);
+            if (min < float.MaxValue) return min;
+        }
         return go.GetComponent<SpriteRenderer>().bounds.min.y;
     }
 
@@ -110,9 +117,8 @@ public partial class TwoPlayerShop2D
         const float frame = 0.2f;   // 枠の太さ(棚の範囲の外側にはみ出す分)
         Rect outer = new Rect(a.xMin - frame, a.yMin - frame, a.width + frame * 2f, a.height + frame * 2f);
 
-        if (shelfModel != null) { BuildShelfModel(outer); return; }
-
-        if (shelfSprite != null)
+        if (shelfModel != null) BuildShelfModel(outer);
+        else if (shelfSprite != null)
         {
             // 棚の画像を、棚の範囲いっぱいに引き伸ばす
             var tr = MakeBagPart("ShelfImage", shelfRoot, layerShop, Color.white, -20, false);
@@ -121,10 +127,14 @@ public partial class TwoPlayerShop2D
             Vector2 size = shelfSprite.bounds.size;
             tr.position = new Vector3(outer.center.x, outer.center.y, 0f);
             tr.localScale = new Vector3(outer.width / Mathf.Max(0.01f, size.x), outer.height / Mathf.Max(0.01f, size.y), 1f);
-            return;
         }
+        else BuildPlaceholderShelf(a, outer, frame);
+        BuildPriceTags(a);   // 値札(TwoPlayerShop2D.Products.cs)
+    }
 
-        // 仮の棚: 背板 → 左右の柱・天板 → 段の板
+    // 仮の棚: 背板 → 左右の柱・天板 → 段の板
+    void BuildPlaceholderShelf(Rect a, Rect outer, float frame)
+    {
         var back = MakeBagPart("Back", shelfRoot, layerShop, shelfBackColor, -20, false);
         SetRect(back, outer.center.x, outer.center.y, outer.width, outer.height);
         var left = MakeBagPart("Left", shelfRoot, layerShop, shelfBoardColor, -18, false);
