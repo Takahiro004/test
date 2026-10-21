@@ -222,7 +222,7 @@ public partial class TwoPlayerShop2D
             int lap = barMoney > 0f ? Mathf.FloorToInt((barMoney - 0.001f) / screenAmount) : 0;
             float bottom = lap * screenAmount;
             for (int i = 0; i < 2; i++)
-                PlaceBar(i, Mathf.Min(barMoney, totals[i]), bottom + screenAmount);
+                PlaceBar(i, Mathf.Min(barMoney, totals[i]), float.MaxValue);   // レジ袋と金額も棒の先に乗ったまま、画面の上の端を超えていく
             SetChartView(bottom, screenAmount);
             barTopLabel.text = $"¥{bottom + screenAmount:N0}";
             barBottomLabel.text = lap > 0 ? $"¥{bottom:N0}" : "";
@@ -283,7 +283,7 @@ public partial class TwoPlayerShop2D
     }
 
     // 棒 i を金額 money の高さにして、上にレジ袋と金額を乗せる(グラフの中の座標)
-    // clampMoney: 金額とレジ袋がこの金額の高さ(= 今の画面の上の端)を超えないように、棒に重ねる
+    // clampMoney: 金額とレジ袋がこの金額の高さを超えないように、棒に重ねる(float.MaxValue なら止めない)
     void PlaceBar(int i, float money, float clampMoney)
     {
         float screenAmount = Mathf.Max(1, resultBarScreenAmount);
