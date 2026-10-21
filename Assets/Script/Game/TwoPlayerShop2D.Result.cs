@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 //     → 伸び終わったら、カメラが引いて全体を見せる(棒も文字もレジ袋も全部一緒に小さくなる)
 //     → resultBarHoldTime 秒たったら、棒グラフを残したまま勝ち負けの画面へ
 //  - 1P/2P それぞれの画面: 合計金額の多い方に「あなたの勝ち！」、少ない方に「あなたの負け！」、同じなら「引き分け！」を大きく出す
-//  - 棚の画面: 左右に分けて(左 1P / 右 2P)、1P/2P・合計金額・「Aでもう一度」を出す
+//  - 棚の画面: 棒グラフを出していたら、それを残して 1P/2P の名前の下に「Aでもう一度」。出していなければ左右に分けて(左 1P / 右 2P)、1P/2P・合計金額・「Aでもう一度」を出す
 // resultRestartDelay 秒たったら、どちらかが A を押すとシーンを読み込み直して最初から
 public partial class TwoPlayerShop2D
 {
@@ -94,15 +94,20 @@ public partial class TwoPlayerShop2D
         {
             ShowResultOnPlayerScreen(p1, result1);
             ShowResultOnPlayerScreen(p2, -result1);
-            // 「結果発表」の見出しの場所(画面のいちばん上)に「Aでもう一度」を出す
+            // 「Aでもう一度」は、棒の下の 1P/2P の名前よりさらに下に出す(画面の上のほうは他の UI と重なるため)
             Vector2 vis = ShopVisibleSize();
             float s2 = Mathf.Min(vis.x, vis.y) / 8f;
             var titleTr = barsRoot.transform.Find("Title");
             if (titleTr != null) titleTr.gameObject.SetActive(false);
             var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3005);
             hint.characterSize = 0.07f * s2 * Mathf.Max(0.3f, resultBarTextScale);
+            hint.anchor = TextAnchor.UpperCenter;   // 位置は文字の上の端(影より先に決める。影は作ったときの向きをまねる)
             AddTextShadow(hint);
-            hint.transform.position = new Vector3(0f, vis.y * 0.46f, 0f);
+            float nameBottom = Mathf.Min(barNames[0].GetComponent<MeshRenderer>().bounds.min.y,
+                                         barNames[1].GetComponent<MeshRenderer>().bounds.min.y);
+            float hintHeight = hint.characterSize * hint.fontSize * 0.1f;   // 文字の高さのおおよそ
+            float hintY = Mathf.Max(nameBottom - 0.15f, -vis.y / 2f + 0.1f + hintHeight);   // 画面の下の端からははみ出さない
+            hint.transform.position = new Vector3(0f, hintY, 0f);
             resultHint1 = resultHint2 = hint;
             resultTime = 0f;
             return;
