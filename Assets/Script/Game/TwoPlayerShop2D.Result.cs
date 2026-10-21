@@ -100,7 +100,8 @@ public partial class TwoPlayerShop2D
             var titleTr = barsRoot.transform.Find("Title");
             if (titleTr != null) titleTr.gameObject.SetActive(false);
             var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3005);
-            hint.characterSize = 0.07f * s2;
+            hint.characterSize = 0.07f * s2 * Mathf.Max(0.3f, resultBarTextScale);
+            AddTextShadow(hint);
             hint.transform.position = new Vector3(0f, vis.y * 0.46f, 0f);
             resultHint1 = resultHint2 = hint;
             resultTime = 0f;
@@ -151,13 +152,15 @@ public partial class TwoPlayerShop2D
         var t = barsRoot.transform;
         Vector2 view = ShopVisibleSize();   // 実際に映っている範囲(棒は画面の下の端から上の端まで使う)
         float size = Mathf.Min(view.x, view.y) / 8f;
-        var ink = new Color(0.2f, 0.2f, 0.25f);
+        var ink = new Color(0.1f, 0.1f, 0.16f);     // 文字は濃い色
+        var sub = new Color(0.3f, 0.32f, 0.4f);     // 目盛りなどの小さい文字
+        float ts = Mathf.Max(0.3f, resultBarTextScale);
 
-        // 画面に止まっているもの: 背景(白)・見出し・上の端/下の端の金額
-        var panel = MakeBagPart("Panel", t, layerShop, new Color(0.97f, 0.97f, 0.97f), 2999, false);
-        SetRect(panel, 0f, 0f, view.x + 2f, view.y + 2f);
+        // 画面に止まっているもの: 背景(上下で色が変わる)・見出し・上の端/下の端の金額
+        MakeResultBackground(t, view);
         var title = MakeText("Title", t, layerShop, "結果発表", ink, 3006);
-        title.characterSize = 0.08f * size;
+        title.characterSize = 0.08f * size * ts;
+        AddTextShadow(title);
         title.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
 
         barBaseY = -view.y * 0.36f;  // 棒の伸び始める位置(下に 1P/2P の名前を出すぶん空ける)
@@ -166,12 +169,12 @@ public partial class TwoPlayerShop2D
         barNameY = -view.y * 0.05f;  // 名前は伸び始める位置の少し下(画面の上での長さ)
         barWidth = Mathf.Min(view.x, view.y) * 0.19f;
 
-        barTopLabel = MakeText("TopLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3006);
-        barTopLabel.characterSize = 0.05f * size;
+        barTopLabel = MakeText("TopLabel", t, layerShop, "", sub, 3006);
+        barTopLabel.characterSize = 0.05f * size * ts;
         barTopLabel.anchor = TextAnchor.UpperLeft;
         barTopLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barTopEdge - 0.05f, 0f);
-        barBottomLabel = MakeText("BottomLabel", t, layerShop, "", new Color(0.5f, 0.5f, 0.55f), 3006);
-        barBottomLabel.characterSize = 0.05f * size;
+        barBottomLabel = MakeText("BottomLabel", t, layerShop, "", sub, 3006);
+        barBottomLabel.characterSize = 0.05f * size * ts;
         barBottomLabel.anchor = TextAnchor.LowerLeft;
         barBottomLabel.transform.position = new Vector3(-view.x / 2f + 0.15f, barBaseY + 0.05f, 0f);
 
@@ -188,10 +191,13 @@ public partial class TwoPlayerShop2D
             barBagSize = barWidth * 1.2f;
             barBags[i] = MakeResultBagIcon(barChart, $"Bag{i + 1}", barBagSize);
             barTexts[i] = MakeText($"Total{i + 1}", barChart, layerShop, "¥0", ink, 3004);
-            barTexts[i].characterSize = 0.07f * size;
+            barTexts[i].characterSize = 0.07f * size * ts;
+            barTexts[i].color = i == 0 ? new Color(0.7f, 0.05f, 0.08f) : new Color(0f, 0.38f, 0.62f);   // 棒の色を濃くした色
+            AddTextShadow(barTexts[i]);
 
             var nameText = MakeText($"Name{i + 1}", barChart, layerShop, i == 0 ? "1P" : "2P", ink, 3004);
-            nameText.characterSize = 0.08f * size;
+            nameText.characterSize = 0.08f * size * ts;
+            AddTextShadow(nameText);
             nameText.transform.localPosition = new Vector3(x, barNameY, 0f);   // 伸び始める位置の少し下
             barNames[i] = nameText.transform;
             bars[i].localPosition = new Vector3(x, 0f, 0f);
@@ -298,7 +304,7 @@ public partial class TwoPlayerShop2D
         float bagY = Mathf.Min(h + bagH * 0.6f, textY - bagH * 0.75f);
         barBags[i].localPosition = new Vector3(x, bagY, 0f);
         barTexts[i].transform.localPosition = new Vector3(x, textY, 0f);
-        barTexts[i].text = $"¥{Mathf.RoundToInt(money):N0}";
+        SetTextWithShadow(barTexts[i], $"¥{Mathf.RoundToInt(money):N0}");
     }
 
     // 1万ごとの目盛り(横線と金額)。グラフの中に作るので、カメラが進む・引くのに合わせて動く
@@ -309,16 +315,59 @@ public partial class TwoPlayerShop2D
         for (float m = screenAmount; m <= maxTotal + screenAmount; m += screenAmount)
         {
             float y = m / screenAmount * barMaxHeight;
-            var line = MakeBagPart("GridLine", barChart, layerShop, new Color(0.8f, 0.8f, 0.85f), 3000, false);
+            var line = MakeBagPart("GridLine", barChart, layerShop, new Color(0.55f, 0.6f, 0.7f, 0.5f), 3000, false);
             line.localPosition = new Vector3(0f, y, 0f);
             line.localScale = new Vector3(view.x * 2f, 0.03f * size, 1f);
             gridLines.Add(line);
-            var label = MakeText("GridLabel", barChart, layerShop, $"¥{m:N0}", new Color(0.55f, 0.55f, 0.6f), 3004);
-            label.characterSize = 0.05f * size;
+            var label = MakeText("GridLabel", barChart, layerShop, $"¥{m:N0}", new Color(0.3f, 0.32f, 0.4f), 3004);
+            label.characterSize = 0.05f * size * Mathf.Max(0.3f, resultBarTextScale);
             label.anchor = TextAnchor.LowerLeft;
             label.transform.localPosition = new Vector3(-view.x / 2f + 0.15f, y + 0.05f, 0f);
             gridLabels.Add(label.transform);
         }
+    }
+
+    // 結果発表の背景: 上の色(resultBarBackTop)から下の色(resultBarBackBottom)へ、横じまでなめらかにつなぐ
+    void MakeResultBackground(Transform parent, Vector2 view)
+    {
+        const int bands = 24;
+        float h = (view.y + 2f) / bands;
+        for (int b = 0; b < bands; b++)
+        {
+            float k = (b + 0.5f) / bands;   // 0 = 下、1 = 上
+            var band = MakeBagPart($"Back{b}", parent, layerShop, Color.Lerp(resultBarBackBottom, resultBarBackTop, k), 2999, false);
+            SetRect(band, 0f, -(view.y + 2f) / 2f + h * (b + 0.5f), view.x + 2f, h * 1.02f);
+        }
+    }
+
+    // 文字の右下に、うすい影を付けて読みやすくする(文字と一緒に動く・大きさが変わる)
+    static void AddTextShadow(TextMesh tm)
+    {
+        var mr = tm.GetComponent<MeshRenderer>();
+        var go = new GameObject("Shadow");
+        go.layer = tm.gameObject.layer;
+        go.transform.SetParent(tm.transform, false);
+        float off = tm.characterSize * 0.6f;
+        go.transform.localPosition = new Vector3(off, -off, 0f);
+        var sh = go.AddComponent<TextMesh>();
+        sh.font = tm.font;
+        sh.text = tm.text;
+        sh.fontSize = tm.fontSize;
+        sh.characterSize = tm.characterSize;
+        sh.anchor = tm.anchor;
+        sh.alignment = tm.alignment;
+        sh.color = new Color(1f, 1f, 1f, 0.85f);   // 背景が明るいので、白い影で文字のふちを立たせる
+        var smr = go.GetComponent<MeshRenderer>();
+        smr.material = mr.sharedMaterial;
+        smr.sortingOrder = mr.sortingOrder - 1;
+    }
+
+    // 文字を変えたら、影の文字も同じにする
+    static void SetTextWithShadow(TextMesh tm, string text)
+    {
+        tm.text = text;
+        var sh = tm.transform.Find("Shadow");
+        if (sh != null) sh.GetComponent<TextMesh>().text = text;
     }
 
     // 棒の上に乗せるレジ袋。袋の画像(Bag Sprite)があればそれ、無ければ四角と持ち手の仮の形
