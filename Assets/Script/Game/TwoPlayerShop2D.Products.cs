@@ -13,6 +13,12 @@ public class ProductInfo
     public int price = 100;
     [Tooltip("献立の食材(必ず棚に並べる)")]
     public bool menuIngredient;
+    [Tooltip("重さ(1が普通)。重い商品ほど、下の割れる商品に重さがかかる")]
+    public float weight = 1f;
+    [Tooltip("割れる商品(たまご など)。袋の中で上に重さが乗ると割れて消える")]
+    public bool fragile;
+    [Tooltip("割れる商品が割れる重さ(重さ 1 の商品が何個ぶん乗ったら割れるか)")]
+    public float breakLoad = 3f;
     [Tooltip("画像も3Dモデルも無いときの、仮の図形の形(当たり判定も同じ形)")]
     public ProductShape shape = ProductShape.Square;
     [Tooltip("商品の画像。入れると図形の代わりに出て、当たり判定は画像の形になる")]
@@ -58,6 +64,8 @@ public class ProductInfo
         var list = new ProductInfo[table.Length];
         for (int i = 0; i < table.Length; i++)   // 仮の図形は、見分けやすいように順番に変える
             list[i] = new ProductInfo(table[i].name, table[i].rank, price[table[i].rank], table[i].menu, shapes[i % shapes.Length]);
+        foreach (var p in list)   // 割れる商品(仮。ほかにも割れるものがあれば一覧で Fragile を付ける)
+            if (p.name == "たまご") p.fragile = true;
         return list;
     }
 }

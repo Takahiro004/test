@@ -84,6 +84,7 @@ public partial class TwoPlayerShop2D
             foreach (var c in go.GetComponentsInChildren<Collider2D>()) products.Remove(c);
             originalColors.Remove(go);
             priceOf.Remove(go);
+            infoOf.Remove(go);
             Destroy(go);
         }
         slotOf.Clear();
