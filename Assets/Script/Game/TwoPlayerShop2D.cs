@@ -96,6 +96,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
     public bool showShelf = true;
+    [Tooltip("棚の画面: 棚は横に長く、画面にはその一部が映る。Shelf Phase Time 秒ごとにフェーズが変わり、棚が商品ごと横にスライドする。OFF なら棚は1つだけで動かない")]
+    public bool shelfSlide = true;
     [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色")]
     public bool showPriceTags = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
@@ -328,6 +330,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("横のときの棚の段の数")]
     public int landscapeRows = 2;
 
+    [Header("棚のフェーズ(横にスライドする棚。1フェーズの棚 = 段 x 列。商品の一覧の順に、1フェーズ目の棚から置く)")]
+    [Tooltip("フェーズの数。0 なら商品の一覧を全部並べられるだけ(一覧の数 ÷ (段 x 列))")]
+    public int shelfPhaseCount = 0;
+    [Tooltip("1つのフェーズの秒数。ゲーム開始からこの秒数ごとに、次のフェーズの棚へスライドする(最後のフェーズで止まる)")]
+    public float shelfPhaseTime = 30f;
+    [Tooltip("棚がスライドする動きの秒数")]
+    public float shelfSlideTime = 1.5f;
+
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]
     public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
@@ -459,7 +469,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void CreateProducts()
     {
-        int count = ShelfCount;   // 段 x 列(TwoPlayerShop2D.Shelf.cs)
+        int count = TotalSlotCount;   // 段 x 列 x フェーズの数(TwoPlayerShop2D.Shelf.cs)
         for (int i = 0; i < count; i++)
         {
             // 棚の i 番目には「商品の一覧」の i 番目を置く(TwoPlayerShop2D.Products.cs。一覧が短ければ繰り返す)

@@ -5,6 +5,9 @@ using UnityEngine;
 //  - 仮の棚(背板・柱・段の板)を描き、商品を板の上に乗せる(showShelf が OFF なら、今までどおりマスの真ん中に浮かせる)
 //  - 棚の画像(shelfSprite)か 3Dモデル(shelfModel)を入れたら、仮の棚の代わりにそれを出す
 //  - 再生中に段・列・見た目を変えたら、LateUpdate で作り直す
+//  - フェーズ(shelfSlide): 棚は横に長く、画面に映っているのはその一部(1フェーズぶん = 段 x 列)。
+//    shelfPhaseTime 秒ごとに次のフェーズになり、棚が商品ごと横にスライドして、右にあった棚が映る。
+//    棚の i 番目の商品は、フェーズ i / (段 x 列) の棚に置く(商品の一覧の順。1フェーズ目は一覧の最初の 段 x 列 個)
 public partial class TwoPlayerShop2D
 {
     Transform shelfRoot;   // 棚の見た目(仮の棚 / 画像 / 3Dモデル)をまとめる親
@@ -13,7 +16,27 @@ public partial class TwoPlayerShop2D
 
     int ShelfColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);
     int ShelfRows => Mathf.Max(1, IsPortrait ? portraitRows : landscapeRows);
-    int ShelfCount => ShelfColumns * ShelfRows;
+    int ShelfCount => ShelfColumns * ShelfRows;                 // 1フェーズの棚に置く数
+    int TotalSlotCount => ShelfCount * PhaseCount;              // 全部のフェーズの棚に置く数
+
+    // フェーズの数(0 なら商品の一覧の数から: 一覧を全部並べられるだけ)
+    int PhaseCount
+    {
+        get
+        {
+            if (!shelfSlide) return 1;
+            if (shelfPhaseCount > 0) return shelfPhaseCount;
+            int n = productList != null && productList.Length > 0 ? productList.Length : ShelfCount;
+            return Mathf.Max(1, Mathf.CeilToInt(n / (float)ShelfCount));
+        }
+    }
+
+    // 1フェーズぶんの棚の横幅(隣のフェーズの棚は、この分だけ右にある。画面の外に出るように、画面の横幅以上にする)
+    float ShelfSectionWidth => Mathf.Max(ShelfArea().width, ShopViewSize().x) + 0.4f;
+
+    float shelfScroll;                 // 今どれだけ左へスライドしているか(ゲーム内の長さ)
+    float slideFrom, slideTo, slideTime;
+    int shelfPhase, appliedPhaseCount;
 
     // 棚を置く範囲(ゲーム内の座標)
     Rect ShelfArea()
@@ -31,15 +54,16 @@ public partial class TwoPlayerShop2D
         return new Rect(-view.x / 2f, -view.y / 2f, view.x, top + view.y / 2f);
     }
 
-    // 棚の i 番目(0始まり。左上から右へ)の場所
+    // 棚の i 番目(0始まり。フェーズの棚ごとに、左上から右へ)の場所。今のスライドの分もずらす
     // 棚を出すときは「板の上の面」の高さ、出さないときはマスの真ん中
     Vector2 ShelfSlotPosition(int i)
     {
         Rect a = ShelfArea();
         int cols = ShelfColumns, rows = ShelfRows;
         float cellW = a.width / cols, cellH = a.height / rows;
-        float x = a.xMin + cellW * (i % cols + 0.5f);
-        float rowTop = a.yMax - cellH * (i / cols);
+        int section = i / ShelfCount, j = i % ShelfCount;   // どのフェーズの棚の、何番目か
+        float x = a.xMin + cellW * (j % cols + 0.5f) + section * ShelfSectionWidth - shelfScroll;
+        float rowTop = a.yMax - cellH * (j / cols);
         if (!showShelf) return new Vector2(x, rowTop - cellH / 2f);
         return new Vector2(x, rowTop - cellH + shelfBoardThickness);
     }
@@ -96,7 +120,7 @@ public partial class TwoPlayerShop2D
     void UpdateShelfIfChanged()
     {
         var now = CurrentShelfSettings();
-        if (now == appliedShelf) return;
+        if (now == appliedShelf && PhaseCount == appliedPhaseCount) return;
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す
     }
 
@@ -108,6 +132,7 @@ public partial class TwoPlayerShop2D
     void BuildShelfVisual()
     {
         appliedShelf = CurrentShelfSettings();
+        appliedPhaseCount = PhaseCount;
         if (shelfRoot != null) Destroy(shelfRoot.gameObject);
         shelfRoot = null;
         if (!showShelf) return;
@@ -116,21 +141,67 @@ public partial class TwoPlayerShop2D
         shelfRoot.gameObject.layer = layerShop;
         Rect a = ShelfArea();
         const float frame = 0.2f;   // 枠の太さ(棚の範囲の外側にはみ出す分)
-        Rect outer = new Rect(a.xMin - frame, a.yMin - frame, a.width + frame * 2f, a.height + frame * 2f);
-
-        if (shelfModel != null) BuildShelfModel(outer);
-        else if (shelfSprite != null)
+        // フェーズの数だけ、右へ並べて作る(作るときは shelfRoot を原点に置き、あとでスライドの分だけ動かす)
+        for (int k = 0; k < PhaseCount; k++)
         {
-            // 棚の画像を、棚の範囲いっぱいに引き伸ばす
-            var tr = MakeBagPart("ShelfImage", shelfRoot, layerShop, Color.white, -20, false);
-            var sr = tr.GetComponent<SpriteRenderer>();
-            sr.sprite = shelfSprite;
-            Vector2 size = shelfSprite.bounds.size;
-            tr.position = new Vector3(outer.center.x, outer.center.y, 0f);
-            tr.localScale = new Vector3(outer.width / Mathf.Max(0.01f, size.x), outer.height / Mathf.Max(0.01f, size.y), 1f);
+            float dx = k * ShelfSectionWidth;
+            Rect ak = new Rect(a.x + dx, a.y, a.width, a.height);
+            Rect outer = new Rect(ak.xMin - frame, ak.yMin - frame, ak.width + frame * 2f, ak.height + frame * 2f);
+
+            if (shelfModel != null) BuildShelfModel(outer);
+            else if (shelfSprite != null)
+            {
+                // 棚の画像を、棚の範囲いっぱいに引き伸ばす
+                var tr = MakeBagPart("ShelfImage", shelfRoot, layerShop, Color.white, -20, false);
+                var sr = tr.GetComponent<SpriteRenderer>();
+                sr.sprite = shelfSprite;
+                Vector2 size = shelfSprite.bounds.size;
+                tr.position = new Vector3(outer.center.x, outer.center.y, 0f);
+                tr.localScale = new Vector3(outer.width / Mathf.Max(0.01f, size.x), outer.height / Mathf.Max(0.01f, size.y), 1f);
+            }
+            else BuildPlaceholderShelf(ak, outer, frame);
         }
-        else BuildPlaceholderShelf(a, outer, frame);
         BuildPriceTags(a);   // 値札(TwoPlayerShop2D.Products.cs)
+        shelfRoot.position = new Vector3(-shelfScroll, 0f, 0f);
+    }
+
+    // ---------- フェーズ(棚が横にスライドする) ----------
+
+    // 今のフェーズ(0始まり)。ゲーム開始からの時間で決まる(エントリー中は 0)
+    int CurrentPhase()
+    {
+        if (!shelfSlide || InEntry || entryPhase == -1 || timeLeft < 0f) return 0;
+        float elapsed = Mathf.Max(0f, gameTime) - timeLeft;
+        return Mathf.Clamp(Mathf.FloorToInt(elapsed / Mathf.Max(1f, shelfPhaseTime)), 0, PhaseCount - 1);
+    }
+
+    // LateUpdate から毎フレーム: フェーズが変わったら、棚を商品ごと横にスライドさせる
+    void UpdateShelfScroll()
+    {
+        int phase = CurrentPhase();
+        if (phase != shelfPhase)
+        {
+            shelfPhase = phase;
+            slideFrom = shelfScroll;
+            slideTime = 0f;
+            lastEvent = $"フェーズ{phase + 1}！ 棚がスライド";
+        }
+        slideTo = shelfPhase * ShelfSectionWidth;
+        if (Mathf.Approximately(shelfScroll, slideTo)) return;
+
+        slideTime += Time.deltaTime;
+        float k = Mathf.SmoothStep(0f, 1f, slideTime / Mathf.Max(0.05f, shelfSlideTime));   // ゆっくり動き出して、ゆっくり止まる
+        shelfScroll = k >= 1f ? slideTo : Mathf.Lerp(slideFrom, slideTo, k);
+        ApplyShelfScroll();
+    }
+
+    // 今のスライドの分だけ、棚の見た目と棚の商品を動かす
+    void ApplyShelfScroll()
+    {
+        if (shelfRoot != null) shelfRoot.position = new Vector3(-shelfScroll, 0f, 0f);
+        for (int i = 0; i < slots.Count; i++) slots[i].pos = ShelfSlotPosition(i);
+        foreach (var kv in slotOf)
+            if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
     }
 
     // 仮の棚: 背板 → 左右の柱・天板 → 段の板

@@ -78,7 +78,8 @@ public partial class TwoPlayerShop2D
         appliedColumns = portraitColumns;
         appliedTopSpace = portraitTopSpace;
 
-        if (slots.Count != ShelfCount) RebuildShelfProducts();   // 段・列で商品の数が変わった(TwoPlayerShop2D.Shelf.cs)
+        shelfScroll = slideTo = shelfPhase * ShelfSectionWidth;   // 大きさが変わってもスライドの位置を合わせる(TwoPlayerShop2D.Shelf.cs)
+        if (slots.Count != TotalSlotCount) RebuildShelfProducts();   // 段・列で商品の数が変わった(TwoPlayerShop2D.Shelf.cs)
         for (int i = 0; i < slots.Count; i++) slots[i].pos = ShelfSlotPosition(i);
         foreach (var kv in slotOf)   // 棚に置いてある商品だけ動かす
             if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
@@ -100,6 +101,7 @@ public partial class TwoPlayerShop2D
     {
         if (switcher == null || p1 == null) return;
         UpdateShelfIfChanged();   // 段・列・棚の見た目を再生中に変えた
+        UpdateShelfScroll();      // フェーズが変わったら棚を横にスライド
         if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
