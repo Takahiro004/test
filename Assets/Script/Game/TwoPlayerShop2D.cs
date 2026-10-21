@@ -24,6 +24,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Clash.cs  掴み合い
 ///   TwoPlayerShop2D.Bag.cs    レジ袋・金額・袋の外の商品を消す
 ///   TwoPlayerShop2D.Sprites.cs 商品の図形(四角・丸・三角・多角形・L字など)・矢印・ゲージの形の自動生成
+///   TwoPlayerShop2D.Entry.cs  エントリー画面(A で参加 → 2人そろったらカウントダウン → 開始)
 ///   TwoPlayerShop2D.Pads.cs   コントローラーの 1P/2P の登録(F2。パソコンに保存して、次からも同じ側にする)
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
@@ -107,6 +108,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showResultOnTimeUp = true;
     [Tooltip("タイムアップ: 勝ち負けの前に、棚の画面で合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる結果発表を出す")]
     public bool showResultBars = true;
+    [Tooltip("エントリー画面: 再生したらまずエントリー画面を出し、1P/2P が A で参加したらカウントダウンして開始(制限時間は開始から数える)。OFF ならすぐ始まる")]
+    public bool showEntryScreen = true;
     [Tooltip("コントローラー: F2(またはビューボタン長押し)で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
     public bool fixedPadAssignment = true;
     [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
@@ -166,6 +169,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("制限時間")]
     [Tooltip("1ゲームのプレイ時間(秒)。再生を始めたときから数える。120で2分")]
     public float gameTime = 120f;
+    [Tooltip("エントリー画面: 2人そろってから始まるまでのカウントダウンの秒数")]
+    public float entryCountdown = 3f;
+    [Tooltip("エントリー画面: 棚の画面に出すゲーム名")]
+    public string entryTitle = "詰め放題バトル";
     [Tooltip("残りがこの秒数以下になったら、時間の文字を赤くする")]
     public float timerWarningTime = 10f;
     [Tooltip("勝ち負けを出してから、Aボタンでもう一度遊べるようになるまでの秒数(連打でうっかり始まらないように)")]
@@ -627,6 +634,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         ApplyMonitorMode();
         ApplyPlayerLayout();
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
+
+        // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
+        if (UpdateEntry()) return;
 
         // タイムアップ: 操作と点数を止めて、勝ち負けを出す(Aでもう一度)
         if (showResultOnTimeUp && IsTimeUp) { UpdateResult(); return; }
