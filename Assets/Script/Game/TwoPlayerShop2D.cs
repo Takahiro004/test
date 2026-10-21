@@ -27,6 +27,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Input.cs  コントローラー/キーボードの入力
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
+///   TwoPlayerShop2D.Fragile.cs 割れる商品(上に重さが乗ると割れて袋から消える)
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
@@ -66,6 +67,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showPricePopup = true;
     [Tooltip("レジ袋: 袋の外に落ちた商品を消す(袋に入らなかったもの・袋から場外に落ちたもの)")]
     public bool removeOutsideBag = true;
+    [Tooltip("レジ袋: 割れる商品(一覧の Fragile。たまご など)の上に重さが乗ると、割れて袋から消え、金額を合計から引く")]
+    public bool breakFragile = true;
     [Tooltip("レジ袋: 袋から場外に落ちて消えた商品の金額を、合計から引く")]
     public bool subtractSpilledFromTotal = true;
     [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
@@ -218,6 +221,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public Sprite[] productSprites = new Sprite[6];
     [HideInInspector] public float productSize = 1.4f;
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
+
+    [Header("割れる商品(どれが割れるか・どのくらいの重さで割れるかは、商品の一覧の Fragile / Break Load)")]
+    [Tooltip("重さが Break Load を超えた状態がこの秒数続いたら割れる(落ちてきた瞬間の衝撃では割れないように)")]
+    public float breakHoldTime = 0.3f;
 
     [Header("棚の補充")]
     [Tooltip("取られてから補充されるまでの秒数")]
@@ -460,6 +467,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         RegisterProduct(go);
         slotOf[go] = slot;
         priceOf[go] = info.price;
+        infoOf[go] = info;   // 割れるか・重さ(TwoPlayerShop2D.Fragile.cs)
     }
 
     System.Collections.IEnumerator RefillLater(ShelfSlot slot, GameObject taken)
@@ -827,6 +835,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.freezeRotation = freezeRotation;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;   // 袋が強く揺れても、ふちをすり抜けないように
+        if (infoOf.TryGetValue(go, out var info)) rb.mass = Mathf.Max(0.01f, info.weight);   // 商品ごとの重さ(割れる商品にかかる重さに効く)
 
         if (!p.dropped.Contains(go)) p.dropped.Add(go);
 

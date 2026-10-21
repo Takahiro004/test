@@ -127,6 +127,7 @@ public partial class TwoPlayerShop2D
         }
 
         if (removeOutsideBag) RemoveOutsideBag(p);
+        CheckFragile(p);   // 割れる商品(TwoPlayerShop2D.Fragile.cs)
     }
 
     // 袋の外に落ちた商品を消す
@@ -183,7 +184,7 @@ public partial class TwoPlayerShop2D
             {
                 p.total -= price;
                 p.bag.totalLabel.text = $"¥{p.total}";
-                StartCoroutine(Popup(p.layer, c + Vector2.up, $"-¥{price}", new Color(1f, 0.35f, 0.3f), 0.08f));
+                StartCoroutine(MinusPopup(p, price));   // 合計金額の近くに赤で出す
             }
             RemoveProduct(p, go);
             lastEvent = $"{p.name}の {go.name} が袋から落ちた -¥{price}(合計 ¥{p.total})";
@@ -215,6 +216,8 @@ public partial class TwoPlayerShop2D
         }
         originalColors.Remove(go);
         priceOf.Remove(go);
+        infoOf.Remove(go);
+        overloadTime.Remove(go);
         stoppedTime.Remove(go);
         StartCoroutine(ShrinkAndDestroy(go));
     }
@@ -247,6 +250,26 @@ public partial class TwoPlayerShop2D
             label.transform.position = new Vector3(pos.x, pos.y + 1f + k, 0f);
             label.color = new Color(color.r, color.g, color.b, 1f - k);
             time += Time.deltaTime;
+            yield return null;
+        }
+        Destroy(label.gameObject);
+    }
+
+    // 合計金額が減ったとき、「-¥金額」を合計金額のすぐ右に赤で出して、上へ浮かびながら消す(袋が揺れても一緒に動く)
+    System.Collections.IEnumerator MinusPopup(Player p, int price)
+    {
+        var total = p.bag.totalLabel;
+        var label = MakeText("MinusPopup", total.transform.parent, p.layer, $"-¥{price}", new Color(1f, 0.25f, 0.2f), 1002);
+        label.characterSize = HudTextSize;
+        label.anchor = TextAnchor.MiddleLeft;
+        float x = total.GetComponent<MeshRenderer>().bounds.max.x + HudTextSize * 2f;   // 合計金額の文字の右の端の少し右
+        Vector3 start = new Vector3(x, total.transform.position.y, 0f) - total.transform.parent.position;   // 袋の中の位置
+        var color = label.color;
+        for (float time = 0f; time < pricePopupTime; time += Time.deltaTime)
+        {
+            float k = time / Mathf.Max(0.05f, pricePopupTime);
+            label.transform.localPosition = start + Vector3.up * (k * HudTextSize * 6f);
+            label.color = new Color(color.r, color.g, color.b, 1f - k);
             yield return null;
         }
         Destroy(label.gameObject);
