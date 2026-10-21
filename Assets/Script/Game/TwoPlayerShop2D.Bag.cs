@@ -101,6 +101,7 @@ public partial class TwoPlayerShop2D
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
     void CheckBag(Player p)
     {
+        p.bag.totalLabel.gameObject.SetActive(showBagTotal);   // 合計金額の表示の ON/OFF
         float t = bagWallThickness;
         float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
         float top = floorY + bagHeight;
@@ -262,7 +263,8 @@ public partial class TwoPlayerShop2D
         var label = MakeText("MinusPopup", total.transform.parent, p.layer, $"-¥{price}", new Color(1f, 0.25f, 0.2f), 1002);
         label.characterSize = HudTextSize;
         label.anchor = TextAnchor.MiddleLeft;
-        float x = total.GetComponent<MeshRenderer>().bounds.max.x + HudTextSize * 2f;   // 合計金額の文字の右の端の少し右
+        float x = showBagTotal ? total.GetComponent<MeshRenderer>().bounds.max.x + HudTextSize * 2f   // 合計金額の文字の右の端の少し右
+                               : total.transform.position.x;                                         // 合計を出していないときは、その場所
         Vector3 start = new Vector3(x, total.transform.position.y, 0f) - total.transform.parent.position;   // 袋の中の位置
         var color = label.color;
         for (float time = 0f; time < pricePopupTime; time += Time.deltaTime)

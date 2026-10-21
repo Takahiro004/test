@@ -30,6 +30,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
 ///   TwoPlayerShop2D.Fragile.cs 割れる商品(上に重さが乗ると割れて袋から消える)
+///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
@@ -65,6 +66,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool createFloor = true;
     [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
     public bool createBag = true;
+    [Tooltip("レジ袋: 袋の上に合計金額を出す")]
+    public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
     public bool showPricePopup = true;
     [Tooltip("レジ袋: 袋の外に落ちた商品を消す(袋に入らなかったもの・袋から場外に落ちたもの)")]
@@ -96,8 +99,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
     public bool showShelf = true;
-    [Tooltip("棚の画面: 棚は横に長く、画面にはその一部が映る。Shelf Phase Time 秒ごとにフェーズが変わり、棚が商品ごと横にスライドする。OFF なら棚は1つだけで動かない")]
+    [Tooltip("棚の画面: 棚は横に長くつながっていて、ゆっくり左から右へ流れ続ける(速さは Shelf Scroll Speed)。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
+    [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
+    public bool randomRefill = true;
     [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色")]
     public bool showPriceTags = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
@@ -330,13 +335,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("横のときの棚の段の数")]
     public int landscapeRows = 2;
 
-    [Header("棚のフェーズ(横にスライドする棚。1フェーズの棚 = 段 x 列。商品の一覧の順に、1フェーズ目の棚から置く)")]
-    [Tooltip("フェーズの数。0 なら商品の一覧を全部並べられるだけ(一覧の数 ÷ (段 x 列))")]
-    public int shelfPhaseCount = 0;
-    [Tooltip("1つのフェーズの秒数。ゲーム開始からこの秒数ごとに、次のフェーズの棚へスライドする(最後のフェーズで止まる)")]
-    public float shelfPhaseTime = 30f;
-    [Tooltip("棚がスライドする動きの秒数")]
-    public float shelfSlideTime = 1.5f;
+    [Header("棚のスクロール(棚がゆっくり左から右へ流れる)")]
+    [Tooltip("棚が流れる速さ(1秒に進む長さ。縦の棚の画面の横幅は Portrait View Width = 8)")]
+    public float shelfScrollSpeed = 0.4f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]
@@ -395,6 +396,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public ProductShape shape;
         public Color color;
         public int count;   // これまでに置いた個数(名前の番号に使う)
+        public int product = -1;   // 置く商品(商品の一覧の番号。ランダム補充のとき。-1 = 空き)
+        public GameObject go;      // 今置いてある商品(無ければ null)
+        public TextMesh tag;       // このマスの値札
     }
 
     Player p1, p2;
@@ -469,14 +473,15 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void CreateProducts()
     {
-        int count = TotalSlotCount;   // 段 x 列 x フェーズの数(TwoPlayerShop2D.Shelf.cs)
+        int count = TotalSlotCount;   // 段 x 列 x 棚の数(TwoPlayerShop2D.Shelf.cs)
+        if (UseDeck) InitDeck();   // 山札を作り直す(TwoPlayerShop2D.Deck.cs)
         for (int i = 0; i < count; i++)
         {
-            // 棚の i 番目には「商品の一覧」の i 番目を置く(TwoPlayerShop2D.Products.cs。一覧が短ければ繰り返す)
-            var info = ProductFor(i);
-            var slot = new ShelfSlot { pos = ShelfSlotPosition(i), shape = info.shape, color = RankColor(info.rank) };
+            // ランダム補充: 山札からランダムに引く / そうでなければ「商品の一覧」の i 番目(一覧が短ければ繰り返す)
+            var slot = new ShelfSlot { pos = ShelfSlotPosition(i) };
             slots.Add(slot);
-            PlaceProduct(slot);
+            if (UseDeck) slot.product = DrawCard();
+            if (!UseDeck || slot.product >= 0) PlaceProduct(slot);
         }
     }
 
@@ -484,7 +489,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void PlaceProduct(ShelfSlot slot)
     {
         slot.count++;
-        var info = ProductFor(slots.IndexOf(slot));
+        var info = SlotInfo(slot);
+        slot.shape = info.shape;
+        slot.color = RankColor(info.rank);
         string objName = slot.count == 1 ? info.name : $"{info.name}_{slot.count}";
         // 3Dモデル → 画像 → 仮の図形 の順に、入っているものを使う
         var go = info.model != null ? MakeModelProduct(objName, slot.pos, info, layerShop)
@@ -494,6 +501,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         PutOnShelf(go, slot);   // 棚を出すときは板の上に乗せる
         RegisterProduct(go);
         slotOf[go] = slot;
+        slot.go = go;
+        SetSlotTag(slot);   // 値札をこの商品に
         priceOf[go] = info.price;
         infoOf[go] = info;   // 割れるか・重さ(TwoPlayerShop2D.Fragile.cs)
     }
@@ -504,6 +513,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         // 掴み合い中は、取り合っている商品が棚に戻っているので補充を待つ
         while (clash != null && clash.product == taken) yield return null;
         if (!slots.Contains(slot)) yield break;   // 待っている間に段・列が変わって、この場所が無くなった
+        if (slot.go != null) yield break;         // 待っている間に、もう置かれた(棚が回ったとき)
+        if (UseDeck)
+        {
+            slot.product = DrawCard();             // 山札からランダムに1枚(TwoPlayerShop2D.Deck.cs)
+            if (slot.product < 0) yield break;     // 山札が空(次に棚が回ってきたときに引く)
+        }
         PlaceProduct(slot);
     }
 
@@ -803,6 +818,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         Collider2D col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
         if (col == null || !products.TryGetValue(col, out var go)) return;
+        // 棚の商品は、全部が画面に映っていないと取れない(TwoPlayerShop2D.Shelf.cs)
+        if (slotOf.ContainsKey(go) && !CanGrabOnShelf(go)) { lastEvent = $"{go.name} は画面に全部映っていないので取れない"; return; }
         TakeProduct(p, go);
     }
 
@@ -836,6 +853,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (slotOf.TryGetValue(go, out var slot))
         {
             slotOf.Remove(go);
+            slot.go = null;
+            if (UseDeck) { ReturnCard(slot.product); slot.product = -1; }   // 取った商品のカードは山札に戻る
+            SetSlotTag(slot);
             if (refillShelf) StartCoroutine(RefillLater(slot, go));
         }
 

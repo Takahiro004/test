@@ -138,7 +138,14 @@ public partial class TwoPlayerShop2D
         return go;
     }
 
-    // 棚の値札(商品の名前と金額)。段の板の上、商品の上のあたりに出す
+    // 棚のマスに置く商品の設定(ランダム補充なら山札から引いたもの、そうでなければ一覧の順)
+    ProductInfo SlotInfo(ShelfSlot slot)
+    {
+        if (slot.product >= 0 && productList != null && slot.product < productList.Length) return productList[slot.product];
+        return ProductFor(slots.IndexOf(slot));
+    }
+
+    // 棚の値札(商品の名前と金額)。マスごとに1つ作り、商品の上のあたりに出す(棚と一緒に流れる)
     void BuildPriceTags(Rect area)
     {
         if (!showPriceTags || shelfRoot == null) return;
@@ -146,17 +153,28 @@ public partial class TwoPlayerShop2D
         float size = Mathf.Min(cellW, cellH);
         for (int i = 0; i < slots.Count; i++)
         {
-            var info = ProductFor(i);
-            int j = i % ShelfCount;   // フェーズの棚の中で何番目か(フェーズの棚は右へ並ぶ)
-            float x = area.xMin + cellW * (j % ShelfColumns + 0.5f) + (i / ShelfCount) * ShelfSectionWidth;
+            int section = i / ShelfCount, j = i % ShelfCount;   // どの棚の、何番目か
+            if (section >= shelfSections.Count) break;
+            float x = area.xMin + cellW * (j % ShelfColumns + 0.5f);
             float rowTop = area.yMax - cellH * (j / ShelfColumns);
-            var tag = MakeText($"PriceTag{i + 1}", shelfRoot, layerShop, $"{info.name}\n¥{info.price:N0}",
-                               info.menuIngredient ? new Color(1f, 0.92f, 0.4f) : Color.white, -15);
+            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", Color.white, -15);
             tag.characterSize = 0.012f * size;
             tag.anchor = TextAnchor.UpperCenter;
             tag.alignment = TextAlignment.Center;
-            tag.transform.position = new Vector3(x, rowTop - 0.1f, 0f);
+            tag.transform.localPosition = new Vector3(x, rowTop - 0.1f, 0f);
+            slots[i].tag = tag;
+            SetSlotTag(slots[i]);
         }
+    }
+
+    // 値札を、今そのマスにある商品にする(空きなら消す)
+    void SetSlotTag(ShelfSlot slot)
+    {
+        if (slot.tag == null) return;
+        if (slot.go == null) { slot.tag.text = ""; return; }
+        var info = SlotInfo(slot);
+        slot.tag.text = $"{info.name}\n¥{info.price:N0}";
+        slot.tag.color = info.menuIngredient ? new Color(1f, 0.92f, 0.4f) : Color.white;
     }
 
     // ---------- 画像の商品の当たり判定 ----------
