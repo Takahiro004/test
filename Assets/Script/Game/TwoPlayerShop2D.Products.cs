@@ -23,6 +23,8 @@ public class ProductInfo
     public ProductShape shape = ProductShape.Square;
     [Tooltip("商品の画像。入れると図形の代わりに出て、当たり判定は画像の形になる")]
     public Sprite sprite;
+    [Tooltip("この商品の大きさ(1で普通。1.5なら1.5倍、0.7なら7割)。画像・3Dモデル・仮の図形のどれにも効き、当たり判定も一緒に変わる")]
+    public float size = 1f;
     [Tooltip("商品の3Dモデル(プレハブ)。入れると図形・画像の代わりに出る。当たり判定はモデルを囲む四角。暗く・黒く見えたらマテリアルを Unlit にする")]
     public GameObject model;
     [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える")]
