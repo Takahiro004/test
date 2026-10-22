@@ -158,7 +158,7 @@ public partial class TwoPlayerShop2D
             float x = area.xMin + cellW * (j % ShelfColumns + 0.5f);
             float rowTop = area.yMax - cellH * (j / ShelfColumns);
             var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", Color.white, -15);
-            tag.characterSize = 0.012f * size;
+            SetTextSize(tag, 0.012f * size);
             tag.anchor = TextAnchor.UpperCenter;
             tag.alignment = TextAlignment.Center;
             tag.transform.localPosition = new Vector3(x, rowTop - 0.1f, 0f);

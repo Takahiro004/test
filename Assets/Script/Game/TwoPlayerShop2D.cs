@@ -45,6 +45,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("参照")]
     public DisplayTestSwitcher switcher;
 
+    [Header("文字(フォント)。再生する前に決める")]
+    [Tooltip("ゲーム中の文字のフォント(.ttf / .otf を Assets に入れて、ここへドラッグ)。日本語が入っているフォントにする。空なら Unity の標準フォント")]
+    public Font textFont;
+    [Tooltip("文字の解像度(1〜4)。大きいほどくっきりする(見た目の大きさは変わらない)。2 で前の2倍")]
+    [Range(1, 4)] public int textResolution = 2;
+
     [Header("モニターの置き方(縦型モニター用 / 横型モニター用を切り替える)")]
     [Tooltip("縦型モニター: 本番 / 横型(縦と同じ見た目): 横のモニターの真ん中に本番と同じ縦長の画面を出す / 横型(横いっぱい): 横のモニターに合わせて並べ直す。再生中に変えてもすぐ反映(商品・カーソルの大きさは新しく出たものから)")]
     public MonitorMode monitorMode = MonitorMode.Portrait;
@@ -422,6 +428,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void Start()
     {
+        ApplyTextFont();   // 文字のフォントと解像度(TwoPlayerShop2D.Bag.cs)。文字を作る前に決める
         if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
         ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
@@ -909,6 +916,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void OnGUI()
     {
         if (!showOverlayLabel || switcher == null) return;
+        if (textFont != null) GUI.skin.font = textFont;   // 左上の確認用表示も同じフォントに
         // 解像度が高い画面でも読める大きさにする(高さ 1080 を基準)
         float guiScale = Mathf.Max(1f, Screen.height / 1080f) * Mathf.Max(0.5f, textScale / 2f);
         GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));

@@ -44,7 +44,7 @@ public partial class TwoPlayerShop2D
         }
 
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
-        bag.totalLabel.characterSize = HudTextSize;
+        SetTextSize(bag.totalLabel, HudTextSize);
         return bag;
     }
 
@@ -87,7 +87,7 @@ public partial class TwoPlayerShop2D
                 bottomCol.size = new Vector2(1f, 1f + extra);
                 bottomCol.offset = new Vector2(0f, -extra / 2f);
             }
-            b.totalLabel.characterSize = HudTextSize;
+            SetTextSize(b.totalLabel, HudTextSize);
             b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
         }
     }
@@ -242,7 +242,7 @@ public partial class TwoPlayerShop2D
     System.Collections.IEnumerator PricePopup(Player p, Vector2 pos, int price)
     {
         var label = MakeText("PricePopup", null, p.layer, $"+¥{price}", new Color(1f, 0.95f, 0.3f), 1002);
-        label.characterSize = HudTextSize;
+        SetTextSize(label, HudTextSize);
         var color = label.color;
         float time = 0f;
         while (time < pricePopupTime)
@@ -261,7 +261,7 @@ public partial class TwoPlayerShop2D
     {
         var total = p.bag.totalLabel;
         var label = MakeText("MinusPopup", total.transform.parent, p.layer, $"-¥{price}", new Color(1f, 0.25f, 0.2f), 1002);
-        label.characterSize = HudTextSize;
+        SetTextSize(label, HudTextSize);
         label.anchor = TextAnchor.MiddleLeft;
         float x = showBagTotal ? total.GetComponent<MeshRenderer>().bounds.max.x + HudTextSize * 2f   // 合計金額の文字の右の端の少し右
                                : total.transform.position.x;                                         // 合計を出していないときは、その場所
@@ -280,6 +280,25 @@ public partial class TwoPlayerShop2D
     // 合計金額・「+¥」・「LB: キック」などの文字の大きさ(textScale で変える)
     float HudTextSize => 0.08f * Mathf.Max(0.1f, textScale);
 
+    // ---------- 文字(フォント) ----------
+    // ゲーム中の文字は全部 MakeText で作る。フォントは Inspector の Text Font(空なら Unity の標準フォント)。
+    // 文字は「元の絵」を引き伸ばして表示するので、元の絵を textResolution 倍の大きさで作って、ぼやけにくくしている。
+    // 文字の大きさは characterSize に直接入れず、SetTextSize で入れる(元の絵の大きさが変わっても、見た目の大きさが同じになる)
+    static int labelFontSize = 64;
+
+    // 再生を始めたときに呼ぶ(フォントと解像度を決める)
+    void ApplyTextFont()
+    {
+        labelFont = textFont != null ? textFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        labelFontSize = 64 * Mathf.Clamp(textResolution, 1, 4);
+    }
+
+    // 文字の大きさを入れる(size は前と同じ意味。元の絵の大きさ 64 のときの characterSize)
+    static void SetTextSize(TextMesh tm, float size)
+    {
+        tm.characterSize = size * 64f / Mathf.Max(1, tm.fontSize);
+    }
+
     static TextMesh MakeText(string objName, Transform parent, int layer, string text, Color color, int order)
     {
         if (labelFont == null) labelFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -291,8 +310,8 @@ public partial class TwoPlayerShop2D
         tm.font = labelFont;
         tm.text = text;
         tm.color = color;
-        tm.fontSize = 64;
-        tm.characterSize = 0.08f;
+        tm.fontSize = labelFontSize;
+        SetTextSize(tm, 0.08f);
         tm.anchor = TextAnchor.MiddleCenter;
         tm.alignment = TextAlignment.Center;
         var mr = go.GetComponent<MeshRenderer>();

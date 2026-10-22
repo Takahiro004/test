@@ -64,12 +64,12 @@ public partial class TwoPlayerShop2D
         }
         var vs = MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2006);
         vs.transform.position = new Vector3(0f, y + 0.1f, 0f);
-        vs.characterSize = 0.14f;
+        SetTextSize(vs, 0.14f);
         clash.title = MakeText("Title", t, layerShop, ClashTitle(), Color.white, 2006);
         clash.title.transform.position = new Vector3(0f, y + 1.9f, 0f);
         clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2007);
         clash.result.transform.position = new Vector3(0f, y + 1.1f, 0f);
-        clash.result.characterSize = 0.12f;
+        SetTextSize(clash.result, 0.12f);
 
         FitToShopView(t, clashGaugeY);   // 真ん中に出す / 縦の画面でもはみ出さないように縮める
     }
@@ -98,20 +98,20 @@ public partial class TwoPlayerShop2D
 
             // 名前はゲージの外側の端の横(ゲージの無い側)
             var nameText = MakeText($"Name{i + 1}", t, layerShop, i == 0 ? "1P" : "2P", i == 0 ? p1.color : p2.color, 2006);
-            nameText.characterSize = 0.12f * size;
+            SetTextSize(nameText, 0.12f * size);
             nameText.transform.position = s + (i == 0 ? Vector2.right : Vector2.left) * (thickness * 0.9f);
         }
 
         var vs = MakeText("VS", t, layerShop, "VS", new Color(1f, 0.95f, 0.3f), 2006);
         vs.transform.position = Vector3.zero;
-        vs.characterSize = 0.2f * size;
+        SetTextSize(vs, 0.2f * size);
 
         // 回数は画面の下の端、勝ち負けは画面の上の端(ゲージの細い先とぶつからない高さ)
         clash.title = MakeText("Title", t, layerShop, ClashTitle(), Color.white, 2006);
-        clash.title.characterSize = 0.06f * size;
+        SetTextSize(clash.title, 0.06f * size);
         clash.title.transform.position = new Vector3(0f, -view.y * 0.46f, 0f);
         clash.result = MakeText("Result", t, layerShop, "", new Color(1f, 0.95f, 0.3f), 2007);
-        clash.result.characterSize = 0.12f * size;
+        SetTextSize(clash.result, 0.12f * size);
         clash.result.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
     }
 
@@ -339,7 +339,7 @@ public partial class TwoPlayerShop2D
             if (label == null) yield break;
             float t = time / duration;
             label.transform.position = Vector3.zero;
-            label.characterSize = size * (t < 0.1f ? Mathf.Lerp(1.4f, 1f, t / 0.1f) : 1f);
+            SetTextSize(label, size * (t < 0.1f ? Mathf.Lerp(1.4f, 1f, t / 0.1f) : 1f));
             label.color = new Color(color.r, color.g, color.b, t < 0.8f ? 1f : 1f - (t - 0.8f) / 0.2f);
             yield return null;
         }

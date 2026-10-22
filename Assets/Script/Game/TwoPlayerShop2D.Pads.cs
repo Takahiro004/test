@@ -126,7 +126,7 @@ public partial class TwoPlayerShop2D
             padRegisterPanels[i].gameObject.SetActive(text != null);
             if (text == null) continue;
             padRegisterLabels[i].text = text;
-            padRegisterLabels[i].characterSize = w / 90f;   // 1行 14文字くらいが板に入る大きさ
+            SetTextSize(padRegisterLabels[i], w / 90f);   // 1行 14文字くらいが板に入る大きさ
             SetRect(padRegisterPanels[i], 0f, 0f, w, w * 0.45f);
         }
     }

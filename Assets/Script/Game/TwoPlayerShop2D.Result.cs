@@ -100,7 +100,7 @@ public partial class TwoPlayerShop2D
             var titleTr = barsRoot.transform.Find("Title");
             if (titleTr != null) titleTr.gameObject.SetActive(false);
             var hint = MakeText("Hint", t, layerShop, "Aでもう一度", new Color(0.2f, 0.2f, 0.25f), 3005);
-            hint.characterSize = 0.07f * s2 * Mathf.Max(0.3f, resultBarTextScale);
+            SetTextSize(hint, 0.07f * s2 * Mathf.Max(0.3f, resultBarTextScale));
             hint.anchor = TextAnchor.UpperCenter;   // 位置は文字の上の端(影より先に決める。影は作ったときの向きをまねる)
             AddTextShadow(hint);
             float nameBottom = Mathf.Min(barNames[0].GetComponent<MeshRenderer>().bounds.min.y,
@@ -123,17 +123,17 @@ public partial class TwoPlayerShop2D
 
             var player = i == 0 ? p1 : p2;
             var nameText = MakeText($"Name{i + 1}", t, layerShop, player.name, player.color, 3002);
-            nameText.characterSize = 0.18f * size;
+            SetTextSize(nameText, 0.18f * size);
             nameText.transform.position = new Vector3(cx, view.y * 0.2f, 0f);
 
             var total = MakeText($"Total{i + 1}", t, layerShop, $"¥{(i == 0 ? total1 : total2):N0}", Color.white, 3002);
-            total.characterSize = 0.11f * size;
+            SetTextSize(total, 0.11f * size);
             total.transform.position = new Vector3(cx, -view.y * 0.05f, 0f);
 
             ShowResultOnPlayerScreen(player, r);
 
             var hint = MakeText($"Hint{i + 1}", t, layerShop, "Aで\nもう一度", new Color(1f, 1f, 1f, 0.8f), 3002);
-            hint.characterSize = 0.06f * size;
+            SetTextSize(hint, 0.06f * size);
             hint.transform.position = new Vector3(cx, -view.y * 0.3f, 0f);
             if (i == 0) resultHint1 = hint; else resultHint2 = hint;
         }
@@ -164,7 +164,7 @@ public partial class TwoPlayerShop2D
         // 画面に止まっているもの: 背景(上下で色が変わる)・見出し
         MakeResultBackground(t, view);
         var title = MakeText("Title", t, layerShop, "結果発表", ink, 3006);
-        title.characterSize = 0.08f * size * ts;
+        SetTextSize(title, 0.08f * size * ts);
         AddTextShadow(title);
         title.transform.position = new Vector3(0f, view.y * 0.46f, 0f);
 
@@ -187,12 +187,12 @@ public partial class TwoPlayerShop2D
             barBagSize = barWidth * 1.2f;
             barBags[i] = MakeResultBagIcon(barChart, $"Bag{i + 1}", barBagSize);
             barTexts[i] = MakeText($"Total{i + 1}", barChart, layerShop, "¥0", ink, 3004);
-            barTexts[i].characterSize = 0.07f * size * ts;
+            SetTextSize(barTexts[i], 0.07f * size * ts);
             barTexts[i].color = i == 0 ? new Color(0.7f, 0.05f, 0.08f) : new Color(0f, 0.38f, 0.62f);   // 棒の色を濃くした色
             AddTextShadow(barTexts[i]);
 
             var nameText = MakeText($"Name{i + 1}", barChart, layerShop, i == 0 ? "1P" : "2P", ink, 3004);
-            nameText.characterSize = 0.08f * size * ts;
+            SetTextSize(nameText, 0.08f * size * ts);
             AddTextShadow(nameText);
             nameText.transform.localPosition = new Vector3(x, barNameY, 0f);   // 伸び始める位置の少し下
             barNames[i] = nameText.transform;
@@ -328,7 +328,7 @@ public partial class TwoPlayerShop2D
             line.localScale = new Vector3(view.x * 2f, 0.03f * size, 1f);
             gridLines.Add(line);
             var label = MakeText("GridLabel", barChart, layerShop, $"¥{m:N0}", new Color(0.3f, 0.32f, 0.4f), 3004);
-            label.characterSize = 0.05f * size * Mathf.Max(0.3f, resultBarTextScale);
+            SetTextSize(label, 0.05f * size * Mathf.Max(0.3f, resultBarTextScale));
             label.anchor = TextAnchor.LowerLeft;
             label.transform.localPosition = new Vector3(-view.x / 2f + 0.15f, y + 0.05f, 0f);
             gridLabels.Add(label.transform);
@@ -355,7 +355,7 @@ public partial class TwoPlayerShop2D
         var go = new GameObject("Shadow");
         go.layer = tm.gameObject.layer;
         go.transform.SetParent(tm.transform, false);
-        float off = tm.characterSize * 0.6f;
+        float off = tm.characterSize * tm.fontSize / 64f * 0.6f;   // 見た目の大きさに合わせる(SetTextSize)
         go.transform.localPosition = new Vector3(off, -off, 0f);
         var sh = go.AddComponent<TextMesh>();
         sh.font = tm.font;
@@ -429,7 +429,7 @@ public partial class TwoPlayerShop2D
 
         string text = result > 0 ? "あなたの\n勝ち！" : result < 0 ? "あなたの\n負け！" : "引き分け！";
         var main = MakeText("Result", root.transform, p.layer, text, result < 0 ? new Color(0.75f, 0.8f, 0.95f) : Color.white, 3002);
-        main.characterSize = 0.22f * size;
+        SetTextSize(main, 0.22f * size);
         main.transform.position = Vector3.zero;   // 画面の真ん中(合計金額は棚の画面に出す)
     }
 

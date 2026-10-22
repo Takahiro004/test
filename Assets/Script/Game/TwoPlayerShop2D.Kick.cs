@@ -109,7 +109,7 @@ public partial class TwoPlayerShop2D
         p.kickLabel.gameObject.SetActive(p.kick == null);
         // 1P/2Pの画面の範囲の左上
         Vector2 view = PlayerViewSize();
-        p.kickLabel.characterSize = HudTextSize;
+        SetTextSize(p.kickLabel, HudTextSize);
         p.kickLabel.anchor = TextAnchor.UpperLeft;
         p.kickLabel.alignment = TextAlignment.Left;
         p.kickLabel.transform.position = new Vector3(-view.x / 2f + 0.3f, view.y / 2f - 0.3f, 0f);
@@ -238,7 +238,7 @@ public partial class TwoPlayerShop2D
     IEnumerator Popup(int layer, Vector2 pos, string text, Color color, float size)
     {
         var label = MakeText("Popup", null, layer, text, color, 2010);
-        label.characterSize = size * Mathf.Max(0.1f, textScale);
+        SetTextSize(label, size * Mathf.Max(0.1f, textScale));
         for (float time = 0f; time < 1f; time += Time.deltaTime)
         {
             label.transform.position = new Vector3(pos.x, pos.y + time, 0f);
