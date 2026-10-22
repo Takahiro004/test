@@ -105,10 +105,16 @@ public partial class TwoPlayerShop2D
         tr.localScale = new Vector3(w, h, 1f);
     }
 
+    // 袋の上の合計金額の表示の ON/OFF(エントリー画面のときも、ゲーム中と同じにする。Update から毎フレーム)
+    void ApplyBagTotalVisibility()
+    {
+        foreach (var p in new[] { p1, p2 })
+            if (p != null && p.bag != null) p.bag.totalLabel.gameObject.SetActive(showBagTotal);
+    }
+
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
     void CheckBag(Player p)
     {
-        p.bag.totalLabel.gameObject.SetActive(showBagTotal);   // 合計金額の表示の ON/OFF
         float t = bagWallThickness;
         float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
         float top = floorY + bagHeight;

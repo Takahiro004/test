@@ -42,6 +42,30 @@ public partial class TwoPlayerShop2D
     readonly System.Collections.Generic.List<Transform> gridLabels = new System.Collections.Generic.List<Transform>();
     float barViewWidth, barTextSize, barNameY;
 
+    bool heldCleared;
+
+    // タイムアップのとき、1P/2P の画面で落とす前(持ち運び中)の商品と、その画面のカーソルを消す
+    void ClearHeldOnTimeUp()
+    {
+        if (heldCleared) return;
+        heldCleared = true;
+        foreach (var p in new[] { p1, p2 })
+        {
+            if (p.held != null)
+            {
+                var go = p.held;
+                foreach (var c in go.GetComponentsInChildren<Collider2D>()) products.Remove(c);
+                originalColors.Remove(go);
+                priceOf.Remove(go);
+                infoOf.Remove(go);
+                Destroy(go);
+                p.held = null;
+            }
+            p.inShop = true;
+            p.cursorOwn.gameObject.SetActive(false);
+        }
+    }
+
     // Start で呼ぶ: 前のゲームの割り当てを戻す
     void RestorePads()
     {
@@ -51,6 +75,8 @@ public partial class TwoPlayerShop2D
 
     void UpdateResult()
     {
+        ClearHeldOnTimeUp();   // 落とす前の商品とカーソルを消す(最初の1回だけ)
+
         // 0. 結果発表(棒グラフ)
         if (showResultBars && !barsDone)
         {
