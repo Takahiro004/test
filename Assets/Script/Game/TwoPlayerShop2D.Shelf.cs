@@ -5,7 +5,8 @@ using UnityEngine;
 //  - 仮の棚(背板・柱・段の板)を描き、商品を板の上に乗せる(showShelf が OFF なら、今までどおりマスの真ん中に浮かせる)
 //  - 棚の画像(shelfSprite)か 3Dモデル(shelfModel)を入れたら、仮の棚の代わりにそれを出す
 //  - 再生中に段・列・見た目を変えたら、LateUpdate で作り直す
-//  - スクロール(shelfSlide): 棚は横に長くつながっていて、ゆっくり左から右へ流れ続ける(shelfScrollSpeed)。画面に映っているのはその一部。
+//  - スライド(shelfSlide): 棚は横に長くつながっていて、画面に映っているのはその一部。
+//    shelfSlideInterval 秒ごとに、左から次の棚が shelfSlideTime 秒でスライドしてくる(今の棚は右へ出ていく)。
 //    棚は「1画面ぶんの棚(段 x 列)」を2つ輪のようにつないだもの。右の画面の外へ出た棚は、左の画面の外へ回って、また入ってくる。
 //    回るとき(画面の外)に、商品を入れ替える(ランダム補充なら山札から引き直す。TwoPlayerShop2D.Deck.cs)
 //  - 商品は、全部が画面に映っていないと取れない(CanGrabOnShelf)
@@ -25,6 +26,8 @@ public partial class TwoPlayerShop2D
     float ShelfSectionWidth => Mathf.Max(ShelfArea().width, ShopViewSize().x) + 0.4f;
 
     float shelfScroll;                 // 今どれだけ右へ流れたか(ゲーム内の長さ)
+    float slideWait, slideElapsed, slideFrom;   // 次のスライドまで待った秒数 / スライド中の経過 / スライドを始めた位置
+    bool sliding;
     int appliedPhaseCount;             // 作ったときの RingSections
     readonly System.Collections.Generic.List<Transform> shelfSections = new System.Collections.Generic.List<Transform>();
     float[] sectionPrevOffset = new float[0];
@@ -172,11 +175,22 @@ public partial class TwoPlayerShop2D
 
     // ---------- スクロール(棚がゆっくり左から右へ流れる) ----------
 
-    // LateUpdate から毎フレーム。エントリー中・タイムアップのあとは止まる
+    // LateUpdate から毎フレーム。shelfSlideInterval 秒待つ → 棚1つぶん右へスライド → また待つ。エントリー中・タイムアップのあとは止まる
     void UpdateShelfScroll()
     {
         if (!shelfSlide || InEntry || entryPhase == -1 || IsTimeUp) return;
-        shelfScroll += shelfScrollSpeed * Time.deltaTime;
+        if (!sliding)
+        {
+            slideWait += Time.deltaTime;
+            if (slideWait < Mathf.Max(0.1f, shelfSlideInterval)) return;
+            sliding = true;
+            slideElapsed = 0f;
+            slideFrom = shelfScroll;
+        }
+        slideElapsed += Time.deltaTime;
+        float k = Mathf.SmoothStep(0f, 1f, slideElapsed / Mathf.Max(0.05f, shelfSlideTime));   // ゆっくり動き出して、ゆっくり止まる
+        shelfScroll = slideFrom + ShelfSectionWidth * k;
+        if (k >= 1f) { sliding = false; slideWait = 0f; }
         ApplyShelfScroll();
     }
 

@@ -105,7 +105,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
     public bool showShelf = true;
-    [Tooltip("棚の画面: 棚は横に長くつながっていて、ゆっくり左から右へ流れ続ける(速さは Shelf Scroll Speed)。OFF なら棚は1つだけで動かない")]
+    [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
     [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
     public bool randomRefill = true;
@@ -341,9 +341,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("横のときの棚の段の数")]
     public int landscapeRows = 2;
 
-    [Header("棚のスクロール(棚がゆっくり左から右へ流れる)")]
-    [Tooltip("棚が流れる速さ(1秒に進む長さ。縦の棚の画面の横幅は Portrait View Width = 8)")]
-    public float shelfScrollSpeed = 0.4f;
+    [Header("棚のスライド(数秒ごとに、左から次の棚がスライドしてくる)")]
+    [Tooltip("次の棚がスライドしてくるまでの秒数(スライドが終わってから数える)")]
+    public float shelfSlideInterval = 8f;
+    [Tooltip("棚がスライドする動きの秒数")]
+    public float shelfSlideTime = 1f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]
