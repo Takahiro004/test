@@ -32,6 +32,6 @@ public partial class TwoPlayerShop2D
             : view.y / 2f - 1f;
         timerText.transform.position = new Vector3(0f, y, 0f);
         float fit = IsPortrait ? Mathf.Max(1f, view.x / 8f) : 1f;   // 縦: 幅に合わせる(TIMER の目印と同じ)
-        timerText.characterSize = 0.16f * fit * Mathf.Max(0.5f, textScale / 2f);
+        SetTextSize(timerText, 0.16f * fit * Mathf.Max(0.5f, textScale / 2f));
     }
 }

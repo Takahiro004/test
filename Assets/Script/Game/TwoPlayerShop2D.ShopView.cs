@@ -94,7 +94,7 @@ public partial class TwoPlayerShop2D
         Vector2 view = ShopViewSize();
         timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         timerPlaceholder.transform.position = new Vector3(0f, view.y / 2f - view.y * portraitTopSpace / 2f, 0f);
-        timerPlaceholder.characterSize = 0.08f * Mathf.Max(1f, view.x / 8f);
+        SetTextSize(timerPlaceholder, 0.08f * Mathf.Max(1f, view.x / 8f));
     }
 
     void LateUpdate()

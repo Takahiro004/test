@@ -45,6 +45,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("参照")]
     public DisplayTestSwitcher switcher;
 
+    [Header("文字(フォント)。再生する前に決める")]
+    [Tooltip("ゲーム中の文字のフォント(.ttf / .otf を Assets に入れて、ここへドラッグ)。日本語が入っているフォントにする。空なら Unity の標準フォント")]
+    public Font textFont;
+    [Tooltip("文字の解像度(1〜4)。大きいほどくっきりする(見た目の大きさは変わらない)。2 で前の2倍")]
+    [Range(1, 4)] public int textResolution = 2;
+
     [Header("モニターの置き方(縦型モニター用 / 横型モニター用を切り替える)")]
     [Tooltip("縦型モニター: 本番 / 横型(縦と同じ見た目): 横のモニターの真ん中に本番と同じ縦長の画面を出す / 横型(横いっぱい): 横のモニターに合わせて並べ直す。再生中に変えてもすぐ反映(商品・カーソルの大きさは新しく出たものから)")]
     public MonitorMode monitorMode = MonitorMode.Portrait;
@@ -99,7 +105,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public bool fillPlayerScreen = true;
     [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
     public bool showShelf = true;
-    [Tooltip("棚の画面: 棚は横に長くつながっていて、ゆっくり左から右へ流れ続ける(速さは Shelf Scroll Speed)。OFF なら棚は1つだけで動かない")]
+    [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
     [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
     public bool randomRefill = true;
@@ -335,9 +341,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("横のときの棚の段の数")]
     public int landscapeRows = 2;
 
-    [Header("棚のスクロール(棚がゆっくり左から右へ流れる)")]
-    [Tooltip("棚が流れる速さ(1秒に進む長さ。縦の棚の画面の横幅は Portrait View Width = 8)")]
-    public float shelfScrollSpeed = 0.4f;
+    [Header("棚のスライド(数秒ごとに、左から次の棚がスライドしてくる)")]
+    [Tooltip("次の棚がスライドしてくるまでの秒数(スライドが終わってから数える)")]
+    public float shelfSlideInterval = 8f;
+    [Tooltip("棚がスライドする動きの秒数")]
+    public float shelfSlideTime = 1f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]
@@ -422,6 +430,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void Start()
     {
+        ApplyTextFont();   // 文字のフォントと解像度(TwoPlayerShop2D.Bag.cs)。文字を作る前に決める
         if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
         ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
@@ -909,6 +918,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void OnGUI()
     {
         if (!showOverlayLabel || switcher == null) return;
+        if (textFont != null) GUI.skin.font = textFont;   // 左上の確認用表示も同じフォントに
         // 解像度が高い画面でも読める大きさにする(高さ 1080 を基準)
         float guiScale = Mathf.Max(1f, Screen.height / 1080f) * Mathf.Max(0.5f, textScale / 2f);
         GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));

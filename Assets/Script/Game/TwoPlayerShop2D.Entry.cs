@@ -111,17 +111,17 @@ public partial class TwoPlayerShop2D
 
         Vector2 shop = ShopViewSize();
         entryShopTitle = MakeText("EntryTitle", t, layerShop, entryTitle, new Color(1f, 0.85f, 0.3f), 4901);
-        entryShopTitle.characterSize = shop.x / 55f;
+        SetTextSize(entryShopTitle, shop.x / 55f);
         entryShopTitle.transform.position = new Vector3(0f, shop.y * 0.22f, 0f);
         entryShopStatus = MakeText("EntryStatus", t, layerShop, "", Color.white, 4901);
-        entryShopStatus.characterSize = shop.x / 90f;
+        SetTextSize(entryShopStatus, shop.x / 90f);
         entryShopStatus.transform.position = new Vector3(0f, -shop.y * 0.08f, 0f);
 
         float pw = PlayerViewSize().x;
         for (int i = 0; i < 2; i++)
         {
             entryPlayerText[i] = MakeText($"EntryPlayer{i + 1}", t, i == 0 ? layerP1 : layerP2, "", Color.white, 4901);
-            entryPlayerText[i].characterSize = pw / 55f;
+            SetTextSize(entryPlayerText[i], pw / 55f);
             entryPlayerText[i].transform.position = new Vector3(0f, PlayerViewSize().y * 0.1f, 0f);
         }
         RefreshEntryTexts();
@@ -135,7 +135,7 @@ public partial class TwoPlayerShop2D
             // カウントダウンは棚の画面だけに、大きく出す(1P/2P の画面の文字は消す)
             entryShopTitle.gameObject.SetActive(false);
             entryShopStatus.text = Mathf.CeilToInt(entryCountdownLeft).ToString();
-            entryShopStatus.characterSize = ShopViewSize().x / 12f;
+            SetTextSize(entryShopStatus, ShopViewSize().x / 12f);
             entryShopStatus.transform.position = Vector3.zero;
             for (int i = 0; i < 2; i++) entryPlayerText[i].gameObject.SetActive(false);
             return;
@@ -161,7 +161,7 @@ public partial class TwoPlayerShop2D
         entryShopTitle.gameObject.SetActive(false);
         entryShopStatus.text = "スタート！";   // 棚の画面だけ
         entryShopStatus.color = new Color(1f, 0.85f, 0.3f);
-        entryShopStatus.characterSize = ShopViewSize().x / 36f;
+        SetTextSize(entryShopStatus, ShopViewSize().x / 36f);
         yield return new WaitForSeconds(0.8f);
         Destroy(entryRoot);
         entryRoot = null;

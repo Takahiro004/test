@@ -5,7 +5,8 @@ using UnityEngine;
 //  - 仮の棚(背板・柱・段の板)を描き、商品を板の上に乗せる(showShelf が OFF なら、今までどおりマスの真ん中に浮かせる)
 //  - 棚の画像(shelfSprite)か 3Dモデル(shelfModel)を入れたら、仮の棚の代わりにそれを出す
 //  - 再生中に段・列・見た目を変えたら、LateUpdate で作り直す
-//  - スクロール(shelfSlide): 棚は横に長くつながっていて、ゆっくり左から右へ流れ続ける(shelfScrollSpeed)。画面に映っているのはその一部。
+//  - スライド(shelfSlide): 棚は横に長くつながっていて、画面に映っているのはその一部。
+//    shelfSlideInterval 秒ごとに、左から次の棚が shelfSlideTime 秒でスライドしてくる(今の棚は右へ出ていく)。
 //    棚は「1画面ぶんの棚(段 x 列)」を2つ輪のようにつないだもの。右の画面の外へ出た棚は、左の画面の外へ回って、また入ってくる。
 //    回るとき(画面の外)に、商品を入れ替える(ランダム補充なら山札から引き直す。TwoPlayerShop2D.Deck.cs)
 //  - 商品は、全部が画面に映っていないと取れない(CanGrabOnShelf)
@@ -25,6 +26,8 @@ public partial class TwoPlayerShop2D
     float ShelfSectionWidth => Mathf.Max(ShelfArea().width, ShopViewSize().x) + 0.4f;
 
     float shelfScroll;                 // 今どれだけ右へ流れたか(ゲーム内の長さ)
+    float slideWait, slideElapsed, slideFrom;   // 次のスライドまで待った秒数 / スライド中の経過 / スライドを始めた位置
+    bool sliding;
     int appliedPhaseCount;             // 作ったときの RingSections
     readonly System.Collections.Generic.List<Transform> shelfSections = new System.Collections.Generic.List<Transform>();
     float[] sectionPrevOffset = new float[0];
@@ -172,11 +175,22 @@ public partial class TwoPlayerShop2D
 
     // ---------- スクロール(棚がゆっくり左から右へ流れる) ----------
 
-    // LateUpdate から毎フレーム。エントリー中・タイムアップのあとは止まる
+    // LateUpdate から毎フレーム。shelfSlideInterval 秒待つ → 棚1つぶん右へスライド → また待つ。エントリー中・タイムアップのあとは止まる
     void UpdateShelfScroll()
     {
         if (!shelfSlide || InEntry || entryPhase == -1 || IsTimeUp) return;
-        shelfScroll += shelfScrollSpeed * Time.deltaTime;
+        if (!sliding)
+        {
+            slideWait += Time.deltaTime;
+            if (slideWait < Mathf.Max(0.1f, shelfSlideInterval)) return;
+            sliding = true;
+            slideElapsed = 0f;
+            slideFrom = shelfScroll;
+        }
+        slideElapsed += Time.deltaTime;
+        float k = Mathf.SmoothStep(0f, 1f, slideElapsed / Mathf.Max(0.05f, shelfSlideTime));   // ゆっくり動き出して、ゆっくり止まる
+        shelfScroll = slideFrom + ShelfSectionWidth * k;
+        if (k >= 1f) { sliding = false; slideWait = 0f; }
         ApplyShelfScroll();
     }
 
@@ -224,18 +238,49 @@ public partial class TwoPlayerShop2D
     }
 
     // 商品が全部画面に映っているか(映っていないと取れない)
+    // 見た目の絵の四角(透明なふちも入る)ではなく、当たり判定の形で調べる。
+    // 絵の四角で調べると、長方形・三角など絵の上下に透明な所がある形や、余白のある画像が、
+    // 一番下の段(板の下がすぐ画面の端)で「はみ出している」ことになって取れなかった
     bool CanGrabOnShelf(GameObject go)
     {
-        Vector2 half = ShopViewSize() / 2f;
-        bool any = false;
-        Bounds b = default;
-        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        Vector2 half = ShopViewSize() / 2f + new Vector2(0.02f, 0.02f);   // 少しだけゆとり
+        Rect r;
+        if (!ShapeRect(go, out r)) return true;
+        return r.xMin >= -half.x && r.xMax <= half.x && r.yMin >= -half.y && r.yMax <= half.y;
+    }
+
+    // 商品の当たり判定の形が入る四角(今の位置・向き・大きさで計算する。物理の更新を待たない)
+    static bool ShapeRect(GameObject go, out Rect rect)
+    {
+        float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+        void Add(Vector3 w) { minX = Mathf.Min(minX, w.x); maxX = Mathf.Max(maxX, w.x); minY = Mathf.Min(minY, w.y); maxY = Mathf.Max(maxY, w.y); }
+
+        foreach (var col in go.GetComponentsInChildren<Collider2D>())
         {
-            if (r is SpriteRenderer sr && sr.sprite == null) continue;   // 3Dモデルの商品の、絵の無い SpriteRenderer
-            if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+            var t = col.transform;
+            if (col is PolygonCollider2D poly)
+            {
+                for (int p = 0; p < poly.pathCount; p++)
+                    foreach (var pt in poly.GetPath(p)) Add(t.TransformPoint(pt + poly.offset));
+            }
+            else if (col is BoxCollider2D box)
+            {
+                Vector2 h = box.size / 2f;
+                Add(t.TransformPoint(box.offset + new Vector2(-h.x, -h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(h.x, -h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(h.x, h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(-h.x, h.y)));
+            }
+            else if (col is CircleCollider2D circle)
+            {
+                Vector3 c = t.TransformPoint(circle.offset);
+                float rad = circle.radius * Mathf.Max(Mathf.Abs(t.lossyScale.x), Mathf.Abs(t.lossyScale.y));
+                Add(c - new Vector3(rad, rad)); Add(c + new Vector3(rad, rad));
+            }
+            else { Add(col.bounds.min); Add(col.bounds.max); }
         }
-        if (!any) return true;
-        return b.min.x >= -half.x && b.max.x <= half.x && b.min.y >= -half.y && b.max.y <= half.y;
+        rect = new Rect(minX, minY, maxX - minX, maxY - minY);
+        return minX <= maxX;
     }
 
     // 仮の棚: 背板 → 左右の柱・天板 → 段の板
