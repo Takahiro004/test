@@ -238,18 +238,49 @@ public partial class TwoPlayerShop2D
     }
 
     // 商品が全部画面に映っているか(映っていないと取れない)
+    // 見た目の絵の四角(透明なふちも入る)ではなく、当たり判定の形で調べる。
+    // 絵の四角で調べると、長方形・三角など絵の上下に透明な所がある形や、余白のある画像が、
+    // 一番下の段(板の下がすぐ画面の端)で「はみ出している」ことになって取れなかった
     bool CanGrabOnShelf(GameObject go)
     {
-        Vector2 half = ShopViewSize() / 2f;
-        bool any = false;
-        Bounds b = default;
-        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        Vector2 half = ShopViewSize() / 2f + new Vector2(0.02f, 0.02f);   // 少しだけゆとり
+        Rect r;
+        if (!ShapeRect(go, out r)) return true;
+        return r.xMin >= -half.x && r.xMax <= half.x && r.yMin >= -half.y && r.yMax <= half.y;
+    }
+
+    // 商品の当たり判定の形が入る四角(今の位置・向き・大きさで計算する。物理の更新を待たない)
+    static bool ShapeRect(GameObject go, out Rect rect)
+    {
+        float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+        void Add(Vector3 w) { minX = Mathf.Min(minX, w.x); maxX = Mathf.Max(maxX, w.x); minY = Mathf.Min(minY, w.y); maxY = Mathf.Max(maxY, w.y); }
+
+        foreach (var col in go.GetComponentsInChildren<Collider2D>())
         {
-            if (r is SpriteRenderer sr && sr.sprite == null) continue;   // 3Dモデルの商品の、絵の無い SpriteRenderer
-            if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+            var t = col.transform;
+            if (col is PolygonCollider2D poly)
+            {
+                for (int p = 0; p < poly.pathCount; p++)
+                    foreach (var pt in poly.GetPath(p)) Add(t.TransformPoint(pt + poly.offset));
+            }
+            else if (col is BoxCollider2D box)
+            {
+                Vector2 h = box.size / 2f;
+                Add(t.TransformPoint(box.offset + new Vector2(-h.x, -h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(h.x, -h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(h.x, h.y)));
+                Add(t.TransformPoint(box.offset + new Vector2(-h.x, h.y)));
+            }
+            else if (col is CircleCollider2D circle)
+            {
+                Vector3 c = t.TransformPoint(circle.offset);
+                float rad = circle.radius * Mathf.Max(Mathf.Abs(t.lossyScale.x), Mathf.Abs(t.lossyScale.y));
+                Add(c - new Vector3(rad, rad)); Add(c + new Vector3(rad, rad));
+            }
+            else { Add(col.bounds.min); Add(col.bounds.max); }
         }
-        if (!any) return true;
-        return b.min.x >= -half.x && b.max.x <= half.x && b.min.y >= -half.y && b.max.y <= half.y;
+        rect = new Rect(minX, minY, maxX - minX, maxY - minY);
+        return minX <= maxX;
     }
 
     // 仮の棚: 背板 → 左右の柱・天板 → 段の板
