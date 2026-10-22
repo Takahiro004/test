@@ -14,7 +14,7 @@ public partial class TwoPlayerShop2D
     }
 
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
-    float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY;
+    float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY, appliedBagOuter;
 
     // ---------- レジ袋 ----------
 
@@ -65,7 +65,7 @@ public partial class TwoPlayerShop2D
     void LayoutBags()
     {
         appliedBagX = bagX; appliedBagWidth = bagWidth; appliedBagHeight = bagHeight;
-        appliedBagWall = bagWallThickness; appliedBagFloorY = floorY;
+        appliedBagWall = bagWallThickness; appliedBagFloorY = floorY; appliedBagOuter = bagWallOuterThickness;
 
         float t = bagWallThickness;
         foreach (var p in new[] { p1, p2 })
@@ -87,6 +87,13 @@ public partial class TwoPlayerShop2D
                 bottomCol.size = new Vector2(1f, 1f + extra);
                 bottomCol.offset = new Vector2(0f, -extra / 2f);
             }
+            // 左右のふちも、当たり判定だけ外側へ厚くする(見た目はそのまま)。
+            // ふちは見た目どおりだと 0.3 と薄く、小さい商品(図形の商品など)を積むと、重さで押されてすり抜けることがあった
+            float side = bagWallOuterThickness / Mathf.Max(0.01f, t);   // 外側へ厚くする分(ローカルの長さ)
+            var leftCol = b.left.GetComponent<BoxCollider2D>();
+            if (leftCol != null) { leftCol.size = new Vector2(1f + side, 1f); leftCol.offset = new Vector2(-side / 2f, 0f); }
+            var rightCol = b.right.GetComponent<BoxCollider2D>();
+            if (rightCol != null) { rightCol.size = new Vector2(1f + side, 1f); rightCol.offset = new Vector2(side / 2f, 0f); }
             SetTextSize(b.totalLabel, HudTextSize);
             b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
         }
