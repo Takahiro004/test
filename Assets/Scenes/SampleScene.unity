@@ -573,6 +573,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   switcher: {fileID: 0}
+  textFont: {fileID: 0}
+  textResolution: 2
   monitorMode: 0
   shopScreenRotation: 0
   portraitLayout:
@@ -766,8 +768,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 6
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 8433648495133754758, guid: 182ca6f0eb96da04cb3719d74416c8c6, type: 3}
+    size: 1.4
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3057\u3087\u3046\u3086"
@@ -778,8 +780,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 7
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -5425427450820602910, guid: 5014cb8d8b3c7f742948e88ee63f4acf, type: 3}
+    size: 1.5
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3086\u3067\u3048\u3073"
@@ -802,7 +804,7 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 1
-    sprite: {fileID: 0}
+    sprite: {fileID: 4097578743117614346, guid: 54a5e37aa404cdc42afe3e383f8e2504, type: 3}
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
@@ -838,8 +840,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 7292024741190325978, guid: 0692ebddae7da0949906395ffdef64cf, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u307E\u3050\u308D"
@@ -850,8 +852,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 5
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 3498470401697163024, guid: 478fe9e4a9aa4134381813ee435e9c88, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u305A\u308F\u3044\u304B\u306B"
@@ -886,8 +888,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 0
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -4884370531699334514, guid: 7a54ac0d681c0df47ad84d07da877289, type: 3}
+    size: 1.5
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3046\u3069\u3093"
@@ -922,8 +924,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 3
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 1570154474118192848, guid: 8b05e00dc1cff444991c44737490dc28, type: 3}
+    size: 1.2
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u306A\u3063\u3068\u3046"
@@ -946,8 +948,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 5
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 9202589174693625124, guid: 4fae0d1a762e4864f87c3ded60a4a66a, type: 3}
+    size: 1.4
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3050\u307F"
@@ -982,8 +984,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 0
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 4906752080188445462, guid: 63a9b123e0c3b544e92edeed715ae5a3, type: 3}
+    size: 1.2
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u308A\u3093\u3054"
@@ -994,8 +996,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 1
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -1231352191345514875, guid: 2a57e574a89e5644aa22007973826708, type: 3}
+    size: 1.2
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3044\u308F\u3057"
@@ -1054,8 +1056,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 6
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -9066826926224049800, guid: 958ecfed644a1944eae0d14a044950c5, type: 3}
+    size: 1.4
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3053\u308D\u3063\u3051"
@@ -1078,8 +1080,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 0
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -3053547739730046739, guid: 40f11939b327dd54a909080e73dc8ffd, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3053\u30FC\u3089"
@@ -1102,8 +1104,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 2
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -6656721811531967515, guid: b1963e44f94b7af4680fe6de115618c7, type: 3}
+    size: 1.2
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3071\u3077\u308A\u304B"
@@ -1126,8 +1128,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 7301665489712622594, guid: 6e4c022ec2f953442975536618df5e43, type: 3}
+    size: 1.6
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3061\u3087\u3053\u308C\u30FC\u3068"
@@ -1162,8 +1164,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 7
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -2661381019683416676, guid: dc1099fe0c3990e4a9beb63c741351c1, type: 3}
+    size: 1.4
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u304B\u3089\u3042\u3052"
@@ -1210,8 +1212,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 3
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 7586756543635156743, guid: ad02a475d253a1241bc166e44878bb94, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3066\u3070\u3055\u304D"
@@ -1222,8 +1224,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -2225253542028709799, guid: 942fa2742749b71448eb22bce5e49fd9, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u307D\u3066\u3068\u3055\u3089\u3060"
@@ -1354,8 +1356,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 7
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: -4882964199209968670, guid: 38a3202e8c4690049ad4dfbd5ca6a1c5, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u3075\u308B\u30FC\u3064\u3082\u308A"
@@ -1414,8 +1416,8 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
-    size: 1
+    sprite: {fileID: 5660966175338769301, guid: 9a80d9d3a1cb28b45876abeec65e3291, type: 3}
+    size: 1.3
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
   - name: "\u30AB\u30C3\u30D7\u9EBA"
@@ -1460,6 +1462,7 @@ MonoBehaviour:
   bagWidth: 4
   bagHeight: 7.5
   bagWallThickness: 0.2
+  bagWallOuterThickness: 0.6
   bagColor: {r: 1, g: 1, b: 1, a: 0.85}
   bagSprite: {fileID: 0}
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
@@ -1495,7 +1498,8 @@ MonoBehaviour:
   portraitRows: 3
   landscapeColumns: 3
   landscapeRows: 2
-  shelfScrollSpeed: 0.4
+  shelfSlideInterval: 8
+  shelfSlideTime: 1
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
