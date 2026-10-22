@@ -674,6 +674,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         ApplyPlayerLayout();
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
+        ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
+
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;
 
