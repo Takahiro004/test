@@ -265,6 +265,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [HideInInspector] public float bagHeight = 4f;   // 自動で計算(bagHeightRatio)
     [Tooltip("袋のふちの太さ")]
     public float bagWallThickness = 0.3f;
+    [Tooltip("袋の左右のふちの当たり判定を、見た目より外側へ厚くする長さ(商品がふちをすり抜けないように。見た目は変わらない)")]
+    public float bagWallOuterThickness = 0.6f;
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
     [Tooltip("袋の画像(未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
     public Sprite bagSprite;
@@ -478,6 +480,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         // 同じ画面の中(1P同士、2P同士)はぶつかる
         Physics2D.IgnoreLayerCollision(layerP1, layerP1, false);
         Physics2D.IgnoreLayerCollision(layerP2, layerP2, false);
+        // 積み重なった商品が、重さで袋のふちにめり込んだり、すり抜けたりしにくくなるように、物理の計算を丁寧にする
+        Physics2D.velocityIterations = Mathf.Max(Physics2D.velocityIterations, 12);
+        Physics2D.positionIterations = Mathf.Max(Physics2D.positionIterations, 8);
     }
 
     void CreateProducts()
@@ -677,7 +682,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (createBag && p1.bag != null)
         {
             if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
-                bagWallThickness != appliedBagWall || floorY != appliedBagFloorY) LayoutBags();
+                bagWallThickness != appliedBagWall || floorY != appliedBagFloorY ||
+                bagWallOuterThickness != appliedBagOuter) LayoutBags();
             CheckBag(p1);
             CheckBag(p2);
         }
