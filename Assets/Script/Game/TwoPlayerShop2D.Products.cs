@@ -103,7 +103,10 @@ public partial class TwoPlayerShop2D
         }
     }
 
-    // 3Dモデルの商品: 親に当たり判定(モデルを囲む四角)と、見えない SpriteRenderer(色・手前の順番の処理用)を付ける
+    // 3Dモデルの商品: 親に当たり判定と、見えない SpriteRenderer(色・手前の順番の処理用)を付ける
+    // 当たり判定は、モデルを画面の向き(手前から)見たときの輪郭。カメラは一方向だけなので、
+    // モデルの頂点を画面の平面(x, y)に落として、それを全部包む形(凸包)を作り、点を減らして PolygonCollider2D にする。
+    // へこんだ形は、へこみが埋まった形になる。モデルの頂点が読めないとき(ビルドで Read/Write が OFF など)は、囲む四角
     GameObject MakeModelProduct(string objName, Vector2 pos, ProductInfo info, int layer)
     {
         var go = new GameObject(objName);
@@ -122,10 +125,20 @@ public partial class TwoPlayerShop2D
             foreach (var r in renderers) b.Encapsulate(r.bounds);
             // 縦横の長いほうが productSize になる大きさにして、真ん中を親の位置に合わせる
             float k = productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
+            var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
             model.transform.localScale = Vector3.one * k;
             model.transform.localPosition = -b.center * k;
-            var box = go.AddComponent<BoxCollider2D>();
-            box.size = new Vector2(b.size.x, b.size.y) * k;
+            if (outline != null)
+            {
+                var pts = new Vector2[outline.Length];
+                for (int i = 0; i < pts.Length; i++) pts[i] = outline[i] * k;
+                go.AddComponent<PolygonCollider2D>().points = pts;   // 親には絵が無いので、Unity が勝手に形を作ることはない
+            }
+            else
+            {
+                var box = go.AddComponent<BoxCollider2D>();
+                box.size = new Vector2(b.size.x, b.size.y) * k;
+            }
         }
         else
         {
@@ -136,6 +149,58 @@ public partial class TwoPlayerShop2D
         go.transform.position = pos;
         SetLayer(go, layer);
         return go;
+    }
+
+    // 3Dモデルの、画面の向きから見た輪郭(大きさ 1 のとき。真ん中 center を 0 にした点)。
+    // モデルと向きごとに1回だけ計算する。頂点が読めなければ null
+    readonly Dictionary<string, Vector2[]> modelOutlineCache = new Dictionary<string, Vector2[]>();
+
+    Vector2[] ModelOutline(ProductInfo info, GameObject model, Vector3 center)
+    {
+        string key = $"{info.model.GetInstanceID()}_{info.modelRotation}";
+        if (modelOutlineCache.TryGetValue(key, out var cached)) return cached;
+
+        // モデルは今、親(商品)の原点・大きさ 1 で置いてある。頂点を親の座標にして、画面の平面に落とす
+        var points = new List<Vector2>();
+        var parent = model.transform.parent;
+        foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
+            AddMeshPoints(mf.sharedMesh, mf.transform, parent, center, points);
+        foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>())
+            AddMeshPoints(skin.sharedMesh, skin.transform, parent, center, points);
+
+        Vector2[] result = null;
+        if (points.Count >= 3)
+        {
+            var hull = ConvexHull(points);
+            float size = 0.01f;
+            foreach (var p in hull) size = Mathf.Max(size, Mathf.Abs(p.x) * 2f, Mathf.Abs(p.y) * 2f);
+            // 点を減らす(画像の商品と同じ。上限を超えていたら、大まかさを少しずつ上げてやり直す)
+            float eps = size * imageColliderDetail;
+            var simple = hull;
+            for (int n = 0; n < 20; n++)
+            {
+                simple = SimplifyClosed(hull, eps);
+                if (simple.Length <= Mathf.Max(4, imageColliderMaxPoints)) break;
+                eps *= 1.5f;
+            }
+            result = simple.Length >= 3 ? simple : hull;
+        }
+        else Debug.LogWarning($"[Shop2D] {info.name} の3Dモデルの頂点が読めないので、当たり判定は四角にした(モデルの Import Settings で Read/Write にチェック)");
+        modelOutlineCache[key] = result;
+        return result;
+    }
+
+    static void AddMeshPoints(Mesh mesh, Transform meshTransform, Transform parent, Vector3 center, List<Vector2> points)
+    {
+        if (mesh == null) return;
+#if !UNITY_EDITOR
+        if (!mesh.isReadable) return;   // ビルドしたゲームでは、Import Settings の Read/Write が ON のモデルだけ頂点が読める
+#endif
+        foreach (var v in mesh.vertices)
+        {
+            Vector3 local = parent.InverseTransformPoint(meshTransform.TransformPoint(v)) - center;
+            points.Add(new Vector2(local.x, local.y));
+        }
     }
 
     // 棚のマスに置く商品の設定(ランダム補充なら山札から引いたもの、そうでなければ一覧の順)
