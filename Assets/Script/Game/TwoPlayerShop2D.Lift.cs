@@ -8,7 +8,7 @@ using UnityEngine;
 //  3. bagLiftTime 秒: 袋(Kinematic の Rigidbody2D)を MovePosition で上へ動かす。中の商品は底に押されて一緒に上がる
 //  4. bagLiftHoldTime 秒: 持ち上げたまま耐える(「耐えろ！ あと3」) → 「耐えた！」 → 合計金額の結果発表へ
 //  3〜4 の間、袋の底より下へ落ちた商品は「こぼれた」として消し、合計から引く(Subtract Spilled From Total が ON のとき)
-//  袋の中が重すぎたら、bagTearAt まで上がったところで袋が破れて中身が散らばり、その人は0円(TwoPlayerShop2D.Weight.cs)
+//  袋の中が重すぎたら、上まで持ち上げてから bagTearDelay 秒たったところで袋が破れて中身が散らばり、その人は0円(TwoPlayerShop2D.Weight.cs)
 public partial class TwoPlayerShop2D
 {
     bool liftStarted, liftDone;
@@ -69,12 +69,14 @@ public partial class TwoPlayerShop2D
         SetLiftBanner("持ち上げろ！", Color.white);
         float total = Mathf.Max(0.01f, bagLiftTime) + Mathf.Max(0f, bagLiftHoldTime);
         int shownCount = -1;
+        // 破れるのは、上まで持ち上げてから bagTearDelay 秒たったとき(耐える時間より長ければ、耐える時間の最後)
+        float tearTime = Mathf.Min(Mathf.Max(0.01f, bagLiftTime) + Mathf.Max(0f, bagTearDelay), total - Time.fixedDeltaTime);
         for (float time = 0f; time < total; time += Time.fixedDeltaTime)
         {
             float k = Mathf.Clamp01(time / Mathf.Max(0.01f, bagLiftTime));
             liftHeight = target * Mathf.SmoothStep(0f, 1f, k);
-            // 重すぎる袋は、bagTearAt まで上がったところで底が破れる(中身が落ちて0円。TwoPlayerShop2D.Weight.cs)
-            if (k >= bagTearAt)
+            // 重すぎる袋は、上まで持ち上げて少し耐えたところで底が破れる(中身が落ちて0円。TwoPlayerShop2D.Weight.cs)
+            if (time >= tearTime)
             {
                 if (TryTearBagOnLift(p1)) SetLiftBannerOf(p1, "袋が破れた…", new Color(1f, 0.3f, 0.25f));
                 if (TryTearBagOnLift(p2)) SetLiftBannerOf(p2, "袋が破れた…", new Color(1f, 0.3f, 0.25f));

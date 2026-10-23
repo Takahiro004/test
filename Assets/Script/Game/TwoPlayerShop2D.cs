@@ -281,8 +281,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("袋が破れる(最後に持ち上げたとき。機能のON/OFF の Bag Tear Enabled)")]
     [Tooltip("袋の中の商品の重さの合計がこれを超えていたら、持ち上げたときに破れる(重さ 1 の商品が何個ぶんか)。重さは画面には出さない")]
     public float bagMaxWeight = 15f;
-    [Tooltip("持ち上げ始めてから破れるまでの割合(持ち上げる高さを1として。0.3なら3割上がったところで破れる)")]
-    [Range(0f, 1f)] public float bagTearAt = 0.3f;
+    [Tooltip("上まで持ち上げてから、破れるまでの秒数(耐えている途中で破れる。Bag Lift Hold Time より長くすると、耐える時間の最後に破れる)")]
+    public float bagTearDelay = 2f;
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
