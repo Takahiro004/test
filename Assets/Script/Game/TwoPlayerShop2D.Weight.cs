@@ -2,7 +2,7 @@ using UnityEngine;
 
 // 商品の重さ・最後に持ち上げたとき重すぎたら袋が破れる(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋が破れる」)
 //  - 商品の重さ: useTempWeights なら名前から決めた仮の重さ(TempWeight)、OFF なら商品の一覧の Weight。重さは画面に出さない
-//  - タイムアップのあと袋を持ち上げたとき(bagTearAt まで上がったところ)、袋の中(inBag)の重さの合計が bagMaxWeight を超えていたら破れる:
+//  - タイムアップのあと袋を持ち上げたとき(上まで持ち上げて bagTearDelay 秒たったところ)、袋の中(inBag)の重さの合計が bagMaxWeight を超えていたら破れる:
 //    袋の底だけ破れて中身が下へ落ち、机に散らばる。その人の金額は0円(散らばった商品は残すが、数えない)
 public partial class TwoPlayerShop2D
 {
