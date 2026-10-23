@@ -3,7 +3,7 @@ using UnityEngine;
 // 商品の重さ・最後に持ち上げたとき重すぎたら袋が破れる(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋が破れる」)
 //  - 商品の重さ: useTempWeights なら名前から決めた仮の重さ(TempWeight)、OFF なら商品の一覧の Weight。重さは画面に出さない
 //  - タイムアップのあと袋を持ち上げたとき(bagTearAt まで上がったところ)、袋の中(inBag)の重さの合計が bagMaxWeight を超えていたら破れる:
-//    袋が消えて中身が机に散らばり、その人の金額は0円(散らばった商品は残すが、数えない)
+//    袋の底だけ破れて中身が下へ落ち、机に散らばる。その人の金額は0円(散らばった商品は残すが、数えない)
 public partial class TwoPlayerShop2D
 {
     // 商品1つの重さ(1が普通)
@@ -60,28 +60,22 @@ public partial class TwoPlayerShop2D
         bag.torn = true;
         lastEvent = $"{p.name}の袋が破れた！(重さ {weight:0.#} / {bagMaxWeight:0.#}) → 0円";
         Debug.Log($"[Shop2D] {lastEvent}");
-        StartCoroutine(Popup(p.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "袋が破れた！", new Color(1f, 0.3f, 0.25f), 0.12f));
 
-        // 底が抜ける(見た目も当たり判定も)。左右のふちも外して、中身が机に散らばるようにする
-        foreach (var part in new[] { bag.bottom, bag.left, bag.right })
-        {
-            var col = part.GetComponent<Collider2D>();
-            if (col != null) col.enabled = false;
-            var sr = part.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.enabled = false;
-        }
-        var backSr = bag.back.GetComponent<SpriteRenderer>();
-        if (backSr != null) backSr.enabled = false;   // 袋の絵も消す(破れてなくなった)
+        // 底だけ破れる(底の見た目と当たり判定を消す)。左右のふちと袋の絵はそのまま
+        var bottomCol = bag.bottom.GetComponent<Collider2D>();
+        if (bottomCol != null) bottomCol.enabled = false;
+        var bottomSr = bag.bottom.GetComponent<SpriteRenderer>();
+        if (bottomSr != null) bottomSr.enabled = false;
 
-        // 中身を起こして、左右に散らす(袋の真ん中から外へ。少し上へも)
+        // 中身を起こして、底から落とす(少し左右に散らす)
         foreach (var go in p.inBag)
         {
             var rb = go != null ? go.GetComponent<Rigidbody2D>() : null;
             if (rb == null) continue;
             rb.WakeUp();
             float side = Mathf.Sign(go.transform.position.x - bagX + Random.Range(-0.3f, 0.3f));
-            rb.linearVelocity = new Vector2(side * Random.Range(0.4f, 1f) * bagTearScatter, Random.Range(0.5f, 1.5f));
-            rb.angularVelocity = Random.Range(-360f, 360f);
+            rb.linearVelocity = new Vector2(side * Random.Range(0.3f, 1f) * bagTearScatter, -1f);
+            rb.angularVelocity = Random.Range(-180f, 180f);
         }
         p.inBag.Clear();   // 袋の中のものはもう無い(散らばった商品は机に残る。数えない)
 
