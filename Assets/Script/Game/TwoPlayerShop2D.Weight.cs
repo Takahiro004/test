@@ -1,10 +1,9 @@
-using System.Collections;
 using UnityEngine;
 
-// 商品の重さ・袋の重さの表示・重すぎたら袋が破れる(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋が破れる」)
-//  - 商品の重さ: useTempWeights なら名前から決めた仮の重さ(TempWeight)、OFF なら商品の一覧の Weight
-//  - 袋の中(inBag)の商品の重さの合計が bagMaxWeight を超えたら、袋が破れる:
-//    底が抜けて中の商品が全部こぼれ、少しして消える(合計から引く)。bagRepairTime 秒で新しい袋(空)に戻る
+// 商品の重さ・最後に持ち上げたとき重すぎたら袋が破れる(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋が破れる」)
+//  - 商品の重さ: useTempWeights なら名前から決めた仮の重さ(TempWeight)、OFF なら商品の一覧の Weight。重さは画面に出さない
+//  - タイムアップのあと袋を持ち上げたとき(bagTearAt まで上がったところ)、袋の中(inBag)の重さの合計が bagMaxWeight を超えていたら破れる:
+//    袋が消えて中身が机に散らばり、その人の金額は0円(散らばった商品は残すが、数えない)
 public partial class TwoPlayerShop2D
 {
     // 商品1つの重さ(1が普通)
@@ -49,76 +48,48 @@ public partial class TwoPlayerShop2D
         return sum;
     }
 
-    // CheckBag から毎フレーム: 重さを表示して、重すぎたら破る
-    void CheckBagWeight(Player p)
+    // 最後に袋を持ち上げたとき(TwoPlayerShop2D.Lift.cs): 重すぎたら破れて、中身が散らばり、金額は0円
+    // 破れたら true
+    bool TryTearBagOnLift(Player p)
     {
-        if (p.bag == null) return;
+        if (!bagTearEnabled || p.bag == null || p.bag.torn) return false;
         float weight = BagWeight(p);
-        UpdateWeightLabel(p, weight);
-        if (bagTearEnabled && !p.bag.torn && weight > bagMaxWeight)
-            StartCoroutine(TearBagRoutine(p, weight));
-    }
+        if (weight <= bagMaxWeight) return false;
 
-    void UpdateWeightLabel(Player p, float weight)
-    {
-        var bag = p.bag;
-        if (bag.weightLabel == null)
-            bag.weightLabel = MakeText($"BagWeight_{p.name}", bag.root, p.layer, "", Color.white, 1001);
-        bool show = showBagWeight && bagTearEnabled;
-        bag.weightLabel.gameObject.SetActive(show);
-        if (!show) return;
-
-        SetTextSize(bag.weightLabel, HudTextSize * 0.7f);
-        // 袋の口のすぐ下(袋の中の上のほう)。袋と一緒に動くように、袋の中の位置で決める
-        bag.weightLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight - HudTextSize * 4f, 0f);
-        bag.weightLabel.text = bag.torn ? "やぶれた！" : $"おもさ {weight:0.#} / {bagMaxWeight:0.#}";
-        bool warn = bag.torn || weight > bagMaxWeight * bagWeightWarning;
-        bag.weightLabel.color = warn ? new Color(1f, 0.3f, 0.25f) : Color.white;
-    }
-
-    // 袋が破れる: 底が抜けて中の商品が全部こぼれる → 少しして消える(合計から引く) → 新しい袋に戻る
-    IEnumerator TearBagRoutine(Player p, float weight)
-    {
         var bag = p.bag;
         bag.torn = true;
-        lastEvent = $"{p.name}の袋が破れた！(重さ {weight:0.#} / {bagMaxWeight:0.#})";
+        lastEvent = $"{p.name}の袋が破れた！(重さ {weight:0.#} / {bagMaxWeight:0.#}) → 0円";
         Debug.Log($"[Shop2D] {lastEvent}");
         StartCoroutine(Popup(p.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "袋が破れた！", new Color(1f, 0.3f, 0.25f), 0.12f));
 
-        // 底を消す(見た目も当たり判定も)。中の商品を起こして落とす
-        var bottomCol = bag.bottom.GetComponent<Collider2D>();
-        var bottomSr = bag.bottom.GetComponent<SpriteRenderer>();
-        bool bottomVisible = bottomSr.enabled;
-        bottomCol.enabled = false;
-        bottomSr.enabled = false;
-        var spilled = new System.Collections.Generic.List<GameObject>(p.inBag);
-        p.inBag.Clear();
-        int lost = 0;
-        foreach (var go in spilled)
+        // 底が抜ける(見た目も当たり判定も)。左右のふちも外して、中身が机に散らばるようにする
+        foreach (var part in new[] { bag.bottom, bag.left, bag.right })
         {
-            if (go == null) continue;
-            var rb = go.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.WakeUp();
-            priceOf.TryGetValue(go, out int price);
-            lost += price;
+            var col = part.GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+            var sr = part.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
         }
-        if (subtractSpilledFromTotal && lost != 0)
+        var backSr = bag.back.GetComponent<SpriteRenderer>();
+        if (backSr != null) backSr.enabled = false;   // 袋の絵も消す(破れてなくなった)
+
+        // 中身を起こして、左右に散らす(袋の真ん中から外へ。少し上へも)
+        foreach (var go in p.inBag)
         {
-            p.total -= lost;
-            bag.totalLabel.text = $"¥{p.total}";
-            StartCoroutine(MinusPopup(p, lost));
+            var rb = go != null ? go.GetComponent<Rigidbody2D>() : null;
+            if (rb == null) continue;
+            rb.WakeUp();
+            float side = Mathf.Sign(go.transform.position.x - bagX + Random.Range(-0.3f, 0.3f));
+            rb.linearVelocity = new Vector2(side * Random.Range(0.4f, 1f) * bagTearScatter, Random.Range(0.5f, 1.5f));
+            rb.angularVelocity = Random.Range(-360f, 360f);
         }
+        p.inBag.Clear();   // 袋の中のものはもう無い(散らばった商品は机に残る。数えない)
 
-        // 少し落ちるのを見せてから消す
-        yield return new WaitForSeconds(0.4f);
-        foreach (var go in spilled)
-            if (go != null) RemoveProduct(p, go);
-
-        // 新しい袋に戻る(空)
-        yield return new WaitForSeconds(Mathf.Max(0f, bagRepairTime - 0.4f));
-        bottomCol.enabled = true;
-        bottomSr.enabled = bottomVisible;
-        bag.torn = false;
-        lastEvent = $"{p.name}の袋が新しくなった";
+        // 獲得した金額は0円
+        int lost = p.total;
+        p.total = 0;
+        bag.totalLabel.text = "¥0";
+        if (lost > 0) StartCoroutine(MinusPopup(p, lost));
+        return true;
     }
 }

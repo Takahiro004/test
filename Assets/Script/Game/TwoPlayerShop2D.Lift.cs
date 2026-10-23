@@ -7,6 +7,7 @@ using UnityEngine;
 //  2. bagLiftTime 秒: 袋(Kinematic の Rigidbody2D)を MovePosition で上へ動かす。中の商品は底に押されて一緒に上がる
 //  3. bagLiftHoldTime 秒: 持ち上げたまま待つ
 //  2〜3 の間、袋の底より下へ落ちた商品は「こぼれた」として消し、合計から引く(Subtract Spilled From Total が ON のとき)
+//  袋の中が重すぎたら、bagTearAt まで上がったところで袋が破れて中身が散らばり、その人は0円(TwoPlayerShop2D.Weight.cs)
 public partial class TwoPlayerShop2D
 {
     bool liftStarted, liftDone;
@@ -64,6 +65,8 @@ public partial class TwoPlayerShop2D
         {
             float k = Mathf.Clamp01(time / Mathf.Max(0.01f, bagLiftTime));
             liftHeight = target * Mathf.SmoothStep(0f, 1f, k);
+            // 重すぎる袋は、bagTearAt まで上がったところで破れる(中身が散らばり0円。TwoPlayerShop2D.Weight.cs)
+            if (k >= bagTearAt) { TryTearBagOnLift(p1); TryTearBagOnLift(p2); }
             p1.bag.body.MovePosition(new Vector2(0f, liftHeight));
             p2.bag.body.MovePosition(new Vector2(0f, liftHeight));
             CheckSpill(p1);

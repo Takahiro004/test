@@ -11,8 +11,7 @@ public partial class TwoPlayerShop2D
         public Rigidbody2D body;   // 揺らすとき用(Kinematic。動かすと中の商品を押す)
         public Transform back, left, right, bottom;
         public TextMesh totalLabel;
-        public TextMesh weightLabel;   // 袋の中の重さ(TwoPlayerShop2D.Weight.cs)
-        public bool torn;              // 破れている間は true(落とした商品は袋に入らない)
+        public bool torn;              // 最後に持ち上げたとき破れた(TwoPlayerShop2D.Weight.cs)
     }
 
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
@@ -126,8 +125,6 @@ public partial class TwoPlayerShop2D
             var go = p.dropped[i];
             if (go == null) { p.dropped.RemoveAt(i); continue; }
 
-            if (p.bag.torn) continue;   // 破れている間は入らない(床に落ちて消える)
-
             // 袋の幅の中で、袋の口より下なら「入った」(底に少しめり込んでいても入ったことにする)
             Vector2 c = go.transform.position;
             if (c.x < left || c.x > right || c.y > top) continue;
@@ -146,7 +143,6 @@ public partial class TwoPlayerShop2D
 
         if (removeOutsideBag) RemoveOutsideBag(p);
         CheckFragile(p);   // 割れる商品(TwoPlayerShop2D.Fragile.cs)
-        CheckBagWeight(p);   // 重すぎたら袋が破れる(TwoPlayerShop2D.Weight.cs)
     }
 
     // 袋の外に落ちた商品を消す

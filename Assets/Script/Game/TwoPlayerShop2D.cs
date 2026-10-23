@@ -36,7 +36,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
 ///   TwoPlayerShop2D.Screens.cs 1P/棚/2P をどのカメラ(ディスプレイ)に映すかの割り当て・入れ替え
 ///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
-///   TwoPlayerShop2D.Weight.cs 商品の重さ(仮の重さ)・袋の重さの表示・重すぎたら袋が破れる
+///   TwoPlayerShop2D.Weight.cs 商品の重さ(仮の重さ)・最後に持ち上げたとき重すぎたら袋が破れる(0円)
 ///   TwoPlayerShop2D.Lift.cs   タイムアップのあと、結果発表の前にレジ袋を持ち上げる(こぼれた商品は合計から引く)
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
@@ -84,10 +84,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool breakFragile = true;
     [Tooltip("レジ袋: 袋から場外に落ちて消えた商品の金額を、合計から引く")]
     public bool subtractSpilledFromTotal = true;
-    [Tooltip("レジ袋: 袋の中の商品の重さの合計が Bag Max Weight を超えたら袋が破れて、中の商品が全部こぼれる(消えて合計から引く)。Bag Repair Time 秒で新しい袋に戻る")]
+    [Tooltip("タイムアップ: 最後に袋を持ち上げたとき、袋の中の商品の重さの合計が Bag Max Weight を超えていたら袋が破れて、中身が散らばり、その人の金額は0円になる(Bag Lift On Time Up が ON のとき)")]
     public bool bagTearEnabled = true;
-    [Tooltip("レジ袋: 袋の中の重さ(今の重さ / 破れる重さ)を袋に出す")]
-    public bool showBagWeight = true;
     [Tooltip("商品の重さ: 仮の重さを使う(名前から決めた適当な値。飲み物・魚・肉は重く、お菓子は軽い)。OFF なら商品の一覧の Weight を使う")]
     public bool useTempWeights = true;
     [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
@@ -275,13 +273,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("重さが Break Load を超えた状態がこの秒数続いたら割れる(落ちてきた瞬間の衝撃では割れないように)")]
     public float breakHoldTime = 0.3f;
 
-    [Header("袋が破れる(重さ。機能のON/OFF の Bag Tear Enabled)")]
-    [Tooltip("袋の中の商品の重さの合計がこれを超えたら破れる(重さ 1 の商品が何個ぶんか)")]
+    [Header("袋が破れる(最後に持ち上げたとき。機能のON/OFF の Bag Tear Enabled)")]
+    [Tooltip("袋の中の商品の重さの合計がこれを超えていたら、持ち上げたときに破れる(重さ 1 の商品が何個ぶんか)。重さは画面には出さない")]
     public float bagMaxWeight = 15f;
-    [Tooltip("重さがこの割合(破れる重さを1として)を超えたら、重さの表示を赤くする")]
-    [Range(0f, 1f)] public float bagWeightWarning = 0.8f;
-    [Tooltip("破れてから、新しい袋に戻るまでの秒数(その間に落とした商品は袋に入らない)")]
-    public float bagRepairTime = 2f;
+    [Tooltip("持ち上げ始めてから破れるまでの割合(持ち上げる高さを1として。0.3なら3割上がったところで破れる)")]
+    [Range(0f, 1f)] public float bagTearAt = 0.3f;
+    [Tooltip("破れたとき、中身が左右に散らばる強さ")]
+    public float bagTearScatter = 4f;
 
     [Header("棚の補充")]
     [Tooltip("取られてから補充されるまでの秒数")]
