@@ -289,6 +289,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
+    [Header("物理の重さ")]
+    [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
+    public bool weightAffectsPhysics = false;
+
     [Header("袋がきしむ擬音(破れる重さに近づいたら「ミシ…」)")]
     [Tooltip("擬音が出はじめる重さ(破れる重さ Bag Max Weight を1として。0.7なら7割)")]
     [Range(0f, 0.99f)] public float bagCreakStart = 0.7f;
@@ -969,7 +973,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.freezeRotation = freezeRotation;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;   // 袋が強く揺れても、ふちをすり抜けないように
-        rb.mass = Mathf.Max(0.01f, WeightOf(go));   // 商品ごとの重さ(割れる商品にかかる重さに効く。TwoPlayerShop2D.Weight.cs)
+        // 物理の重さ(mass)は、ふつうは全部 1。商品ごとの重さ(袋が破れる重さ)を mass にすると、重い商品(3)と軽い商品(0.5)の差が大きく、
+        // 軽い商品が押されて袋のふちをすり抜けやすくなった。Weight Affects Physics を ON にしたときだけ重さを使う
+        rb.mass = weightAffectsPhysics ? Mathf.Max(0.01f, WeightOf(go)) : 1f;
 
         if (!p.dropped.Contains(go)) p.dropped.Add(go);
 
