@@ -164,6 +164,7 @@ public partial class TwoPlayerShop2D
     void ShakeBag(Player target, float direction, float power, bool kicked)
     {
         if (target.bag == null || target.bag.body == null) return;
+        if (liftStarted) return;   // タイムアップで袋を持ち上げ始めたら、飛んでいる途中の足が届いても揺らさない(TwoPlayerShop2D.Lift.cs)
         if (target.shakeRoutine != null) StopCoroutine(target.shakeRoutine);
         target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, direction, power));
         if (kicked)
