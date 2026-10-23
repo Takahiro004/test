@@ -41,10 +41,14 @@ public partial class TwoPlayerShop2D
         float size = HudTextSize * (over ? 1.1f : Mathf.Lerp(0.6f, 0.9f, k)) * Mathf.Max(0.1f, bagCreakSize);
         SetTextSize(label, size);
 
-        // 場所: 袋の左か右のふちの外側、高さはふちの上半分くらい(袋の中の商品と重ならないように)
+        // 場所: 袋のふちのまわり(左右のふちの上のあたり)。文字が画面からはみ出さないように、画面の中に収める
+        // (前は袋の外側に出していたので、袋が画面いっぱいだと文字が半分画面の外になった)
         float side = Random.value < 0.5f ? -1f : 1f;
-        Vector3 basePos = new Vector3(bagX + side * (bagWidth / 2f + Random.Range(0.2f, 0.8f)),
-                                      floorY + bagHeight * Random.Range(0.35f, 1f), 0f);
+        float halfWidth = word.Length * size * 6.4f / 2f;   // 文字の横幅の半分(およそ。1文字 = 大きさ x 6.4)
+        float halfView = PlayerViewSize().x / 2f;
+        float x = bagX + side * (bagWidth / 2f + Random.Range(-0.6f, 0.4f));
+        x = Mathf.Clamp(x, -halfView + halfWidth + 0.1f, halfView - halfWidth - 0.1f);
+        Vector3 basePos = new Vector3(x, floorY + bagHeight * Random.Range(0.75f, 1.1f), 0f);
         label.transform.localRotation = Quaternion.Euler(0f, 0f, side * -Random.Range(5f, 20f));   // 少し傾ける
 
         const float duration = 1.1f;
