@@ -30,6 +30,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
 ///   TwoPlayerShop2D.Fragile.cs 割れる商品(上に重さが乗ると割れて袋から消える)
+///   TwoPlayerShop2D.Creak.cs  袋がきしむ擬音(重くなってきたら袋のまわりに「ミシ…」)
 ///   TwoPlayerShop2D.Menu.cs   献立ミッション(食材5品がそろったら、それ以降の商品が1.2倍)
 ///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
@@ -89,6 +90,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool subtractSpilledFromTotal = true;
     [Tooltip("タイムアップ: 最後に袋を持ち上げたとき、袋の中の商品の重さの合計が Bag Max Weight を超えていたら袋の底が破れて、中身が落ちて散らばり、その人の金額は0円になる(Bag Lift On Time Up が ON のとき)")]
     public bool bagTearEnabled = true;
+    [Tooltip("レジ袋: 袋の中が重くなってきたら(破れる重さに近づいたら)、袋のまわりに「ミシ…」などの擬音を出す。重いほどたくさん出る")]
+    public bool bagCreakEnabled = true;
     [Tooltip("商品の重さ: 仮の重さを使う(名前から決めた適当な値。飲み物・魚・肉は重く、お菓子は軽い)。OFF なら商品の一覧の Weight を使う")]
     public bool useTempWeights = true;
     [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
@@ -285,6 +288,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float bagTearDelay = 2f;
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
+
+    [Header("袋がきしむ擬音(破れる重さに近づいたら「ミシ…」)")]
+    [Tooltip("擬音が出はじめる重さ(破れる重さ Bag Max Weight を1として。0.7なら7割)")]
+    [Range(0f, 0.99f)] public float bagCreakStart = 0.7f;
+    [Tooltip("出す擬音(この中からランダム)")]
+    public string[] bagCreakWords = { "ミシ…", "ミシミシ…", "ギシ…", "ギチ…" };
+    [Tooltip("擬音の文字の大きさ(1で普通)")]
+    public float bagCreakSize = 1f;
 
     [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
     [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)。1試合に、この中から1つだけ出る")]
