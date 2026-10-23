@@ -287,8 +287,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float bagTearScatter = 1.5f;
 
     [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
-    [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)")]
+    [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)。1試合に、この中から1つだけ出る")]
     public MenuRecipe[] menuList = MenuRecipe.Defaults();
+    [Tooltip("この試合の献立を決める(Menu List の番号。0始まり)。-1 ならランダム")]
+    public int menuFixedIndex = -1;
+    [Tooltip("袋の画面の献立の表示の場所(画面の真ん中が 0、右の端が 0.5、上の端が 0.5)。文字の左上の位置")]
+    public Vector2 menuLabelPosition = new Vector2(-0.45f, 0.3f);
+    [Tooltip("袋の画面の献立の文字の大きさ(1で普通)")]
+    public float menuLabelSize = 1f;
     [Tooltip("完成したあとに袋に入れた商品の金額の倍率")]
     public float menuBonusRate = 1.2f;
     [Tooltip("「○○完成！」を出しておく秒数")]
@@ -477,6 +483,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
         ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
         RestorePads();   // もう一度遊ぶとき、前のゲームのコントローラーの割り当てを戻す
+        ChooseMenu();    // この試合の献立(TwoPlayerShop2D.Menu.cs)
 
         SetupPhysicsLayers();
         CreateProducts();
@@ -715,6 +722,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
+        UpdateMenuLabels();          // この試合の献立と、そろった食材(TwoPlayerShop2D.Menu.cs)
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;
