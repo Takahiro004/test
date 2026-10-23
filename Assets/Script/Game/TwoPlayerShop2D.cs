@@ -574,8 +574,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         // 3Dモデル → 画像 → 仮の図形 の順に、入っているものを使う
         var go = info.model != null ? MakeModelProduct(objName, slot.pos, info, layerShop)
                                     : MakeSprite(objName, slot.pos, slot.shape, slot.color, layerShop, info.sprite);
-        // 商品ごとの大きさ(一覧の Size。0 以下なら 1 のまま)。当たり判定も一緒に変わる
-        if (info.size > 0f) go.transform.localScale *= info.size;
+        // 商品ごとの大きさ。当たり判定も一緒に変わる(0 以下なら 1 のまま)
+        //  - 3Dモデルの商品は Size を使わず、Model Size を使う(Size は画像・図形に合わせた値なので)
+        float scale = info.model != null ? info.modelSize : info.size;
+        if (scale > 0f) go.transform.localScale *= scale;
         PutOnShelf(go, slot);   // 棚を出すときは板の上に乗せる
         RegisterProduct(go);
         slotOf[go] = slot;
