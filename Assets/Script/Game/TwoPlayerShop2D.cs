@@ -310,6 +310,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 menuLabelPosition = new Vector2(-0.45f, 0.3f);
     [Tooltip("袋の画面の献立の文字の大きさ(1で普通)")]
     public float menuLabelSize = 1f;
+    [Tooltip("まだ棚に出ていない献立の食材を、山札から引くときに優先する確率(0.25なら4回に1回)。残り時間が少なくなったら必ず出す")]
+    [Range(0f, 1f)] public float menuIngredientBoost = 0.25f;
     [Tooltip("完成したあとに袋に入れた商品の金額の倍率")]
     public float menuBonusRate = 1.2f;
     [Tooltip("「○○完成！」を出しておく秒数")]
@@ -578,6 +580,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         RegisterProduct(go);
         slotOf[go] = slot;
         slot.go = go;
+        if (UseDeck) MarkShown(slot.product);   // この試合で棚に出した(献立の食材を必ず出すため。TwoPlayerShop2D.Deck.cs)
         SetSlotTag(slot);   // 値札をこの商品に
         priceOf[go] = info.price;
         infoOf[go] = info;   // 割れるか・重さ(TwoPlayerShop2D.Fragile.cs)
