@@ -112,6 +112,7 @@ public partial class TwoPlayerShop2D
         if (timerPlaceholder != null)
             timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         UpdateGameTimer();
+        UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
 
         if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
         var cam = switcher.screens[screenShop].camera;
