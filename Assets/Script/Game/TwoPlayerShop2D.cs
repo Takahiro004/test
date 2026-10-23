@@ -30,6 +30,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
 ///   TwoPlayerShop2D.Fragile.cs 割れる商品(上に重さが乗ると割れて袋から消える)
+///   TwoPlayerShop2D.Menu.cs   献立ミッション(食材5品がそろったら、それ以降の商品が1.2倍)
 ///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
@@ -74,6 +75,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool createFloor = true;
     [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
     public bool createBag = true;
+    [Tooltip("献立ミッション: 献立の食材5品が全部自分の袋に入ったら「○○完成！」。それ以降に袋に入れた商品の金額が Menu Bonus Rate 倍")]
+    public bool menuMission = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
@@ -283,6 +286,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
+    [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
+    [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)")]
+    public MenuRecipe[] menuList = MenuRecipe.Defaults();
+    [Tooltip("完成したあとに袋に入れた商品の金額の倍率")]
+    public float menuBonusRate = 1.2f;
+    [Tooltip("「○○完成！」を出しておく秒数")]
+    public float menuCompleteTime = 2.5f;
+
     [Header("棚の補充")]
     [Tooltip("取られてから補充されるまでの秒数")]
     public float refillDelay = 1.5f;
@@ -423,6 +434,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
         public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
         public Coroutine screenShakeRoutine;   // 自分の画面(カメラ)が揺れている処理
+        public string completedMenu;     // 完成した献立の名前(献立ミッション。まだなら null)
         public bool hasCameraBase;
         public Vector3 cameraBase;       // 揺れていないときのカメラの位置
     }
