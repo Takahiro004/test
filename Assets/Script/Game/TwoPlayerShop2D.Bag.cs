@@ -11,6 +11,7 @@ public partial class TwoPlayerShop2D
         public Rigidbody2D body;   // 揺らすとき用(Kinematic。動かすと中の商品を押す)
         public Transform back, left, right, bottom;
         public TextMesh totalLabel;
+        public bool torn;              // 最後に持ち上げたとき破れた(TwoPlayerShop2D.Weight.cs)
     }
 
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
