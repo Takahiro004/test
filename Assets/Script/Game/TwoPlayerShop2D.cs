@@ -36,6 +36,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
 ///   TwoPlayerShop2D.Screens.cs 1P/棚/2P をどのカメラ(ディスプレイ)に映すかの割り当て・入れ替え
 ///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
+///   TwoPlayerShop2D.Lift.cs   タイムアップのあと、結果発表の前にレジ袋を持ち上げる(こぼれた商品は合計から引く)
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
 ///   TwoPlayerShop2D.Timer.cs  制限時間(棚の画面に残り時間を出す)
 ///   Inspector の欄の順番が変わらないように、public の設定はすべて本体に置く
@@ -121,6 +122,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showResultOnTimeUp = true;
     [Tooltip("タイムアップ: 勝ち負けの前に、棚の画面で合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる結果発表を出す")]
     public bool showResultBars = true;
+    [Tooltip("タイムアップ: 結果発表の前に、1P/2P のレジ袋を持ち上げる。袋からこぼれて落ちた商品は消えて、その金額を合計から引く(詰め放題の「持ち上げてこぼれたら無し」)")]
+    public bool bagLiftOnTimeUp = true;
     [Tooltip("エントリー画面: 再生したらまずエントリー画面を出し、1P/2P が A で参加したらカウントダウンして開始(制限時間は開始から数える)。OFF ならすぐ始まる")]
     public bool showEntryScreen = true;
     [Tooltip("コントローラー: F2(またはビューボタン長押し)で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
@@ -217,6 +220,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float resultBarTextScale = 1.5f;
 
     [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
+
+    [Header("タイムアップ: 袋を持ち上げる(機能のON/OFF の Bag Lift On Time Up)")]
+    [Tooltip("タイムアップしてから持ち上げ始めるまでの秒数(落ちている途中の商品が袋に入るのを待つ)")]
+    public float bagLiftDelay = 0.8f;
+    [Tooltip("持ち上げる高さ(1P/2Pの画面の高さを1として。0.2なら2割)。袋の上の合計金額が画面からはみ出さない高さまでで止まる")]
+    [Range(0f, 0.6f)] public float bagLiftRatio = 0.2f;
+    [Tooltip("持ち上げるのにかかる秒数(小さいほど速く持ち上がり、商品がこぼれやすい)")]
+    public float bagLiftTime = 1.5f;
+    [Tooltip("持ち上げたあと、そのまま待つ秒数(こぼれる商品が落ちきるのを待つ)。そのあと結果発表へ")]
+    public float bagLiftHoldTime = 1.5f;
 
     [Header("コントローラー")]
     [Tooltip("スティックの遊び(これ未満は無視)")]

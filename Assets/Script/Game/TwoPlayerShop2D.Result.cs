@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 
 // タイムアップのあと(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 // 操作と点数を止めて、
+//  -. 袋を持ち上げる(bagLiftOnTimeUp。TwoPlayerShop2D.Lift.cs): こぼれた商品は消えて合計から引く
 //  0. 結果発表(showResultBars): 棚の画面で、合計金額の棒グラフ(1P 赤・2P 青)が下から伸びる。上にレジ袋と金額
 //     2本は同じ速さで伸び、少ない方が先に止まる。画面の上の端 = resultBarScreenAmount(1万)。
 //     棒の先が画面の resultBarFollowHeight の高さまで来たら、カメラが棒の先を追いかけて上へ進む(低い方の棒は画面の下へ流れて見えなくなる)
@@ -76,6 +77,9 @@ public partial class TwoPlayerShop2D
     void UpdateResult()
     {
         ClearHeldOnTimeUp();   // 落とす前の商品とカーソルを消す(最初の1回だけ)
+
+        // 袋を持ち上げる(こぼれた商品は合計から引く。TwoPlayerShop2D.Lift.cs)
+        if (UpdateBagLift()) return;
 
         // 0. 結果発表(棒グラフ)
         if (showResultBars && !barsDone)
