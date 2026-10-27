@@ -116,9 +116,13 @@ public partial class TwoPlayerShop2D
 
         var model = Instantiate(info.model, go.transform);
         model.name = "Model";
+        // プレハブで回した向き・大きさは残す(前はここで上書きしていたので、プレハブを回しても変わらなかった)。
+        // 一覧の Model Rotation は、プレハブの向きにさらに足す
+        Quaternion prefabRotation = info.model.transform.localRotation;
+        Vector3 prefabScale = info.model.transform.localScale;
         model.transform.localPosition = Vector3.zero;
-        model.transform.localRotation = Quaternion.Euler(info.modelRotation);
-        model.transform.localScale = Vector3.one;
+        model.transform.localRotation = Quaternion.Euler(info.modelRotation) * prefabRotation;
+        model.transform.localScale = prefabScale;
 
         var renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
@@ -131,7 +135,7 @@ public partial class TwoPlayerShop2D
             float k = modelOriginalSize ? Mathf.Max(0.0001f, modelUnitScale)
                                         : productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
             var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
-            model.transform.localScale = Vector3.one * k;
+            model.transform.localScale = prefabScale * k;
             model.transform.localPosition = -b.center * k;
             if (outline != null)
             {
