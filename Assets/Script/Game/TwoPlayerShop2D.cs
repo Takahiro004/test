@@ -502,7 +502,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void Start()
     {
         ApplyTextFont();   // 文字のフォントと解像度(TwoPlayerShop2D.Bag.cs)。文字を作る前に決める
-        if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
+        if (switcher == null) switcher = FindAnyObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
         ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
         RestorePads();   // もう一度遊ぶとき、前のゲームのコントローラーの割り当てを戻す
