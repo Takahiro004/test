@@ -105,6 +105,7 @@ public partial class TwoPlayerShop2D
         if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
+        UpdateOwnScreenFrames();   // 商品を持って自分の画面を操作中なら、その画面にプレイヤーの色の枠(TwoPlayerShop2D.Frame.cs)
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||

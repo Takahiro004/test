@@ -33,6 +33,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Creak.cs  袋がきしむ擬音(重くなってきたら袋のまわりに「ミシ…」)
 ///   TwoPlayerShop2D.Menu.cs   献立ミッション(食材5品がそろったら、それ以降の商品が1.2倍)
 ///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
+///   TwoPlayerShop2D.Frame.cs  操作中の画面の枠(商品を持って自分の画面を操作しているとき、プレイヤーの色の枠)
 ///   TwoPlayerShop2D.Csv.cs    商品のステータスを表(CSV)から読み込む
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
@@ -79,6 +80,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool createBag = true;
     [Tooltip("献立ミッション: 献立の食材5品が全部自分の袋に入ったら「○○完成！」。それ以降に袋に入れた商品の金額が Menu Bonus Rate 倍")]
     public bool menuMission = true;
+    [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
+    public bool showOwnScreenFrame = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
@@ -299,6 +302,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool modelOriginalSize = false;
     [Tooltip("Model Original Size が ON のとき、モデルの大きさにかける倍率(モデルの1メートル = ゲームの何マスか。ゲームの商品はだいたい 1.4 マス)")]
     public float modelUnitScale = 1f;
+
+    [Header("操作中の画面の枠(商品を持って自分の画面を操作しているとき)")]
+    [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
+    public float ownScreenFrameWidth = 0.3f;
 
     [Header("物理の重さ")]
     [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
