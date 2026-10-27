@@ -82,6 +82,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool menuMission = true;
     [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
     public bool showOwnScreenFrame = true;
+    [Tooltip("棚の画面: ふちに枠を出す。縦に半分ずつ、それぞれのプレイヤーの色(どちらが左かは Shop Frame Left Is P1)")]
+    public bool showShopScreenFrame = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
@@ -306,6 +308,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("操作中の画面の枠(商品を持って自分の画面を操作しているとき)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
     public float ownScreenFrameWidth = 0.3f;
+    [Tooltip("棚の画面の枠の太さ")]
+    public float shopScreenFrameWidth = 0.3f;
+    [Tooltip("棚の画面の枠で、左半分を 1P の色にする。OFF なら 左 = 2P・右 = 1P")]
+    public bool shopFrameLeftIsP1 = false;
 
     [Header("物理の重さ")]
     [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]

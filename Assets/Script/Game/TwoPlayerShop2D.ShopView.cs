@@ -106,6 +106,7 @@ public partial class TwoPlayerShop2D
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
         UpdateOwnScreenFrames();   // 商品を持って自分の画面を操作中なら、その画面にプレイヤーの色の枠(TwoPlayerShop2D.Frame.cs)
+        UpdateShopScreenFrame();   // 棚の画面の枠(左右半分ずつプレイヤーの色)
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
