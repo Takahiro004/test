@@ -39,36 +39,36 @@ public class ProductInfo
         this.name = name; this.rank = rank; this.price = price; this.menuIngredient = menuIngredient; this.shape = shape;
     }
 
-    // 2026-10-21 にチームで決めた商品(商品一覧.xlsx)。献立の食材(★)を先に並べてある
-    // 金額は価格帯の中の仮の値(ランク1: 100 / 2: 200 / 3: 500 / 4: 2000 / 5: 10000)。決まったら Inspector で直す
+    // 2026-10-27 にチームで決めた商品と値段(食材リスト.xlsx の60品 + カップ麺・長ネギ。値段の安い順)。献立の食材(★)は true
+    // ランクは値段から決める(〜150: 1 / 〜300: 2 / 〜1,000: 3 / 〜5,000: 4 / それより上: 5。仮の図形の色に使う)
     public static ProductInfo[] Defaults()
     {
-        int[] price = { 0, 100, 200, 500, 2000, 10000 };
-        (string name, int rank, bool menu)[] table = {
-            // 献立の食材(★)
-            ("にんじん", 1, true), ("じゃがいも", 1, true),
-            ("たまご", 2, true), ("ぎゅうにゅう", 2, true), ("すぱげてぃ", 2, true), ("べーこん", 2, true),
-            ("ぶろっこりー", 2, true), ("しょうゆ", 2, true),
-            ("ゆでえび", 3, true), ("ばたー", 3, true), ("めんつゆ", 3, true), ("おりーぶおいる", 3, true),
-            ("ぎゅうにく", 4, true), ("まぐろ", 4, true),
-            ("ずわいかに", 5, true), ("たい", 5, true), ("ひらめ", 5, true),
-            // ほかの商品
-            ("うどん", 1, false), ("やきそば", 1, false), ("ちくわ", 1, false), ("なっとう", 1, false), ("ばなな", 1, false),
-            ("ぐみ", 1, false), ("らむね", 1, false), ("おちゃ", 1, false), ("りんご", 1, false), ("いわし", 1, false),
-            ("あいすばー", 1, false), ("めかぶ", 1, false), ("むきえだまめ", 1, false),
-            ("さつまいも", 2, false), ("ころっけ", 2, false), ("ぽてち", 2, false), ("こーら", 2, false), ("だんご", 2, false),
-            ("ぱぷりか", 2, false), ("りんごじゅーす", 2, false), ("ちょこれーと", 2, false), ("もなか", 2, false),
-            ("さんま", 3, false), ("からあげ", 3, false), ("とんかつ", 3, false), ("ぎょうざ", 3, false), ("ろーす", 3, false),
-            ("てばさき", 3, false), ("ぽてとさらだ", 3, false), ("つみれ", 3, false), ("ぷりんあらもーど", 3, false),
-            ("ずんだもち", 3, false), ("うめぼし", 3, false),
-            ("かるび", 4, false), ("ねぎたんしお", 4, false), ("らむにく", 4, false), ("もどりがつお", 4, false),
-            ("さくらんぼ", 4, false), ("ぶどう", 4, false), ("ふるーつもり", 4, false),
-            ("きゃびあ", 5, false), ("いちぼ", 5, false), ("ろーすとびーふ", 5, false), ("なまはむ", 5, false),
+        (string name, int price, bool menu)[] table = {
+            ("うどん", 50, false), ("にんじん", 100, true), ("じゃがいも", 100, true), ("やきそば", 100, false),
+            ("ちくわ", 100, false), ("なっとう", 100, false), ("らむね", 100, false), ("いわし", 100, false),
+            ("あいすばー", 100, false), ("めかぶ", 100, false),
+            ("カップ麺", 100, false), ("長ネギ", 100, false), ("ぐみ", 120, false), ("おちゃ", 130, false),
+            ("ばなな", 150, false), ("りんご", 150, false), ("むきえだまめ", 150, false), ("ぽてち", 150, false),
+            ("ぱぷりか", 150, false), ("こーら", 180, false), ("すぱげてぃ", 200, true), ("ぶろっこりー", 200, true),
+            ("ころっけ", 200, false), ("りんごじゅーす", 200, false), ("ちょこれーと", 200, false), ("もなか", 200, false),
+            ("ぎゅうにゅう", 230, true), ("たまご", 250, true), ("べーこん", 250, true), ("しょうゆ", 250, true),
+            ("ぽてとふらい", 250, false), ("さんま", 300, false), ("つみれ", 300, false), ("めんつゆ", 350, true),
+            ("ぎょうざ", 350, false), ("からあげ", 400, false), ("とんかつ", 400, false), ("てばさき", 400, false),
+            ("ぷりんあらもーど", 400, false), ("ばたー", 450, true), ("ゆでえび", 500, true), ("ろーす", 500, false),
+            ("おりーぶおいる", 600, true), ("うめぼし", 600, false), ("ぎゅうにく", 1500, true), ("らむにく", 1500, false),
+            ("もどりがつお", 1500, false), ("まぐろ", 2000, true), ("かるび", 2000, false), ("ぶどう", 2000, false),
+            ("ねぎたんしお", 2500, false), ("すいか", 2500, false), ("さくらんぼ", 3000, false), ("ふるーつもり", 3000, false),
+            ("ずわいかに", 10000, true), ("たい", 10000, true), ("ひらめ", 10000, true), ("ろーすとびーふ", 12000, false),
+            ("いちぼ", 15000, false), ("いせえび", 15000, false), ("きゃびあ", 20000, false), ("なまはむ", 30000, false),
         };
         var shapes = (ProductShape[])System.Enum.GetValues(typeof(ProductShape));
         var list = new ProductInfo[table.Length];
         for (int i = 0; i < table.Length; i++)   // 仮の図形は、見分けやすいように順番に変える
-            list[i] = new ProductInfo(table[i].name, table[i].rank, price[table[i].rank], table[i].menu, shapes[i % shapes.Length]);
+        {
+            int p = table[i].price;
+            int rank = p <= 150 ? 1 : p <= 300 ? 2 : p <= 1000 ? 3 : p <= 5000 ? 4 : 5;
+            list[i] = new ProductInfo(table[i].name, rank, p, table[i].menu, shapes[i % shapes.Length]);
+        }
         foreach (var p in list)   // 割れる商品(仮。ほかにも割れるものがあれば一覧で Fragile を付ける)
             if (p.name == "たまご") p.fragile = true;
         return list;
