@@ -82,7 +82,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool menuMission = true;
     [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
     public bool showOwnScreenFrame = true;
-    [Tooltip("棚の画面: ふちに枠を出す。縦に半分ずつ、それぞれのプレイヤーの色(どちらが左かは Shop Frame Left Is P1)")]
+    [Tooltip("棚の画面: ふちに枠を出す。縦に半分ずつ、それぞれのプレイヤーの色(どちらが左かは Shop Frame Left Is P1)。棚の画面にいるプレイヤーの側だけ出る")]
     public bool showShopScreenFrame = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;

@@ -4,7 +4,8 @@ using UnityEngine;
 // プレイヤーが商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す。
 // どの画面を操作しているかが、ひと目で分かるように。棚に戻ったら消える。
 //  - 枠はカメラの子にするので、画面が揺れても画面のふちに付いたまま。映っている範囲いっぱいに出す
-// 棚の画面には、いつも枠を出す。縦に半分ずつ色分けする(左半分と右半分で、それぞれのプレイヤーの色)。
+// 棚の画面の枠は、縦に半分ずつ色分けする(左半分と右半分で、それぞれのプレイヤーの色)。
+// 棚の画面を操作しているプレイヤーの側だけ出す(商品を持って自分の画面に行っているプレイヤーの側は消える)。
 //  - どちらを左にするかは Shop Frame Left Is P1(OFF なら 左 = 2P の青・右 = 1P の赤。画面のイメージどおり)
 public partial class TwoPlayerShop2D
 {
@@ -22,8 +23,13 @@ public partial class TwoPlayerShop2D
             for (int k = 0; k < 6; k++)
                 shopFrame[k] = MakeBagPart($"ShopFrame_{k}", root, layerShop, Color.white, 2800, false);   // 商品・カーソルより手前
         }
-        foreach (var b in shopFrame) b.gameObject.SetActive(showShopScreenFrame);
-        if (!showShopScreenFrame || p1 == null) return;
+        if (!showShopScreenFrame || p1 == null) { foreach (var b in shopFrame) b.gameObject.SetActive(false); return; }
+
+        // 棚の画面にいるプレイヤーの側だけ出す
+        var leftPlayer = shopFrameLeftIsP1 ? p1 : p2;
+        var rightPlayer = shopFrameLeftIsP1 ? p2 : p1;
+        foreach (int k in new[] { 0, 2, 4 }) shopFrame[k].gameObject.SetActive(leftPlayer.inShop);
+        foreach (int k in new[] { 1, 3, 5 }) shopFrame[k].gameObject.SetActive(rightPlayer.inShop);
 
         Vector2 vis = ShopVisibleSize();   // 映っている範囲(縦に回したモニターでも、見る人から見た縦横)
         float w = vis.x, h = vis.y, t = Mathf.Max(0.01f, shopScreenFrameWidth);
