@@ -734,6 +734,8 @@ MonoBehaviour:
   createFloor: 1
   createBag: 1
   menuMission: 1
+  showOwnScreenFrame: 1
+  showShopScreenFrame: 1
   showBagTotal: 0
   showPricePopup: 1
   removeOutsideBag: 1
@@ -1383,7 +1385,7 @@ MonoBehaviour:
     size: 1
     model: {fileID: 3727405277673888577, guid: 125babc9d919a7f4f981c9be4cf6f065, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
-    modelSize: 1
+    modelSize: 1.8
   - name: "\u3046\u3081\u307C\u3057"
     rank: 3
     price: 600
@@ -1631,6 +1633,8 @@ MonoBehaviour:
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
+  productCsv: {fileID: 4900000, guid: 12d984a5f4f149da8a01023bc59f0dab, type: 3}
+  csvGramsPerWeight: 100
   productShapes: 000000000200000005000000060000000400000007000000
   productSprites:
   - {fileID: 0}
@@ -1649,6 +1653,9 @@ MonoBehaviour:
   bagTearScatter: 1.5
   modelOriginalSize: 0
   modelUnitScale: 1
+  ownScreenFrameWidth: 0.3
+  shopScreenFrameWidth: 0.3
+  shopFrameLeftIsP1: 1
   weightAffectsPhysics: 0
   bagCreakStart: 0.7
   bagCreakWords:
@@ -1740,7 +1747,7 @@ MonoBehaviour:
   portraitRows: 3
   landscapeColumns: 3
   landscapeRows: 2
-  shelfSlideInterval: 120
+  shelfSlideInterval: 8
   shelfSlideTime: 1
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
