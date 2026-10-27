@@ -125,8 +125,11 @@ public partial class TwoPlayerShop2D
         {
             Bounds b = renderers[0].bounds;
             foreach (var r in renderers) b.Encapsulate(r.bounds);
-            // 縦横の長いほうが productSize になる大きさにして、真ん中を親の位置に合わせる
-            float k = productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
+            // 大きさ: ふつうは縦横の長いほうが productSize になる大きさ(どのモデルも同じくらいの大きさ)。
+            // Model Original Size が ON なら、もらったモデルの大きさのまま(x Model Unit Scale)。モデルどうしの大きさの違いが残る
+            // 真ん中は親の位置に合わせる
+            float k = modelOriginalSize ? Mathf.Max(0.0001f, modelUnitScale)
+                                        : productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
             var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
             model.transform.localScale = Vector3.one * k;
             model.transform.localPosition = -b.center * k;

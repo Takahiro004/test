@@ -289,6 +289,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
+    [Header("3Dモデルの商品の大きさ")]
+    [Tooltip("OFF: どのモデルも、縦横の長いほうがふつうの商品の大きさになる(モデルどうしの大きさの違いは無くなる)。ON: もらったモデルの大きさのまま出す(x Model Unit Scale)。どちらも、さらに一覧の Model Size をかける")]
+    public bool modelOriginalSize = false;
+    [Tooltip("Model Original Size が ON のとき、モデルの大きさにかける倍率(モデルの1メートル = ゲームの何マスか。ゲームの商品はだいたい 1.4 マス)")]
+    public float modelUnitScale = 1f;
+
     [Header("物理の重さ")]
     [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
     public bool weightAffectsPhysics = false;
