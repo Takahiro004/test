@@ -39,14 +39,15 @@ public class ProductInfo
         this.name = name; this.rank = rank; this.price = price; this.menuIngredient = menuIngredient; this.shape = shape;
     }
 
-    // 2026-10-27 にチームで決めた商品と値段(食材リスト.xlsx。60品・値段の安い順)。献立の食材(★)は true
+    // 2026-10-27 にチームで決めた商品と値段(食材リスト.xlsx の60品 + カップ麺・長ネギ。値段の安い順)。献立の食材(★)は true
     // ランクは値段から決める(〜150: 1 / 〜300: 2 / 〜1,000: 3 / 〜5,000: 4 / それより上: 5。仮の図形の色に使う)
     public static ProductInfo[] Defaults()
     {
         (string name, int price, bool menu)[] table = {
             ("うどん", 50, false), ("にんじん", 100, true), ("じゃがいも", 100, true), ("やきそば", 100, false),
             ("ちくわ", 100, false), ("なっとう", 100, false), ("らむね", 100, false), ("いわし", 100, false),
-            ("あいすばー", 100, false), ("めかぶ", 100, false), ("ぐみ", 120, false), ("おちゃ", 130, false),
+            ("あいすばー", 100, false), ("めかぶ", 100, false),
+            ("カップ麺", 100, false), ("長ネギ", 100, false), ("ぐみ", 120, false), ("おちゃ", 130, false),
             ("ばなな", 150, false), ("りんご", 150, false), ("むきえだまめ", 150, false), ("ぽてち", 150, false),
             ("ぱぷりか", 150, false), ("こーら", 180, false), ("すぱげてぃ", 200, true), ("ぶろっこりー", 200, true),
             ("ころっけ", 200, false), ("りんごじゅーす", 200, false), ("ちょこれーと", 200, false), ("もなか", 200, false),

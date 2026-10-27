@@ -955,6 +955,32 @@ MonoBehaviour:
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
+  - name: "\u30AB\u30C3\u30D7\u9EBA"
+    rank: 1
+    price: 100
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: -8810456238035203612, guid: 9cc08e6f1cb8ba94e9ef00ff3f9cfd15, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u9577\u30CD\u30AE"
+    rank: 1
+    price: 100
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 6149342204815154439, guid: e71a68e01f116cd47a4182603d6dec57, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3050\u307F"
     rank: 1
     price: 120
