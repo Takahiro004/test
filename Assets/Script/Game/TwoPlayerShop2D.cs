@@ -33,6 +33,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Creak.cs  袋がきしむ擬音(重くなってきたら袋のまわりに「ミシ…」)
 ///   TwoPlayerShop2D.Menu.cs   献立ミッション(食材5品がそろったら、それ以降の商品が1.2倍)
 ///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
+///   TwoPlayerShop2D.Csv.cs    商品のステータスを表(CSV)から読み込む
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
@@ -260,6 +261,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("商品の一覧(棚の左上から順に並ぶ。画像・3Dモデルは各商品の Sprite / Model に入れる)")]
     [Tooltip("1行が商品1つ(名前・ランク・金額・献立の食材か・仮の図形・画像・3Dモデル)。棚のマス(段 x 列)より多いぶんは棚に出ない。並べたい順に入れ替える。空にすると前の設定(Product Shapes など)を使う")]
     public ProductInfo[] productList = ProductInfo.Defaults();
+    [Tooltip("商品のステータスの表(CSV)。入れると、再生を始めたときに、商品名が同じ商品の値段・ランク・献立の食材・重さ・割れる・割れる重さ・大きさ・モデルの大きさを表の値にする(空のマスはそのまま)。画像・3Dモデルは上の一覧のまま。Excel では「CSV UTF-8(コンマ区切り)」で保存する")]
+    public TextAsset productCsv;
+    [Tooltip("表の重さがグラム(見出しに g が付いている)のとき、何グラムを重さ 1 にするか")]
+    public float csvGramsPerWeight = 100f;
 
     // 前の設定(商品の一覧が空のときだけ使う。Inspector には出さない)
     [HideInInspector] public ProductShape[] productShapes = {
@@ -509,6 +514,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         ChooseMenu();    // この試合の献立(TwoPlayerShop2D.Menu.cs)
 
         SetupPhysicsLayers();
+        ApplyProductCsv();   // 商品のステータスを表(CSV)から読む(TwoPlayerShop2D.Csv.cs)。棚に並べる前に
         CreateProducts();
         if (arrangeCameras) ArrangeCameras();
 
