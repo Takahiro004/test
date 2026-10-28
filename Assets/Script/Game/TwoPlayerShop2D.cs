@@ -309,7 +309,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float bagMaxWeight = 15f;
     [Tooltip("上まで持ち上げてから、破れるまでの秒数(耐えている途中で破れる。Bag Lift Hold Time より長くすると、耐える時間の最後に破れる)")]
     public float bagTearDelay = 2f;
-    [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
+    [Tooltip("破れたとき、袋の底から出た中身が左右へ流れる強さ(速さはばらばら。速いものは画面の外へ流れて消え、遅いものは机に残る。0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
     [Header("レジ袋の3Dモデル・破れる演出(TwoPlayerShop2D.BagModel.cs)")]
@@ -407,6 +407,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋の左右のふちの当たり判定を、見た目より外側へ厚くする長さ(商品がふちをすり抜けないように。見た目は変わらない)")]
     public float bagWallOuterThickness = 0.6f;
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
+    [Tooltip("袋の画像が無いときの仮の袋で、白いふち(U字の線)を見せる。OFF なら透明(当たり判定はそのまま。薄い背景は出る)")]
+    public bool bagFrameVisible = false;
     [Tooltip("袋の画像(未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
     public Sprite bagSprite;
     [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
@@ -834,6 +836,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
+        ApplyBagFrameVisibility();   // 仮の袋の白いふちを見せるか(TwoPlayerShop2D.Bag.cs)
         UpdateMenuLabels();          // この試合の献立と、そろった食材(TwoPlayerShop2D.Menu.cs)
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
