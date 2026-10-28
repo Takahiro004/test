@@ -733,7 +733,7 @@ MonoBehaviour:
   rotateHeldProduct: 1
   createFloor: 1
   createBag: 1
-  menuMission: 0
+  menuMission: 1
   showOwnScreenFrame: 1
   showShopScreenFrame: 1
   showBagTotal: 0
@@ -741,8 +741,8 @@ MonoBehaviour:
   removeOutsideBag: 1
   breakFragile: 1
   subtractSpilledFromTotal: 1
-  bagTearEnabled: 0
-  bagCreakEnabled: 0
+  bagTearEnabled: 1
+  bagCreakEnabled: 1
   useTempWeights: 1
   clashEnabled: 1
   clashRematchOnTie: 1
@@ -763,8 +763,8 @@ MonoBehaviour:
   showTimerPlaceholder: 0
   showGameTimer: 1
   showResultOnTimeUp: 1
-  showResultBars: 0
-  bagLiftOnTimeUp: 0
+  showResultBars: 1
+  bagLiftOnTimeUp: 1
   showEntryScreen: 1
   fixedPadAssignment: 1
   useKeyboard: 1
@@ -1670,6 +1670,12 @@ MonoBehaviour:
   bagTearShake: 0.04
   bagTearClip: {fileID: 0}
   bagTearOpenTime: 0.4
+  bagBottomOpenAngle: 120
+  bagBottomOpenTime: 0.5
+  bagBottomFlapHeight: 0.05
+  bagLegWidth: 0.1
+  bagLegDrop: 0.1
+  bagOpenShape: Open
   bagTearPieces: 10
   bagTearPieceColor: {r: 1, g: 1, b: 1, a: 0.85}
   modelOriginalSize: 0
@@ -1734,6 +1740,7 @@ MonoBehaviour:
   bagWallThickness: 0.2
   bagWallOuterThickness: 0.6
   bagColor: {r: 1, g: 1, b: 1, a: 0.85}
+  bagFrameVisible: 0
   bagSprite: {fileID: 0}
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
   pricePopupTime: 1
