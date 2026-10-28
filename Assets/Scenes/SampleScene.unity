@@ -442,13 +442,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 197897471}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.5, z: 0, w: 0.8660254}
+  m_LocalRotation: {x: -0.36209488, y: 0.06178004, z: 0.099643975, w: 0.92473876}
   m_LocalPosition: {x: -5.33095, y: -0.01763, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 60, z: 0}
+  m_LocalEulerAnglesHint: {x: -43, y: 3.3, z: 11}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1657,6 +1657,21 @@ MonoBehaviour:
   bagMaxWeight: 50
   bagTearDelay: 2
   bagTearScatter: 1.5
+  bagModel: {fileID: 0}
+  bagModelRotation: {x: 0, y: 0, z: 0}
+  bagModelScale: {x: 1, y: 1, z: 1}
+  bagModelOffset: {x: 0, y: 0, z: 0}
+  bagStretchShape: Stretch
+  bagStretchStart: 0.6
+  bagStretchAmount: 0.4
+  bagHandleThin: 0.4
+  bagBottomBulge: 0.25
+  bagBottomRound: 0.12
+  bagTearShake: 0.04
+  bagTearClip: {fileID: 0}
+  bagTearOpenTime: 0.4
+  bagTearPieces: 10
+  bagTearPieceColor: {r: 1, g: 1, b: 1, a: 0.85}
   modelOriginalSize: 0
   modelUnitScale: 1
   ownScreenFrameWidth: 0.3
