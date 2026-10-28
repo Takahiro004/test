@@ -71,10 +71,17 @@ public partial class TwoPlayerShop2D
         int shownCount = -1;
         // 破れるのは、上まで持ち上げてから bagTearDelay 秒たったとき(耐える時間より長ければ、耐える時間の最後)
         float tearTime = Mathf.Min(Mathf.Max(0.01f, bagLiftTime) + Mathf.Max(0f, bagTearDelay), total - Time.fixedDeltaTime);
+        // 裂けるアニメーションは、破れる時間に穴が開くように bagTearOpenTime 秒前から始める(TwoPlayerShop2D.BagModel.cs)
+        float tearStartTime = Mathf.Max(0f, tearTime - Mathf.Max(0f, bagTearOpenTime));
         for (float time = 0f; time < total; time += Time.fixedDeltaTime)
         {
             float k = Mathf.Clamp01(time / Mathf.Max(0.01f, bagLiftTime));
             liftHeight = target * Mathf.SmoothStep(0f, 1f, k);
+            if (time >= tearStartTime)
+            {
+                if (WillTearOnLift(p1)) StartBagTear(p1);
+                if (WillTearOnLift(p2)) StartBagTear(p2);
+            }
             // 重すぎる袋は、上まで持ち上げて少し耐えたところで底が破れる(中身が落ちて0円。TwoPlayerShop2D.Weight.cs)
             if (time >= tearTime)
             {
@@ -85,6 +92,8 @@ public partial class TwoPlayerShop2D
             p2.bag.body.MovePosition(new Vector2(0f, liftHeight));
             CheckSpill(p1);
             CheckSpill(p2);
+            UpdateBagLook(p1, k);   // 重さで伸びる・震える(TwoPlayerShop2D.BagModel.cs)
+            UpdateBagLook(p2, k);
 
             // 持ち上げ終わったら、耐える残りの秒数を数える
             float holdLeft = total - time;
