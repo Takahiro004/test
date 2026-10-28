@@ -67,22 +67,22 @@ public partial class TwoPlayerShop2D
         lastEvent = $"{p.name}の袋が破れた！(重さ {weight:0.#} / {bagMaxWeight:0.#}) → 0円";
         Debug.Log($"[Shop2D] {lastEvent}");
 
-        // 底だけ破れる(底の見た目と当たり判定を消す)。左右のふちと袋の絵はそのまま
+        // 底だけ破れる(今までの底の見た目と当たり判定を消し、代わりに左右2枚の扉にして開く)。左右のふちはそのまま
         var bottomCol = bag.bottom.GetComponent<Collider2D>();
         if (bottomCol != null) bottomCol.enabled = false;
         var bottomSr = bag.bottom.GetComponent<SpriteRenderer>();
         if (bottomSr != null) bottomSr.enabled = false;
         SpawnTearPieces(p);   // ビニールの破片(TwoPlayerShop2D.BagModel.cs)
+        StartCoroutine(OpenBagBottom(p));   // 底が真ん中から割れて左右に開く(当たり判定も。TwoPlayerShop2D.BagModel.cs)
 
-        // 中身を起こして、底から落とす(少し左右に散らす)
+        // 中身を起こす。開いていく底の扉の上を滑って、真ん中から落ちる(少しだけ左右にばらつかせる)
         foreach (var go in p.inBag)
         {
             var rb = go != null ? go.GetComponent<Rigidbody2D>() : null;
             if (rb == null) continue;
             rb.WakeUp();
-            float side = Mathf.Sign(go.transform.position.x - bagX + Random.Range(-0.3f, 0.3f));
-            rb.linearVelocity = new Vector2(side * Random.Range(0.3f, 1f) * bagTearScatter, -1f);
-            rb.angularVelocity = Random.Range(-180f, 180f);
+            rb.linearVelocity = new Vector2(Random.Range(-0.3f, 0.3f) * bagTearScatter, -0.5f);
+            rb.angularVelocity = Random.Range(-90f, 90f);
         }
         p.inBag.Clear();   // 袋の中のものはもう無い(散らばった商品は机に残る。数えない)
 
