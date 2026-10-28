@@ -339,12 +339,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public AnimationClip bagTearClip;
     [Tooltip("裂けるアニメーションを始めてから、穴が開いて中身が落ちるまでの秒数(アニメーションで穴が開くところに合わせる)")]
     public float bagTearOpenTime = 0.4f;
-    [Tooltip("破れたとき、底が真ん中から割れて左右に開く角度(度)。当たり判定も一緒に開く")]
+    [Tooltip("破れたとき、底の当たり判定(左右2枚の扉)が下へ開く角度(度)。見た目は穴が開く形")]
     [Range(10f, 180f)] public float bagBottomOpenAngle = 75f;
     [Tooltip("底が開ききるまでの秒数")]
     public float bagBottomOpenTime = 0.5f;
-    [Tooltip("モデルが無いとき: 袋の絵の、下からどこまでが底と一緒にめくれるか(袋の高さの割合)")]
+    [Tooltip("モデルが無いとき: 破れて底に開く穴の高さ(袋の高さの割合)")]
     [Range(0.05f, 1f)] public float bagBottomFlapHeight = 0.3f;
+    [Tooltip("モデルが無いとき: 穴の左右に残る、脚のようなふちの幅(袋の幅の割合)")]
+    [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
+    [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
+    public float bagLegDrop = 0.1f;
     [Tooltip("袋の3Dモデルの、底が真ん中から左右に開いた形のシェイプキーの名前(破れたら 0→100 にする)")]
     public string bagOpenShape = "Open";
     [Tooltip("破れたとき飛ぶビニールの破片の数(0なら出さない)")]
