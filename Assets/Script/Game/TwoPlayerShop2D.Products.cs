@@ -136,7 +136,10 @@ public partial class TwoPlayerShop2D
                                         : productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
             var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
             model.transform.localScale = prefabScale * k;
-            model.transform.localPosition = -b.center * k;
+            // 真ん中を親の位置に合わせ、奥行きは手前の面が z = 0 より少し奥になるようにする。
+            // 3Dモデルは奥行きがあるので、そのままだと手前半分が z = 0 の絵(カーソルの手・文字など)より手前に出て、手の上に重なって見えた
+            Vector3 center = b.center * k;
+            model.transform.localPosition = new Vector3(-center.x, -center.y, -center.z + b.extents.z * k + 0.05f);
             if (outline != null)
             {
                 var pts = new Vector2[outline.Length];
