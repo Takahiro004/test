@@ -465,6 +465,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelRotation = Vector3.zero;
     [Tooltip("3Dモデルの大きさ。X=横・Y=縦・Z=奥行きを別々に変えられる(全部1なら棚の範囲にちょうど収まる)")]
     public Vector3 shelfModelScale = Vector3.one;
+    [Tooltip("棚の画面のカメラの角度(度)。X=上下に傾ける(プラスで見下ろす)・Y=左右に振る・Z=画面を回す。棚の真ん中を中心に回る。全部0で真正面")]
+    public Vector3 shopCameraAngle = Vector3.zero;
 
     [Header("動作")]
     public bool arrangeCameras = true;
