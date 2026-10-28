@@ -30,7 +30,11 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.ShopView.cs 棚の画面の向き(横/縦)・カメラ
 ///   TwoPlayerShop2D.Shelf.cs  棚(段と列・商品を置く場所・仮の棚/画像/3Dモデルの見た目)
 ///   TwoPlayerShop2D.Fragile.cs 割れる商品(上に重さが乗ると割れて袋から消える)
+///   TwoPlayerShop2D.Creak.cs  袋がきしむ擬音(重くなってきたら袋のまわりに「ミシ…」)
+///   TwoPlayerShop2D.Menu.cs   献立ミッション(食材5品がそろったら、それ以降の商品が1.2倍)
 ///   TwoPlayerShop2D.Deck.cs   ランダム補充の山札(引く・戻す)
+///   TwoPlayerShop2D.Frame.cs  操作中の画面の枠(商品を持って自分の画面を操作しているとき、プレイヤーの色の枠)
+///   TwoPlayerShop2D.Csv.cs    商品のステータスを表(CSV)から読み込む
 ///   TwoPlayerShop2D.Products.cs 商品の一覧(ProductInfo。名前・ランク・金額・画像・3Dモデル)・3Dモデルの商品・値札
 ///   TwoPlayerShop2D.PlayerView.cs 1P/2Pの画面の大きさ(どんな形の画面でも範囲が全部映る)・床/袋の配置
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
@@ -74,6 +78,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool createFloor = true;
     [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
     public bool createBag = true;
+    [Tooltip("献立ミッション: 献立の食材5品が全部自分の袋に入ったら「○○完成！」。それ以降に袋に入れた商品の金額が Menu Bonus Rate 倍")]
+    public bool menuMission = true;
+    [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
+    public bool showOwnScreenFrame = true;
+    [Tooltip("棚の画面: 棚を操作しているプレイヤーの色の枠を出す。1人なら全部その人の色、2人なら縦に半分ずつ(どちらが左かは Shop Frame Left Is P1)")]
+    public bool showShopScreenFrame = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
@@ -86,6 +96,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool subtractSpilledFromTotal = true;
     [Tooltip("タイムアップ: 最後に袋を持ち上げたとき、袋の中の商品の重さの合計が Bag Max Weight を超えていたら袋の底が破れて、中身が落ちて散らばり、その人の金額は0円になる(Bag Lift On Time Up が ON のとき)")]
     public bool bagTearEnabled = true;
+    [Tooltip("レジ袋: 袋の中が重くなってきたら(破れる重さに近づいたら)、袋のまわりに「ミシ…」などの擬音を出す。重いほどたくさん出る")]
+    public bool bagCreakEnabled = true;
     [Tooltip("商品の重さ: 仮の重さを使う(名前から決めた適当な値。飲み物・魚・肉は重く、お菓子は軽い)。OFF なら商品の一覧の Weight を使う")]
     public bool useTempWeights = true;
     [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
@@ -254,6 +266,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("商品の一覧(棚の左上から順に並ぶ。画像・3Dモデルは各商品の Sprite / Model に入れる)")]
     [Tooltip("1行が商品1つ(名前・ランク・金額・献立の食材か・仮の図形・画像・3Dモデル)。棚のマス(段 x 列)より多いぶんは棚に出ない。並べたい順に入れ替える。空にすると前の設定(Product Shapes など)を使う")]
     public ProductInfo[] productList = ProductInfo.Defaults();
+    [Tooltip("商品のステータスの表(CSV)。入れると、再生を始めたときに、商品名が同じ商品の値段・ランク・献立の食材・重さ・割れる・割れる重さ・大きさ・モデルの大きさを表の値にする(空のマスはそのまま)。画像・3Dモデルは上の一覧のまま。Excel では「CSV UTF-8(コンマ区切り)」で保存する")]
+    public TextAsset productCsv;
+    [Tooltip("表の重さがグラム(見出しに g が付いている)のとき、何グラムを重さ 1 にするか")]
+    public float csvGramsPerWeight = 100f;
 
     // 前の設定(商品の一覧が空のときだけ使う。Inspector には出さない)
     [HideInInspector] public ProductShape[] productShapes = {
@@ -278,10 +294,52 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("袋が破れる(最後に持ち上げたとき。機能のON/OFF の Bag Tear Enabled)")]
     [Tooltip("袋の中の商品の重さの合計がこれを超えていたら、持ち上げたときに破れる(重さ 1 の商品が何個ぶんか)。重さは画面には出さない")]
     public float bagMaxWeight = 15f;
-    [Tooltip("持ち上げ始めてから破れるまでの割合(持ち上げる高さを1として。0.3なら3割上がったところで破れる)")]
-    [Range(0f, 1f)] public float bagTearAt = 0.3f;
+    [Tooltip("上まで持ち上げてから、破れるまでの秒数(耐えている途中で破れる。Bag Lift Hold Time より長くすると、耐える時間の最後に破れる)")]
+    public float bagTearDelay = 2f;
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
+
+    [Header("3Dモデルの商品の大きさ")]
+    [Tooltip("OFF: どのモデルも、縦横の長いほうがふつうの商品の大きさになる(モデルどうしの大きさの違いは無くなる)。ON: もらったモデルの大きさのまま出す(x Model Unit Scale)。どちらも、さらに一覧の Model Size をかける")]
+    public bool modelOriginalSize = false;
+    [Tooltip("Model Original Size が ON のとき、モデルの大きさにかける倍率(モデルの1メートル = ゲームの何マスか。ゲームの商品はだいたい 1.4 マス)")]
+    public float modelUnitScale = 1f;
+
+    [Header("操作中の画面の枠(商品を持って自分の画面を操作しているとき)")]
+    [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
+    public float ownScreenFrameWidth = 0.3f;
+    [Tooltip("棚の画面の枠の太さ")]
+    public float shopScreenFrameWidth = 0.3f;
+    [Tooltip("2人とも棚にいるとき、棚の画面の枠の左半分を 1P の色にする。OFF なら 左 = 2P・右 = 1P")]
+    public bool shopFrameLeftIsP1 = true;
+
+    [Header("物理の重さ")]
+    [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
+    public bool weightAffectsPhysics = false;
+
+    [Header("袋がきしむ擬音(破れる重さに近づいたら「ミシ…」)")]
+    [Tooltip("擬音が出はじめる重さ(破れる重さ Bag Max Weight を1として。0.7なら7割)")]
+    [Range(0f, 0.99f)] public float bagCreakStart = 0.7f;
+    [Tooltip("出す擬音(この中からランダム)")]
+    public string[] bagCreakWords = { "ミシ…", "ミシミシ…", "ギシ…", "ギチ…" };
+    [Tooltip("擬音の文字の大きさ(1で普通)")]
+    public float bagCreakSize = 1f;
+
+    [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
+    [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)。1試合に、この中から1つだけ出る")]
+    public MenuRecipe[] menuList = MenuRecipe.Defaults();
+    [Tooltip("この試合の献立を決める(Menu List の番号。0始まり)。-1 ならランダム")]
+    public int menuFixedIndex = -1;
+    [Tooltip("袋の画面の献立の表示の場所(画面の真ん中が 0、右の端が 0.5、上の端が 0.5)。文字の左上の位置")]
+    public Vector2 menuLabelPosition = new Vector2(-0.45f, 0.3f);
+    [Tooltip("袋の画面の献立の文字の大きさ(1で普通)")]
+    public float menuLabelSize = 1f;
+    [Tooltip("まだ棚に出ていない献立の食材を、山札から引くときに優先する確率(0.25なら4回に1回)。残り時間が少なくなったら必ず出す")]
+    [Range(0f, 1f)] public float menuIngredientBoost = 0.25f;
+    [Tooltip("完成したあとに袋に入れた商品の金額の倍率")]
+    public float menuBonusRate = 1.2f;
+    [Tooltip("「○○完成！」を出しておく秒数")]
+    public float menuCompleteTime = 2.5f;
 
     [Header("棚の補充")]
     [Tooltip("取られてから補充されるまでの秒数")]
@@ -423,6 +481,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
         public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
         public Coroutine screenShakeRoutine;   // 自分の画面(カメラ)が揺れている処理
+        public string completedMenu;     // 完成した献立の名前(献立ミッション。まだなら null)
         public bool hasCameraBase;
         public Vector3 cameraBase;       // 揺れていないときのカメラの位置
     }
@@ -461,12 +520,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     void Start()
     {
         ApplyTextFont();   // 文字のフォントと解像度(TwoPlayerShop2D.Bag.cs)。文字を作る前に決める
-        if (switcher == null) switcher = FindFirstObjectByType<DisplayTestSwitcher>();
+        if (switcher == null) switcher = FindAnyObjectByType<DisplayTestSwitcher>();
         if (switcher == null) { Debug.LogError("[Shop2D] DisplayTestSwitcher が見つかりません"); return; }
         ApplyMonitorMode();   // 縦型/横型の配置を、袋・机・商品・文字などの設定に入れる
         RestorePads();   // もう一度遊ぶとき、前のゲームのコントローラーの割り当てを戻す
+        ChooseMenu();    // この試合の献立(TwoPlayerShop2D.Menu.cs)
 
         SetupPhysicsLayers();
+        ApplyProductCsv();   // 商品のステータスを表(CSV)から読む(TwoPlayerShop2D.Csv.cs)。棚に並べる前に
         CreateProducts();
         if (arrangeCameras) ArrangeCameras();
 
@@ -538,12 +599,15 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         // 3Dモデル → 画像 → 仮の図形 の順に、入っているものを使う
         var go = info.model != null ? MakeModelProduct(objName, slot.pos, info, layerShop)
                                     : MakeSprite(objName, slot.pos, slot.shape, slot.color, layerShop, info.sprite);
-        // 商品ごとの大きさ(一覧の Size。0 以下なら 1 のまま)。当たり判定も一緒に変わる
-        if (info.size > 0f) go.transform.localScale *= info.size;
+        // 商品ごとの大きさ。当たり判定も一緒に変わる(0 以下なら 1 のまま)
+        //  - 3Dモデルの商品は Size を使わず、Model Size を使う(Size は画像・図形に合わせた値なので)
+        float scale = info.model != null ? info.modelSize : info.size;
+        if (scale > 0f) go.transform.localScale *= scale;
         PutOnShelf(go, slot);   // 棚を出すときは板の上に乗せる
         RegisterProduct(go);
         slotOf[go] = slot;
         slot.go = go;
+        if (UseDeck) MarkShown(slot.product);   // この試合で棚に出した(献立の食材を必ず出すため。TwoPlayerShop2D.Deck.cs)
         SetSlotTag(slot);   // 値札をこの商品に
         priceOf[go] = info.price;
         infoOf[go] = info;   // 割れるか・重さ(TwoPlayerShop2D.Fragile.cs)
@@ -703,6 +767,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
 
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
+        UpdateMenuLabels();          // この試合の献立と、そろった食材(TwoPlayerShop2D.Menu.cs)
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;
@@ -938,7 +1003,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.freezeRotation = freezeRotation;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;   // 袋が強く揺れても、ふちをすり抜けないように
-        rb.mass = Mathf.Max(0.01f, WeightOf(go));   // 商品ごとの重さ(割れる商品にかかる重さに効く。TwoPlayerShop2D.Weight.cs)
+        // 物理の重さ(mass)は、ふつうは全部 1。商品ごとの重さ(袋が破れる重さ)を mass にすると、重い商品(3)と軽い商品(0.5)の差が大きく、
+        // 軽い商品が押されて袋のふちをすり抜けやすくなった。Weight Affects Physics を ON にしたときだけ重さを使う
+        rb.mass = weightAffectsPhysics ? Mathf.Max(0.01f, WeightOf(go)) : 1f;
 
         if (!p.dropped.Contains(go)) p.dropped.Add(go);
 

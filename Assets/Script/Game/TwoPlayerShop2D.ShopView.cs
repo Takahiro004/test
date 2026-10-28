@@ -105,6 +105,8 @@ public partial class TwoPlayerShop2D
         if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
+        UpdateOwnScreenFrames();   // 商品を持って自分の画面を操作中なら、その画面にプレイヤーの色の枠(TwoPlayerShop2D.Frame.cs)
+        UpdateShopScreenFrame();   // 棚の画面の枠(左右半分ずつプレイヤーの色)
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
@@ -112,6 +114,8 @@ public partial class TwoPlayerShop2D
         if (timerPlaceholder != null)
             timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         UpdateGameTimer();
+        UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
+        SyncModelOrder();         // 3Dモデルの商品の描く順番を、絵と同じにする(TwoPlayerShop2D.Products.cs)
 
         if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
         var cam = switcher.screens[screenShop].camera;

@@ -133,9 +133,12 @@ public partial class TwoPlayerShop2D
             p.inBag.Add(go);
             stoppedTime.Remove(go);
             priceOf.TryGetValue(go, out int price);
+            price = BagPrice(p, price);   // 献立が完成していたら倍(TwoPlayerShop2D.Menu.cs)
+            priceOf[go] = price;          // こぼれたときに引く金額も、袋に入ったときの金額にする
             p.total += price;
             p.bag.totalLabel.text = $"¥{p.total}";
             if (showPricePopup) StartCoroutine(PricePopup(p, c, price));
+            CheckMenuMission(p);          // 献立の食材がそろったか
 
             lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
             Debug.Log($"[Shop2D] {lastEvent}");

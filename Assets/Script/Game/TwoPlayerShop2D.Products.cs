@@ -24,12 +24,14 @@ public class ProductInfo
     public ProductShape shape = ProductShape.Square;
     [Tooltip("商品の画像。入れると図形の代わりに出て、当たり判定は画像の形になる")]
     public Sprite sprite;
-    [Tooltip("この商品の大きさ(1で普通。1.5なら1.5倍、0.7なら7割)。画像・3Dモデル・仮の図形のどれにも効き、当たり判定も一緒に変わる")]
+    [Tooltip("この商品の大きさ(1で普通。1.5なら1.5倍、0.7なら7割)。画像・仮の図形に効き、当たり判定も一緒に変わる。3Dモデルを入れたときは使わない(Model Size を使う)")]
     public float size = 1f;
     [Tooltip("商品の3Dモデル(プレハブ)。入れると図形・画像の代わりに出る。当たり判定はモデルを囲む四角。暗く・黒く見えたらマテリアルを Unlit にする")]
     public GameObject model;
     [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える")]
     public Vector3 modelRotation;
+    [Tooltip("3Dモデルを入れたときの大きさ(1で普通。縦横の長いほうが普通の商品の大きさ)。3Dモデルを入れたときは、上の Size は使わない")]
+    public float modelSize = 1f;
 
     public ProductInfo() { }
     public ProductInfo(string name, int rank, int price, bool menuIngredient, ProductShape shape)
@@ -37,36 +39,36 @@ public class ProductInfo
         this.name = name; this.rank = rank; this.price = price; this.menuIngredient = menuIngredient; this.shape = shape;
     }
 
-    // 2026-10-21 にチームで決めた商品(商品一覧.xlsx)。献立の食材(★)を先に並べてある
-    // 金額は価格帯の中の仮の値(ランク1: 100 / 2: 200 / 3: 500 / 4: 2000 / 5: 10000)。決まったら Inspector で直す
+    // 2026-10-27 にチームで決めた商品と値段(食材リスト.xlsx の60品 + カップ麺・長ネギ。値段の安い順)。献立の食材(★)は true
+    // ランクは値段から決める(〜150: 1 / 〜300: 2 / 〜1,000: 3 / 〜5,000: 4 / それより上: 5。仮の図形の色に使う)
     public static ProductInfo[] Defaults()
     {
-        int[] price = { 0, 100, 200, 500, 2000, 10000 };
-        (string name, int rank, bool menu)[] table = {
-            // 献立の食材(★)
-            ("にんじん", 1, true), ("じゃがいも", 1, true),
-            ("たまご", 2, true), ("ぎゅうにゅう", 2, true), ("すぱげてぃ", 2, true), ("べーこん", 2, true),
-            ("ぶろっこりー", 2, true), ("しょうゆ", 2, true),
-            ("ゆでえび", 3, true), ("ばたー", 3, true), ("めんつゆ", 3, true), ("おりーぶおいる", 3, true),
-            ("ぎゅうにく", 4, true), ("まぐろ", 4, true),
-            ("ずわいかに", 5, true), ("たい", 5, true), ("ひらめ", 5, true),
-            // ほかの商品
-            ("うどん", 1, false), ("やきそば", 1, false), ("ちくわ", 1, false), ("なっとう", 1, false), ("ばなな", 1, false),
-            ("ぐみ", 1, false), ("らむね", 1, false), ("おちゃ", 1, false), ("りんご", 1, false), ("いわし", 1, false),
-            ("あいすばー", 1, false), ("めかぶ", 1, false), ("むきえだまめ", 1, false),
-            ("さつまいも", 2, false), ("ころっけ", 2, false), ("ぽてち", 2, false), ("こーら", 2, false), ("だんご", 2, false),
-            ("ぱぷりか", 2, false), ("りんごじゅーす", 2, false), ("ちょこれーと", 2, false), ("もなか", 2, false),
-            ("さんま", 3, false), ("からあげ", 3, false), ("とんかつ", 3, false), ("ぎょうざ", 3, false), ("ろーす", 3, false),
-            ("てばさき", 3, false), ("ぽてとさらだ", 3, false), ("つみれ", 3, false), ("ぷりんあらもーど", 3, false),
-            ("ずんだもち", 3, false), ("うめぼし", 3, false),
-            ("かるび", 4, false), ("ねぎたんしお", 4, false), ("らむにく", 4, false), ("もどりがつお", 4, false),
-            ("さくらんぼ", 4, false), ("ぶどう", 4, false), ("ふるーつもり", 4, false),
-            ("きゃびあ", 5, false), ("いちぼ", 5, false), ("ろーすとびーふ", 5, false), ("なまはむ", 5, false),
+        (string name, int price, bool menu)[] table = {
+            ("うどん", 50, false), ("にんじん", 100, true), ("じゃがいも", 100, true), ("やきそば", 100, false),
+            ("ちくわ", 100, false), ("なっとう", 100, false), ("らむね", 100, false), ("いわし", 100, false),
+            ("あいすばー", 100, false), ("めかぶ", 100, false),
+            ("カップ麺", 100, false), ("長ネギ", 100, false), ("ぐみ", 120, false), ("おちゃ", 130, false),
+            ("ばなな", 150, false), ("りんご", 150, false), ("むきえだまめ", 150, false), ("ぽてち", 150, false),
+            ("ぱぷりか", 150, false), ("こーら", 180, false), ("すぱげてぃ", 200, true), ("ぶろっこりー", 200, true),
+            ("ころっけ", 200, false), ("りんごじゅーす", 200, false), ("ちょこれーと", 200, false), ("もなか", 200, false),
+            ("ぎゅうにゅう", 230, true), ("たまご", 250, true), ("べーこん", 250, true), ("しょうゆ", 250, true),
+            ("ぽてとふらい", 250, false), ("さんま", 300, false), ("つみれ", 300, false), ("めんつゆ", 350, true),
+            ("ぎょうざ", 350, false), ("からあげ", 400, false), ("とんかつ", 400, false), ("てばさき", 400, false),
+            ("ぷりんあらもーど", 400, false), ("ばたー", 450, true), ("ゆでえび", 500, true), ("ろーす", 500, false),
+            ("おりーぶおいる", 600, true), ("うめぼし", 600, false), ("ぎゅうにく", 1500, true), ("らむにく", 1500, false),
+            ("もどりがつお", 1500, false), ("まぐろ", 2000, true), ("かるび", 2000, false), ("ぶどう", 2000, false),
+            ("ねぎたんしお", 2500, false), ("すいか", 2500, false), ("さくらんぼ", 3000, false), ("ふるーつもり", 3000, false),
+            ("ずわいかに", 10000, true), ("たい", 10000, true), ("ひらめ", 10000, true), ("ろーすとびーふ", 12000, false),
+            ("いちぼ", 15000, false), ("いせえび", 15000, false), ("きゃびあ", 20000, false), ("なまはむ", 30000, false),
         };
         var shapes = (ProductShape[])System.Enum.GetValues(typeof(ProductShape));
         var list = new ProductInfo[table.Length];
         for (int i = 0; i < table.Length; i++)   // 仮の図形は、見分けやすいように順番に変える
-            list[i] = new ProductInfo(table[i].name, table[i].rank, price[table[i].rank], table[i].menu, shapes[i % shapes.Length]);
+        {
+            int p = table[i].price;
+            int rank = p <= 150 ? 1 : p <= 300 ? 2 : p <= 1000 ? 3 : p <= 5000 ? 4 : 5;
+            list[i] = new ProductInfo(table[i].name, rank, p, table[i].menu, shapes[i % shapes.Length]);
+        }
         foreach (var p in list)   // 割れる商品(仮。ほかにも割れるものがあれば一覧で Fragile を付ける)
             if (p.name == "たまご") p.fragile = true;
         return list;
@@ -103,7 +105,10 @@ public partial class TwoPlayerShop2D
         }
     }
 
-    // 3Dモデルの商品: 親に当たり判定(モデルを囲む四角)と、見えない SpriteRenderer(色・手前の順番の処理用)を付ける
+    // 3Dモデルの商品: 親に当たり判定と、見えない SpriteRenderer(色・手前の順番の処理用)を付ける
+    // 当たり判定は、モデルを画面の向き(手前から)見たときの輪郭。カメラは一方向だけなので、
+    // モデルの頂点を画面の平面(x, y)に落として、それを全部包む形(凸包)を作り、点を減らして PolygonCollider2D にする。
+    // へこんだ形は、へこみが埋まった形になる。モデルの頂点が読めないとき(ビルドで Read/Write が OFF など)は、囲む四角
     GameObject MakeModelProduct(string objName, Vector2 pos, ProductInfo info, int layer)
     {
         var go = new GameObject(objName);
@@ -111,21 +116,45 @@ public partial class TwoPlayerShop2D
 
         var model = Instantiate(info.model, go.transform);
         model.name = "Model";
+        // プレハブで回した向き・大きさは残す(前はここで上書きしていたので、プレハブを回しても変わらなかった)。
+        // 一覧の Model Rotation は、プレハブの向きにさらに足す
+        Quaternion prefabRotation = info.model.transform.localRotation;
+        Vector3 prefabScale = info.model.transform.localScale;
         model.transform.localPosition = Vector3.zero;
-        model.transform.localRotation = Quaternion.Euler(info.modelRotation);
-        model.transform.localScale = Vector3.one;
+        model.transform.localRotation = Quaternion.Euler(info.modelRotation) * prefabRotation;
+        model.transform.localScale = prefabScale;
 
         var renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
         {
             Bounds b = renderers[0].bounds;
             foreach (var r in renderers) b.Encapsulate(r.bounds);
-            // 縦横の長いほうが productSize になる大きさにして、真ん中を親の位置に合わせる
-            float k = productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
-            model.transform.localScale = Vector3.one * k;
-            model.transform.localPosition = -b.center * k;
-            var box = go.AddComponent<BoxCollider2D>();
-            box.size = new Vector2(b.size.x, b.size.y) * k;
+            // 大きさ: ふつうは縦横の長いほうが productSize になる大きさ(どのモデルも同じくらいの大きさ)。
+            // Model Original Size が ON なら、もらったモデルの大きさのまま(x Model Unit Scale)。モデルどうしの大きさの違いが残る
+            // 真ん中は親の位置に合わせる
+            float k = modelOriginalSize ? Mathf.Max(0.0001f, modelUnitScale)
+                                        : productSize / Mathf.Max(b.size.x, b.size.y, 0.01f);
+            var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
+            model.transform.localScale = prefabScale * k;
+            // 真ん中を親の位置に合わせ、奥行きは手前の面が z = 0 より少し奥になるようにする。
+            // 3Dモデルは奥行きがあるので、そのままだと手前半分が z = 0 の絵(カーソルの手・文字など)より手前に出て、手の上に重なって見えた。
+            // ただ奥へずらしただけだと、今度は z = 0 の背景の絵(棚・袋)の後ろに隠れて見えなくなる。
+            // そこで、モデルも絵と同じ「描く順番(sortingOrder)」で手前・奥を決める(下の UseSpriteOrder と SyncModelOrder)
+            Vector3 center = b.center * k;
+            model.transform.localPosition = new Vector3(-center.x, -center.y, -center.z + b.extents.z * k + 0.05f);
+            UseSpriteOrder(renderers);
+            modelProducts.Add((go.GetComponent<SpriteRenderer>(), renderers));
+            if (outline != null)
+            {
+                var pts = new Vector2[outline.Length];
+                for (int i = 0; i < pts.Length; i++) pts[i] = outline[i] * k;
+                go.AddComponent<PolygonCollider2D>().points = pts;   // 親には絵が無いので、Unity が勝手に形を作ることはない
+            }
+            else
+            {
+                var box = go.AddComponent<BoxCollider2D>();
+                box.size = new Vector2(b.size.x, b.size.y) * k;
+            }
         }
         else
         {
@@ -136,6 +165,82 @@ public partial class TwoPlayerShop2D
         go.transform.position = pos;
         SetLayer(go, layer);
         return go;
+    }
+
+    // 3Dモデルの商品(親の SpriteRenderer と、モデルの見た目)。描く順番を親に合わせるため
+    readonly List<(SpriteRenderer sr, Renderer[] renderers)> modelProducts = new List<(SpriteRenderer, Renderer[])>();
+
+    // モデルを、絵(スプライト)と同じ並びで描くようにする。
+    // ふつうの3Dモデル(不透明)は絵より先にまとめて描かれ、描く順番(sortingOrder)が効かない。
+    // 描く順のグループを「透明」(3000)にすると、絵と一緒に sortingOrder の順で描かれる(見た目は不透明のまま)
+    static void UseSpriteOrder(Renderer[] renderers)
+    {
+        foreach (var r in renderers)
+            foreach (var m in r.materials)   // この商品だけのマテリアル(元のマテリアルは変えない)
+                m.renderQueue = 3000;
+    }
+
+    // 毎フレーム: モデルの描く順番を、親の SpriteRenderer(持ち運び中 999・袋に落とした順 など)に合わせる
+    void SyncModelOrder()
+    {
+        for (int i = modelProducts.Count - 1; i >= 0; i--)
+        {
+            var (sr, renderers) = modelProducts[i];
+            if (sr == null) { modelProducts.RemoveAt(i); continue; }   // 消えた商品
+            foreach (var r in renderers) if (r != null) r.sortingOrder = sr.sortingOrder;
+        }
+    }
+
+    // 3Dモデルの、画面の向きから見た輪郭(大きさ 1 のとき。真ん中 center を 0 にした点)。
+    // モデルと向きごとに1回だけ計算する。頂点が読めなければ null
+    readonly Dictionary<string, Vector2[]> modelOutlineCache = new Dictionary<string, Vector2[]>();
+
+    Vector2[] ModelOutline(ProductInfo info, GameObject model, Vector3 center)
+    {
+        string key = $"{info.model.GetInstanceID()}_{info.modelRotation}";
+        if (modelOutlineCache.TryGetValue(key, out var cached)) return cached;
+
+        // モデルは今、親(商品)の原点・大きさ 1 で置いてある。頂点を親の座標にして、画面の平面に落とす
+        var points = new List<Vector2>();
+        var parent = model.transform.parent;
+        foreach (var mf in model.GetComponentsInChildren<MeshFilter>())
+            AddMeshPoints(mf.sharedMesh, mf.transform, parent, center, points);
+        foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>())
+            AddMeshPoints(skin.sharedMesh, skin.transform, parent, center, points);
+
+        Vector2[] result = null;
+        if (points.Count >= 3)
+        {
+            var hull = ConvexHull(points);
+            float size = 0.01f;
+            foreach (var p in hull) size = Mathf.Max(size, Mathf.Abs(p.x) * 2f, Mathf.Abs(p.y) * 2f);
+            // 点を減らす(画像の商品と同じ。上限を超えていたら、大まかさを少しずつ上げてやり直す)
+            float eps = size * imageColliderDetail;
+            var simple = hull;
+            for (int n = 0; n < 20; n++)
+            {
+                simple = SimplifyClosed(hull, eps);
+                if (simple.Length <= Mathf.Max(4, imageColliderMaxPoints)) break;
+                eps *= 1.5f;
+            }
+            result = simple.Length >= 3 ? simple : hull;
+        }
+        else Debug.LogWarning($"[Shop2D] {info.name} の3Dモデルの頂点が読めないので、当たり判定は四角にした(モデルの Import Settings で Read/Write にチェック)");
+        modelOutlineCache[key] = result;
+        return result;
+    }
+
+    static void AddMeshPoints(Mesh mesh, Transform meshTransform, Transform parent, Vector3 center, List<Vector2> points)
+    {
+        if (mesh == null) return;
+#if !UNITY_EDITOR
+        if (!mesh.isReadable) return;   // ビルドしたゲームでは、Import Settings の Read/Write が ON のモデルだけ頂点が読める
+#endif
+        foreach (var v in mesh.vertices)
+        {
+            Vector3 local = parent.InverseTransformPoint(meshTransform.TransformPoint(v)) - center;
+            points.Add(new Vector2(local.x, local.y));
+        }
     }
 
     // 棚のマスに置く商品の設定(ランダム補充なら山札から引いたもの、そうでなければ一覧の順)
