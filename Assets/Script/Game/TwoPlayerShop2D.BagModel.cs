@@ -11,7 +11,8 @@ using UnityEngine.Playables;
 //    モデルのシェイプキー bagStretchShape を強くする(重いほど伸びる)。破れる直前は小刻みに震える(bagTearShake)
 //  - 裂ける: 破れる bagTearOpenTime 秒前に、裂けるアニメーション bagTearClip を再生し始める。
 //    破れる時間(.Lift.cs の bagTearDelay)ちょうどに穴が開き、底の当たり判定が消えて中身が落ちる(.Weight.cs)。ビニールの破片も飛ぶ
-//  - モデルが無いときは、袋の絵(または仮の袋の背景)を縦に伸ばして試せる
+//  - モデルが無いときは、袋の絵(または仮の袋の背景)を網目の形(メッシュ)にして曲げる: 底はそのまま(中の商品が乗っている)、
+//    持ち手のほうが上へ伸びて細くなり(bagStretchAmount・bagHandleThin)、下のほうは丸くふくらむ(bagBottomBulge・bagBottomRound)
 public partial class TwoPlayerShop2D
 {
     // 袋の見た目(3Dモデル・伸び・裂けるアニメーション)
@@ -25,7 +26,11 @@ public partial class TwoPlayerShop2D
         public float stretch;          // 今の伸び(0〜1)
         public bool tearStarted;       // 裂けるアニメーションを始めた
         public PlayableGraph graph;    // 裂けるアニメーションを再生する仕組み
+        public Mesh mesh;              // モデルが無いとき、袋の絵を曲げる網目(初めて伸びたときに作る)
+        public Vector3[] vertices;
     }
+
+    const int BagMeshColumns = 10, BagMeshRows = 16;   // 袋の絵を曲げる網目の細かさ
 
     // CreateBag から: モデルを作る(無ければ見た目の記録だけ)
     void BuildBagModel(Player p, Bag bag)
@@ -118,12 +123,90 @@ public partial class TwoPlayerShop2D
             return;
         }
 
-        // モデルが無いとき: 袋の絵(仮の袋の背景)を縦に伸ばす(上のふちはそのまま、底が垂れる)。幅は少し細くなる
-        var back = bag.back;
-        Vector2 size = back.GetComponent<SpriteRenderer>().sprite.bounds.size;
-        float sag = bagHeight * 0.15f * look.stretch;
-        back.localScale = new Vector3(bagWidth * (1f - 0.08f * look.stretch) / Mathf.Max(size.x, 0.01f), (bagHeight + sag) / Mathf.Max(size.y, 0.01f), 1f);
-        back.localPosition = new Vector3(bagX, floorY + bagHeight / 2f - sag / 2f, 0f) + shake;
+        // モデルが無いとき: 袋の絵を曲げる
+        if (look.mesh == null && look.stretch <= 0f) return;   // まだ伸びていなければ、今までの絵のまま
+        if (look.mesh == null) BuildBagMesh(p, bag);
+        DeformBagMesh(bag, look.stretch, shake);
+    }
+
+    // 袋の絵(SpriteRenderer)と同じ絵・同じ描く順番の網目を作り、絵のほうは隠す
+    void BuildBagMesh(Player p, Bag bag)
+    {
+        var look = bag.look;
+        var sr = bag.back.GetComponent<SpriteRenderer>();
+        var sprite = sr.sprite;
+        // 絵の中の範囲(画像をまとめた1枚の中にあっても、その部分だけ使う)
+        Vector2 uvMin = Vector2.one, uvMax = Vector2.zero;
+        foreach (var uv in sprite.uv) { uvMin = Vector2.Min(uvMin, uv); uvMax = Vector2.Max(uvMax, uv); }
+
+        int n = (BagMeshColumns + 1) * (BagMeshRows + 1);
+        var uvs = new Vector2[n];
+        var colors = new Color[n];
+        for (int r = 0; r <= BagMeshRows; r++)
+            for (int c = 0; c <= BagMeshColumns; c++)
+            {
+                int i = r * (BagMeshColumns + 1) + c;
+                uvs[i] = new Vector2(Mathf.Lerp(uvMin.x, uvMax.x, (float)c / BagMeshColumns), Mathf.Lerp(uvMin.y, uvMax.y, (float)r / BagMeshRows));
+                colors[i] = sr.color;
+            }
+        var triangles = new int[BagMeshColumns * BagMeshRows * 6];
+        int t = 0;
+        for (int r = 0; r < BagMeshRows; r++)
+            for (int c = 0; c < BagMeshColumns; c++)
+            {
+                int i = r * (BagMeshColumns + 1) + c, up = i + BagMeshColumns + 1;
+                triangles[t++] = i; triangles[t++] = up; triangles[t++] = i + 1;
+                triangles[t++] = i + 1; triangles[t++] = up; triangles[t++] = up + 1;
+            }
+
+        look.vertices = new Vector3[n];
+        look.mesh = new Mesh { name = "BagMesh" };
+        look.mesh.MarkDynamic();
+        look.mesh.vertices = look.vertices;
+        look.mesh.uv = uvs;
+        look.mesh.colors = colors;
+        look.mesh.triangles = triangles;
+
+        var go = new GameObject("BagMesh");
+        go.layer = p.layer;
+        go.transform.SetParent(bag.root, false);
+        go.AddComponent<MeshFilter>().sharedMesh = look.mesh;
+        var mr = go.AddComponent<MeshRenderer>();
+        mr.sharedMaterial = sr.sharedMaterial;   // 絵と同じマテリアル
+        var block = new MaterialPropertyBlock();
+        block.SetTexture("_MainTex", sprite.texture);
+        mr.SetPropertyBlock(block);
+        mr.sortingLayerID = sr.sortingLayerID;
+        mr.sortingOrder = sr.sortingOrder;
+        sr.enabled = false;
+    }
+
+    // 網目の点を動かす。s は伸び(0〜1)。底(floorY)は動かさない
+    void DeformBagMesh(Bag bag, float s, Vector3 shake)
+    {
+        var look = bag.look;
+        float extra = bagHeight * Mathf.Max(0f, bagStretchAmount) * s;   // 持ち手が上へ伸びる分
+        for (int r = 0; r <= BagMeshRows; r++)
+        {
+            float v = (float)r / BagMeshRows;   // 0: 底 〜 1: 持ち手の先
+            // 伸びは上のほう(持ち手)ほど大きい
+            float y = floorY + bagHeight * v + extra * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.3f, 1f, v));
+            // 幅: 上のほうは細く、下のほうはふくらむ(一番ふくらむのは下から3割くらい)
+            float thin = Mathf.Clamp01(bagHandleThin) * s * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 1f, v));
+            float bulge = Mathf.Max(0f, bagBottomBulge) * s * Mathf.Sin(Mathf.PI * Mathf.Clamp01(v / 0.65f));
+            float width = bagWidth * (1f - thin + bulge);
+            for (int c = 0; c <= BagMeshColumns; c++)
+            {
+                float u = (float)c / BagMeshColumns - 0.5f;   // -0.5: 左 〜 0.5: 右
+                // 底の角を持ち上げて、底を丸くする(真ん中の底は動かさない)
+                float round = Mathf.Max(0f, bagBottomRound) * s * bagHeight * (4f * u * u) * Mathf.Pow(1f - Mathf.Clamp01(v / 0.5f), 2f);
+                look.vertices[r * (BagMeshColumns + 1) + c] = new Vector3(bagX + u * width, y + round, 0f) + shake;
+            }
+        }
+        look.mesh.vertices = look.vertices;
+        look.mesh.RecalculateBounds();
+        // 合計金額の表示も、伸びた持ち手の上へ
+        bag.totalLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight + extra + 0.2f + HudTextSize * 4f, 0f);
     }
 
     // 破れる bagTearOpenTime 秒前(.Lift.cs から): 裂けるアニメーションを始める。1回だけ
