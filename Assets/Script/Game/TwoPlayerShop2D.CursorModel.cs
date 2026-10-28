@@ -5,6 +5,7 @@ using UnityEngine;
 //  - 大きさ: 縦横の長いほうが cursorScale x cursorModelSize(画像のカーソルと同じくらい)
 //  - 掴む点(カーソルの位置)は、モデルの真ん中 + cursorModelOffset(カーソルの大きさを1として)
 //  - 描く順番は画像のカーソルと同じ 1000(商品より手前)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
+//  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
 public partial class TwoPlayerShop2D
 {
@@ -39,7 +40,9 @@ public partial class TwoPlayerShop2D
             if (mirror) center.x = -center.x;
             Vector2 offset = cursorModelOffset * length;
             if (mirror) offset.x = -offset.x;
-            model.transform.localPosition = new Vector3(offset.x - center.x, offset.y - center.y, -center.z);
+            // 奥の面を z=0 より少し手前にする(商品・棚の3Dモデルは z=0 より奥にあるので、手がめり込んで隠れない)
+            float backZ = (b.center.z + b.extents.z) * k;
+            model.transform.localPosition = new Vector3(offset.x - center.x, offset.y - center.y, -backZ - 0.01f);
 
             UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
             foreach (var r in renderers) r.sortingOrder = 1000;
