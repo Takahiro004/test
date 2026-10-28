@@ -314,7 +314,8 @@ public partial class TwoPlayerShop2D
         var model = Instantiate(shelfModel, parent);
         model.name = "ShelfModel";
         SetLayer(model, layerShop);
-        model.transform.localRotation = Quaternion.Euler(shelfModelRotation);
+        // プレハブで付けた向きはそのまま残し、その上に shelfModelRotation を足す(商品の3Dモデルと同じ)
+        model.transform.localRotation = Quaternion.Euler(shelfModelRotation) * shelfModel.transform.localRotation;
         model.transform.localScale = Vector3.one;
         model.transform.position = Vector3.zero;
 
