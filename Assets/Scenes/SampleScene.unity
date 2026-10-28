@@ -841,9 +841,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 1
-    sprite: {fileID: -2154529982240324744, guid: c2eb86337f5dc12449fbccfc7bff8354, type: 3}
+    sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 6409661480813284569, guid: 8fbb18bd8c3ae3740a63a3c869457f93, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u306B\u3093\u3058\u3093"
@@ -880,9 +880,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 2
-    sprite: {fileID: 3075057854543797819, guid: 5df4ed380f0210d4b9a14d04c8e15b90, type: 3}
+    sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 7383478696544225448, guid: eef04e42837be3e47be205061815acba, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u3061\u304F\u308F"
@@ -1218,9 +1218,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 7
-    sprite: {fileID: -5425427450820602910, guid: 5014cb8d8b3c7f742948e88ee63f4acf, type: 3}
+    sprite: {fileID: 0}
     size: 1.5
-    model: {fileID: 0}
+    model: {fileID: 997298839595722858, guid: 6e527e60a528a7542a85b1e766c3cd5f, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u307D\u3066\u3068\u3075\u3089\u3044"
@@ -1348,9 +1348,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 1
-    sprite: {fileID: 4097578743117614346, guid: 54a5e37aa404cdc42afe3e383f8e2504, type: 3}
+    sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 483063585362738398, guid: 78d299f7b45f7bd4fa14c5b351c9397b, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u3086\u3067\u3048\u3073"
@@ -1760,9 +1760,10 @@ MonoBehaviour:
   shelfBoardThickness: 0.25
   shelfSprite: {fileID: 0}
   shelfModel: {fileID: 0}
-  shelfModelOffset: {x: 0, y: 0, z: 0}
+  shelfModelOffset: {x: 0, y: 0.5, z: 0}
   shelfModelRotation: {x: 0, y: 0, z: 0}
-  shelfModelScale: 1
+  shelfModelScale: {x: 1.37, y: 1, z: 1}
+  shopCameraAngle: {x: 10, y: 0, z: 0}
   arrangeCameras: 1
 --- !u!4 &699965479
 Transform:
