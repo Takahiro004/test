@@ -137,9 +137,13 @@ public partial class TwoPlayerShop2D
             var outline = ModelOutline(info, model, b.center);   // 大きさ 1 のときの輪郭(真ん中が 0)
             model.transform.localScale = prefabScale * k;
             // 真ん中を親の位置に合わせ、奥行きは手前の面が z = 0 より少し奥になるようにする。
-            // 3Dモデルは奥行きがあるので、そのままだと手前半分が z = 0 の絵(カーソルの手・文字など)より手前に出て、手の上に重なって見えた
+            // 3Dモデルは奥行きがあるので、そのままだと手前半分が z = 0 の絵(カーソルの手・文字など)より手前に出て、手の上に重なって見えた。
+            // ただ奥へずらしただけだと、今度は z = 0 の背景の絵(棚・袋)の後ろに隠れて見えなくなる。
+            // そこで、モデルも絵と同じ「描く順番(sortingOrder)」で手前・奥を決める(下の UseSpriteOrder と SyncModelOrder)
             Vector3 center = b.center * k;
             model.transform.localPosition = new Vector3(-center.x, -center.y, -center.z + b.extents.z * k + 0.05f);
+            UseSpriteOrder(renderers);
+            modelProducts.Add((go.GetComponent<SpriteRenderer>(), renderers));
             if (outline != null)
             {
                 var pts = new Vector2[outline.Length];
@@ -161,6 +165,30 @@ public partial class TwoPlayerShop2D
         go.transform.position = pos;
         SetLayer(go, layer);
         return go;
+    }
+
+    // 3Dモデルの商品(親の SpriteRenderer と、モデルの見た目)。描く順番を親に合わせるため
+    readonly List<(SpriteRenderer sr, Renderer[] renderers)> modelProducts = new List<(SpriteRenderer, Renderer[])>();
+
+    // モデルを、絵(スプライト)と同じ並びで描くようにする。
+    // ふつうの3Dモデル(不透明)は絵より先にまとめて描かれ、描く順番(sortingOrder)が効かない。
+    // 描く順のグループを「透明」(3000)にすると、絵と一緒に sortingOrder の順で描かれる(見た目は不透明のまま)
+    static void UseSpriteOrder(Renderer[] renderers)
+    {
+        foreach (var r in renderers)
+            foreach (var m in r.materials)   // この商品だけのマテリアル(元のマテリアルは変えない)
+                m.renderQueue = 3000;
+    }
+
+    // 毎フレーム: モデルの描く順番を、親の SpriteRenderer(持ち運び中 999・袋に落とした順 など)に合わせる
+    void SyncModelOrder()
+    {
+        for (int i = modelProducts.Count - 1; i >= 0; i--)
+        {
+            var (sr, renderers) = modelProducts[i];
+            if (sr == null) { modelProducts.RemoveAt(i); continue; }   // 消えた商品
+            foreach (var r in renderers) if (r != null) r.sortingOrder = sr.sortingOrder;
+        }
     }
 
     // 3Dモデルの、画面の向きから見た輪郭(大きさ 1 のとき。真ん中 center を 0 にした点)。
