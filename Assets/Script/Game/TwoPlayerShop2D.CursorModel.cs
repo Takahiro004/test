@@ -15,7 +15,11 @@ public partial class TwoPlayerShop2D
         var sr = go.AddComponent<SpriteRenderer>();   // 絵は無し(ほかの処理と同じ形にしておく)
         sr.sortingOrder = 1000;
 
-        var model = Instantiate(prefab, go.transform);
+        // 左右反転は入れ物(Mirror)で、画面の横向きにかける。
+        // モデル自身の大きさでかけると、プレハブを回してあるとき(例: 手のモデル)に、横ではなく奥行きが反転してしまう
+        var holder = new GameObject("Mirror").transform;
+        holder.SetParent(go.transform, false);
+        var model = Instantiate(prefab, holder);
         model.name = "Model";
         Quaternion prefabRotation = prefab.transform.localRotation;
         Vector3 prefabScale = prefab.transform.localScale;
@@ -34,12 +38,10 @@ public partial class TwoPlayerShop2D
             foreach (var r in renderers) b.Encapsulate(r.bounds);
             float length = cursorScale * Mathf.Max(0.01f, cursorModelSize);   // 縦横の長いほうの長さ
             float k = length / Mathf.Max(b.size.x, b.size.y, 0.01f);
-            model.transform.localScale = new Vector3(prefabScale.x * k * (mirror ? -1f : 1f), prefabScale.y * k, prefabScale.z * k);
-            // 真ん中を掴む点に合わせて、cursorModelOffset だけずらす(反転したら左右も反転)
+            model.transform.localScale = prefabScale * k;
+            // 真ん中を掴む点に合わせて、cursorModelOffset だけずらす(反転したら、入れ物ごと左右も反転する)
             Vector3 center = b.center * k;
-            if (mirror) center.x = -center.x;
             Vector2 offset = cursorModelOffset * length;
-            if (mirror) offset.x = -offset.x;
             // 奥の面を z=0 より少し手前にする(商品・棚の3Dモデルは z=0 より奥にあるので、手がめり込んで隠れない)
             float backZ = (b.center.z + b.extents.z) * k;
             model.transform.localPosition = new Vector3(offset.x - center.x, offset.y - center.y, -backZ - 0.01f);
@@ -47,6 +49,7 @@ public partial class TwoPlayerShop2D
             UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
             foreach (var r in renderers) r.sortingOrder = 1000;
         }
+        if (mirror) holder.localScale = new Vector3(-1f, 1f, 1f);
 
         SetLayer(go, layer);
         return go;
