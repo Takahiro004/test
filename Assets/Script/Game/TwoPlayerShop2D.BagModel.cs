@@ -264,6 +264,8 @@ public partial class TwoPlayerShop2D
     {
         var bag = p.bag;
         var look = bag.look;
+        // 袋の中身(このあと .Weight.cs で袋の中の一覧は空になる)は、底から出たら左右へ流す
+        StartCoroutine(FlowSpilledItems(p, new List<GameObject>(p.inBag)));
         float t = Mathf.Max(0.05f, bagWallThickness);
         float half = bagWidth / 2f;
         // 左の扉は左下の角、右の扉は右下の角を軸にする(底の上の面の高さ)。扉の厚さは底と同じ
@@ -283,7 +285,47 @@ public partial class TwoPlayerShop2D
             if (look.mesh != null) DeformBagMesh(bag, look.stretch, Vector3.zero);
             yield return new WaitForFixedUpdate();
         }
+        // 開ききったら、扉の当たり判定は消す(下へ垂れた扉が壁になって、中身が左右へ流れられなくならないように。見た目は残る)
+        look.flapLeft.GetComponent<Collider2D>().enabled = false;
+        look.flapRight.GetComponent<Collider2D>().enabled = false;
     }
+
+    // 破れた袋から出た中身を、左右へ流す。袋の底より下へ出たところで、袋の真ん中から外向きに押す(速さはばらばら)。
+    // 机の上は滑りやすくして流れるようにする。画面の外へ流れたものは消える(遅いものは机に残る)
+    IEnumerator FlowSpilledItems(Player p, List<GameObject> items)
+    {
+        if (spillMaterial == null) spillMaterial = new PhysicsMaterial2D("Spill") { friction = 0.05f, bounciness = 0.1f };
+        var pushed = new HashSet<GameObject>();
+        float edge = PlayerViewSize().x / 2f + 0.5f;   // 画面の端(ここより外へ出たら消す)
+        for (float time = 0f; time < 8f && items.Count > 0; time += Time.fixedDeltaTime)
+        {
+            float bottom = floorY + liftHeight - 0.1f;   // 今の袋の底
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                var go = items[i];
+                if (go == null) { items.RemoveAt(i); continue; }
+                var rb = go.GetComponent<Rigidbody2D>();
+                if (rb == null || !rb.simulated) { items.RemoveAt(i); continue; }
+                Vector2 pos = go.transform.position;
+                if (Mathf.Abs(pos.x) > edge)
+                {
+                    items.RemoveAt(i);
+                    RemoveProduct(p, go);   // 画面の外へ流れた
+                    continue;
+                }
+                if (pushed.Contains(go) || pos.y > bottom) continue;
+                // 袋の底から出た: 外向き(真ん中あたりならどちらか)へ押し、滑りやすくする
+                pushed.Add(go);
+                float dx = pos.x - bagX;
+                float side = Mathf.Abs(dx) > 0.1f ? Mathf.Sign(dx) : (Random.value < 0.5f ? -1f : 1f);
+                rb.linearVelocity = new Vector2(side * Random.Range(0.4f, 2.4f) * bagTearScatter, rb.linearVelocity.y);
+                foreach (var col in go.GetComponentsInChildren<Collider2D>()) col.sharedMaterial = spillMaterial;
+            }
+            yield return new WaitForFixedUpdate();
+        }
+    }
+
+    PhysicsMaterial2D spillMaterial;   // こぼれた中身を机の上で滑らせる
 
     // 底の扉(当たり判定だけ)。pivotX が軸、length の向き(+ なら右へ / - なら左へ)に伸びる
     Transform MakeBottomFlap(Player p, string objName, float pivotX, float length, float thickness)

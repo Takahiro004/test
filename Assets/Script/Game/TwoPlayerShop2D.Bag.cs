@@ -116,6 +116,19 @@ public partial class TwoPlayerShop2D
             if (p != null && p.bag != null) p.bag.totalLabel.gameObject.SetActive(showBagTotal);
     }
 
+    // 仮の袋(画像も3Dモデルも無い)の白いふちの見た目の ON/OFF(Update から毎フレーム。当たり判定はそのまま)
+    void ApplyBagFrameVisibility()
+    {
+        foreach (var p in new[] { p1, p2 })
+        {
+            if (p == null || p.bag == null) continue;
+            bool show = bagFrameVisible && bagSprite == null && (p.bag.look == null || p.bag.look.holder == null);
+            p.bag.left.GetComponent<SpriteRenderer>().enabled = show;
+            p.bag.right.GetComponent<SpriteRenderer>().enabled = show;
+            if (!p.bag.torn) p.bag.bottom.GetComponent<SpriteRenderer>().enabled = show;   // 破れた底は出さない
+        }
+    }
+
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
     void CheckBag(Player p)
     {
