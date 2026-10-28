@@ -463,8 +463,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelOffset = Vector3.zero;
     [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える(例: Y を 180)")]
     public Vector3 shelfModelRotation = Vector3.zero;
-    [Tooltip("3Dモデルの大きさ(1なら棚の範囲にちょうど収まる)")]
-    public float shelfModelScale = 1f;
+    [Tooltip("3Dモデルの大きさ。X=横・Y=縦・Z=奥行きを別々に変えられる(全部1なら棚の範囲にちょうど収まる)")]
+    public Vector3 shelfModelScale = Vector3.one;
 
     [Header("動作")]
     public bool arrangeCameras = true;

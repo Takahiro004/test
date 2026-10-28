@@ -14,7 +14,7 @@ public partial class TwoPlayerShop2D
 {
     Transform shelfRoot;   // 棚の見た目(仮の棚 / 画像 / 3Dモデル)をまとめる親
     (int cols, int rows, bool show, float board, Color back, Color boardColor, Sprite sprite, GameObject model,
-     Vector3 offset, Vector3 rotation, float scale, ShopOrientation orientation, float aspect, float width, float top) appliedShelf;
+     Vector3 offset, Vector3 rotation, Vector3 scale, ShopOrientation orientation, float aspect, float width, float top) appliedShelf;
 
     int ShelfColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);
     int ShelfRows => Mathf.Max(1, IsPortrait ? portraitRows : landscapeRows);
@@ -129,7 +129,7 @@ public partial class TwoPlayerShop2D
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す
     }
 
-    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, float, ShopOrientation, float, float, float) CurrentShelfSettings()
+    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float) CurrentShelfSettings()
         => (ShelfColumns, ShelfRows, showShelf, shelfBoardThickness, shelfBackColor, shelfBoardColor, shelfSprite, shelfModel,
             shelfModelOffset, shelfModelRotation, shelfModelScale, shopOrientation, portraitAspect, portraitViewWidth, portraitTopSpace);
 
@@ -308,16 +308,21 @@ public partial class TwoPlayerShop2D
         }
     }
 
-    // 3Dモデルの棚: 棚の範囲に収まる大きさにして、商品より奥に置く
+    // 3Dモデルの棚: 棚の範囲に収まる大きさにして、商品より奥に置く。
+    // 大きさは入れ物(ShelfModel)で変え、モデルはその中で向きだけ変える(向きを変えても、横・縦・奥行きは画面の向きのまま)
     void BuildShelfModel(Transform parent, Rect outer)
     {
-        var model = Instantiate(shelfModel, parent);
-        model.name = "ShelfModel";
+        var holder = new GameObject("ShelfModel").transform;
+        holder.gameObject.layer = layerShop;
+        holder.SetParent(parent);
+        holder.position = Vector3.zero;
+        var model = Instantiate(shelfModel, holder);
+        model.name = "Model";
         SetLayer(model, layerShop);
         // プレハブで付けた向きはそのまま残し、その上に shelfModelRotation を足す(商品の3Dモデルと同じ)
         model.transform.localRotation = Quaternion.Euler(shelfModelRotation) * shelfModel.transform.localRotation;
         model.transform.localScale = Vector3.one;
-        model.transform.position = Vector3.zero;
+        model.transform.localPosition = Vector3.zero;
 
         var renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) { Debug.LogWarning("[Shop2D] 棚の3Dモデルに見た目(Renderer)がありません"); return; }
@@ -327,14 +332,14 @@ public partial class TwoPlayerShop2D
 
         Bounds b = renderers[0].bounds;
         foreach (var r in renderers) b.Encapsulate(r.bounds);
-        // 縦横の比率は変えずに、棚の範囲に収まる大きさにする
+        // 縦横の比率は変えずに棚の範囲に収まる大きさにしてから、shelfModelScale で横(X)・縦(Y)・奥行き(Z)を別々にかける
         float fit = Mathf.Min(outer.width / Mathf.Max(0.01f, b.size.x), outer.height / Mathf.Max(0.01f, b.size.y));
-        float scale = fit * Mathf.Max(0.01f, shelfModelScale);
-        model.transform.localScale = Vector3.one * scale;
+        Vector3 scale = fit * new Vector3(Mathf.Max(0.01f, shelfModelScale.x), Mathf.Max(0.01f, shelfModelScale.y), Mathf.Max(0.01f, shelfModelScale.z));
+        holder.localScale = scale;
 
         // 真ん中を棚の範囲の真ん中に合わせ、手前の面が商品(z=0)より奥になるようにする
-        Vector3 center = b.center * scale;
-        float frontZ = (b.center.z - b.extents.z) * scale;
-        model.transform.position = new Vector3(outer.center.x - center.x, outer.center.y - center.y, 1f - frontZ) + shelfModelOffset;
+        Vector3 center = Vector3.Scale(b.center, scale);
+        float frontZ = (b.center.z - b.extents.z) * scale.z;
+        holder.position = new Vector3(outer.center.x - center.x, outer.center.y - center.y, 1f - frontZ) + shelfModelOffset;
     }
 }
