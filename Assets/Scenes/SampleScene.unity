@@ -322,6 +322,133 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &197897471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 197897474}
+  - component: {fileID: 197897473}
+  - component: {fileID: 197897472}
+  m_Layer: 0
+  m_Name: Directional Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &197897472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 197897471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!108 &197897473
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 197897471}
+  m_Enabled: 1
+  serializedVersion: 13
+  m_Type: 1
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 1
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShapeRadius: 0.025
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!4 &197897474
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 197897471}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.5, z: 0, w: 0.8660254}
+  m_LocalPosition: {x: -5.33095, y: -0.01763, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 60, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -606,12 +733,16 @@ MonoBehaviour:
   rotateHeldProduct: 1
   createFloor: 1
   createBag: 1
+  menuMission: 1
+  showOwnScreenFrame: 1
+  showShopScreenFrame: 1
   showBagTotal: 0
   showPricePopup: 1
   removeOutsideBag: 1
   breakFragile: 1
   subtractSpilledFromTotal: 1
   bagTearEnabled: 1
+  bagCreakEnabled: 1
   useTempWeights: 1
   clashEnabled: 1
   clashRematchOnTie: 1
@@ -666,7 +797,7 @@ MonoBehaviour:
   p1CursorSprite: {fileID: 8957324059118975939, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   p2CursorSprite: {fileID: -863147454, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   cursorScale: 1.2
-  gameTime: 100
+  gameTime: 120
   entryCountdown: 3
   entryTitle: "\u8A70\u3081\u653E\u984C\u30D0\u30C8\u30EB"
   timerWarningTime: 10
@@ -689,13 +820,26 @@ MonoBehaviour:
   bagLiftRatio: 0.2
   bagLiftTime: 1.5
   bagLiftAnnounceTime: 1.5
-  bagLiftHoldTime: 1.5
+  bagLiftHoldTime: 3
   stickDeadzone: 0.2
   gravityScale: 2
   floorY: -4
   wallX: 8.9
   freezeRotation: 0
   productList:
+  - name: "\u3046\u3069\u3093"
+    rank: 1
+    price: 50
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: -2154529982240324744, guid: c2eb86337f5dc12449fbccfc7bff8354, type: 3}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u306B\u3093\u3058\u3093"
     rank: 1
     price: 100
@@ -704,10 +848,11 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 0
-    sprite: {fileID: -7193321651432767354, guid: e4697be54f49fb24e965706217b79363, type: 3}
+    sprite: {fileID: 0}
     size: 1.4
-    model: {fileID: 0}
+    model: {fileID: 2579262722937850041, guid: 86c3bf2ce4713e74aa9f6f3ec6f01480, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3058\u3083\u304C\u3044\u3082"
     rank: 1
     price: 100
@@ -720,198 +865,7 @@ MonoBehaviour:
     size: 0.75
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u305F\u307E\u3054"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 1
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: -7256455205209926034, guid: ccf461d6d6b38ea47aba8cac94af1191, type: 3}
-    size: 1.7
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304E\u3085\u3046\u306B\u3085\u3046"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: -6001709017647231438, guid: 6ec3fa0635488e74a86ec92c8a4f8b57, type: 3}
-    size: 1.5
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3059\u3071\u3052\u3066\u3043"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: 7272636619451920036, guid: 77160bda02b35df41a788a1676783df1, type: 3}
-    size: 1.5
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3079\u30FC\u3053\u3093"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 42687998664657290, guid: 7cd7951d372e53f4790f2c8bb453c22f, type: 3}
-    size: 1.2
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3076\u308D\u3063\u3053\u308A\u30FC"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 8433648495133754758, guid: 182ca6f0eb96da04cb3719d74416c8c6, type: 3}
-    size: 1.4
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3057\u3087\u3046\u3086"
-    rank: 2
-    price: 200
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: -5425427450820602910, guid: 5014cb8d8b3c7f742948e88ee63f4acf, type: 3}
-    size: 1.5
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3086\u3067\u3048\u3073"
-    rank: 3
-    price: 500
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3070\u305F\u30FC"
-    rank: 3
-    price: 500
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 4097578743117614346, guid: 54a5e37aa404cdc42afe3e383f8e2504, type: 3}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3081\u3093\u3064\u3086"
-    rank: 3
-    price: 500
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304A\u308A\u30FC\u3076\u304A\u3044\u308B"
-    rank: 3
-    price: 500
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304E\u3085\u3046\u306B\u304F"
-    rank: 4
-    price: 2000
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: 7292024741190325978, guid: 0692ebddae7da0949906395ffdef64cf, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u307E\u3050\u308D"
-    rank: 4
-    price: 2000
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 3498470401697163024, guid: 478fe9e4a9aa4134381813ee435e9c88, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u305A\u308F\u3044\u304B\u306B"
-    rank: 5
-    price: 10000
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u305F\u3044"
-    rank: 5
-    price: 10000
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3072\u3089\u3081"
-    rank: 5
-    price: 10000
-    menuIngredient: 1
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: -4884370531699334514, guid: 7a54ac0d681c0df47ad84d07da877289, type: 3}
-    size: 1.5
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3046\u3069\u3093"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3084\u304D\u305D\u3070"
     rank: 1
     price: 100
@@ -920,10 +874,11 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 2
-    sprite: {fileID: 0}
+    sprite: {fileID: 3075057854543797819, guid: 5df4ed380f0210d4b9a14d04c8e15b90, type: 3}
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3061\u304F\u308F"
     rank: 1
     price: 100
@@ -936,6 +891,7 @@ MonoBehaviour:
     size: 1.2
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u306A\u3063\u3068\u3046"
     rank: 1
     price: 100
@@ -944,34 +900,11 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
+    sprite: {fileID: -1293721654909608452, guid: a166568d111c66e4ea766a08fadbc66b, type: 3}
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3070\u306A\u306A"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 9202589174693625124, guid: 4fae0d1a762e4864f87c3ded60a4a66a, type: 3}
-    size: 1.4
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3050\u307F"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3089\u3080\u306D"
     rank: 1
     price: 100
@@ -980,34 +913,11 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 7
-    sprite: {fileID: 0}
+    sprite: {fileID: -1965975140197723580, guid: 3b01b02420f198e479e6f4d1e13a206e, type: 3}
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304A\u3061\u3083"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: 4906752080188445462, guid: 63a9b123e0c3b544e92edeed715ae5a3, type: 3}
-    size: 1.2
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u308A\u3093\u3054"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: -1231352191345514875, guid: 2a57e574a89e5644aa22007973826708, type: 3}
-    size: 1.2
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3044\u308F\u3057"
     rank: 1
     price: 100
@@ -1020,6 +930,7 @@ MonoBehaviour:
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3042\u3044\u3059\u3070\u30FC"
     rank: 1
     price: 100
@@ -1030,8 +941,9 @@ MonoBehaviour:
     shape: 3
     sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 5305367537970599588, guid: bc74e538d58fa504e92c2ec6d2399268, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u3081\u304B\u3076"
     rank: 1
     price: 100
@@ -1040,394 +952,11 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: 0}
+    sprite: {fileID: 5315235228382663014, guid: cfc3ed48b1bdc254fb9f7b85985c3a86, type: 3}
     size: 1
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3080\u304D\u3048\u3060\u307E\u3081"
-    rank: 1
-    price: 100
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3055\u3064\u307E\u3044\u3082"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: -9066826926224049800, guid: 958ecfed644a1944eae0d14a044950c5, type: 3}
-    size: 1.4
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3053\u308D\u3063\u3051"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u307D\u3066\u3061"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: -3053547739730046739, guid: 40f11939b327dd54a909080e73dc8ffd, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3053\u30FC\u3089"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3060\u3093\u3054"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: -6656721811531967515, guid: b1963e44f94b7af4680fe6de115618c7, type: 3}
-    size: 1.2
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3071\u3077\u308A\u304B"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u308A\u3093\u3054\u3058\u3085\u30FC\u3059"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: 7301665489712622594, guid: 6e4c022ec2f953442975536618df5e43, type: 3}
-    size: 1.6
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3061\u3087\u3053\u308C\u30FC\u3068"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3082\u306A\u304B"
-    rank: 2
-    price: 200
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3055\u3093\u307E"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: -2661381019683416676, guid: dc1099fe0c3990e4a9beb63c741351c1, type: 3}
-    size: 1.4
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304B\u3089\u3042\u3052"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3068\u3093\u304B\u3064"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304E\u3087\u3046\u3056"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u308D\u30FC\u3059"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: 7586756543635156743, guid: ad02a475d253a1241bc166e44878bb94, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3066\u3070\u3055\u304D"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: -2225253542028709799, guid: 942fa2742749b71448eb22bce5e49fd9, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u307D\u3066\u3068\u3055\u3089\u3060"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3064\u307F\u308C"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3077\u308A\u3093\u3042\u3089\u3082\u30FC\u3069"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u305A\u3093\u3060\u3082\u3061"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3046\u3081\u307C\u3057"
-    rank: 3
-    price: 500
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304B\u308B\u3073"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u306D\u304E\u305F\u3093\u3057\u304A"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3089\u3080\u306B\u304F"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3082\u3069\u308A\u304C\u3064\u304A"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 5
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3055\u304F\u3089\u3093\u307C"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 6
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3076\u3069\u3046"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 7
-    sprite: {fileID: -4882964199209968670, guid: 38a3202e8c4690049ad4dfbd5ca6a1c5, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3075\u308B\u30FC\u3064\u3082\u308A"
-    rank: 4
-    price: 2000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 0
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u304D\u3083\u3073\u3042"
-    rank: 5
-    price: 10000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 1
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u3044\u3061\u307C"
-    rank: 5
-    price: 10000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 2
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u308D\u30FC\u3059\u3068\u3073\u30FC\u3075"
-    rank: 5
-    price: 10000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 3
-    sprite: {fileID: 0}
-    size: 1
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
-  - name: "\u306A\u307E\u306F\u3080"
-    rank: 5
-    price: 10000
-    menuIngredient: 0
-    weight: 1
-    fragile: 0
-    breakLoad: 3
-    shape: 4
-    sprite: {fileID: 5660966175338769301, guid: 9a80d9d3a1cb28b45876abeec65e3291, type: 3}
-    size: 1.3
-    model: {fileID: 0}
-    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u30AB\u30C3\u30D7\u9EBA"
     rank: 1
     price: 100
@@ -1440,6 +969,7 @@ MonoBehaviour:
     size: 1.5
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
   - name: "\u9577\u30CD\u30AE"
     rank: 1
     price: 100
@@ -1452,6 +982,659 @@ MonoBehaviour:
     size: 1.5
     model: {fileID: 0}
     modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3050\u307F"
+    rank: 1
+    price: 120
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304A\u3061\u3083"
+    rank: 1
+    price: 130
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: 4906752080188445462, guid: 63a9b123e0c3b544e92edeed715ae5a3, type: 3}
+    size: 1.2
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3070\u306A\u306A"
+    rank: 1
+    price: 150
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 0}
+    size: 1.4
+    model: {fileID: 5882146166323527522, guid: a964a0024cdd6d34b8d346175b871735, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u308A\u3093\u3054"
+    rank: 1
+    price: 150
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1.2
+    model: {fileID: 7090000081690452566, guid: 06fb90faaf9d6e84dbf735b921683aee, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3080\u304D\u3048\u3060\u307E\u3081"
+    rank: 1
+    price: 150
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 3497661880722294818, guid: 492d59b740506494086bb01c4b392b14, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u307D\u3066\u3061"
+    rank: 1
+    price: 150
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: -3053547739730046739, guid: 40f11939b327dd54a909080e73dc8ffd, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3071\u3077\u308A\u304B"
+    rank: 1
+    price: 150
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3053\u30FC\u3089"
+    rank: 2
+    price: 180
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 3051736609092649351, guid: 9c95c2082a63c864cb8e840c3bb02860, type: 3}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3059\u3071\u3052\u3066\u3043"
+    rank: 2
+    price: 200
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 7272636619451920036, guid: 77160bda02b35df41a788a1676783df1, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3076\u308D\u3063\u3053\u308A\u30FC"
+    rank: 2
+    price: 200
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 8433648495133754758, guid: 182ca6f0eb96da04cb3719d74416c8c6, type: 3}
+    size: 1.4
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3053\u308D\u3063\u3051"
+    rank: 2
+    price: 200
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: -9120085907456626604, guid: 7ab24420e3d7a3f4a9fca516f126c923, type: 3}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u308A\u3093\u3054\u3058\u3085\u30FC\u3059"
+    rank: 2
+    price: 200
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 7301665489712622594, guid: 6e4c022ec2f953442975536618df5e43, type: 3}
+    size: 1.6
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3061\u3087\u3053\u308C\u30FC\u3068"
+    rank: 2
+    price: 200
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3082\u306A\u304B"
+    rank: 2
+    price: 200
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304E\u3085\u3046\u306B\u3085\u3046"
+    rank: 2
+    price: 230
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: -6001709017647231438, guid: 6ec3fa0635488e74a86ec92c8a4f8b57, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u305F\u307E\u3054"
+    rank: 2
+    price: 250
+    menuIngredient: 1
+    weight: 1
+    fragile: 1
+    breakLoad: 3
+    shape: 2
+    sprite: {fileID: 0}
+    size: 1.7
+    model: {fileID: 8599300373656053707, guid: be4996a9fed9159418c877804692a6da, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3079\u30FC\u3053\u3093"
+    rank: 2
+    price: 250
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 0}
+    size: 1.2
+    model: {fileID: 4353656095230632494, guid: a8fe64ef563193e4a9cbd30853036431, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3057\u3087\u3046\u3086"
+    rank: 2
+    price: 250
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: -5425427450820602910, guid: 5014cb8d8b3c7f742948e88ee63f4acf, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u307D\u3066\u3068\u3075\u3089\u3044"
+    rank: 2
+    price: 250
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3055\u3093\u307E"
+    rank: 2
+    price: 300
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: -2661381019683416676, guid: dc1099fe0c3990e4a9beb63c741351c1, type: 3}
+    size: 1.4
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3064\u307F\u308C"
+    rank: 2
+    price: 300
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3081\u3093\u3064\u3086"
+    rank: 3
+    price: 350
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 2
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304E\u3087\u3046\u3056"
+    rank: 3
+    price: 350
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 2
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304B\u3089\u3042\u3052"
+    rank: 3
+    price: 400
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3068\u3093\u304B\u3064"
+    rank: 3
+    price: 400
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3066\u3070\u3055\u304D"
+    rank: 3
+    price: 400
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: -2225253542028709799, guid: 942fa2742749b71448eb22bce5e49fd9, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3077\u308A\u3093\u3042\u3089\u3082\u30FC\u3069"
+    rank: 3
+    price: 400
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3070\u305F\u30FC"
+    rank: 3
+    price: 450
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 4097578743117614346, guid: 54a5e37aa404cdc42afe3e383f8e2504, type: 3}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3086\u3067\u3048\u3073"
+    rank: 3
+    price: 500
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u308D\u30FC\u3059"
+    rank: 3
+    price: 500
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: 7586756543635156743, guid: ad02a475d253a1241bc166e44878bb94, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304A\u308A\u30FC\u3076\u304A\u3044\u308B"
+    rank: 3
+    price: 600
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 3727405277673888577, guid: 125babc9d919a7f4f981c9be4cf6f065, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1.8
+  - name: "\u3046\u3081\u307C\u3057"
+    rank: 3
+    price: 600
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304E\u3085\u3046\u306B\u304F"
+    rank: 4
+    price: 1500
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 7292024741190325978, guid: 0692ebddae7da0949906395ffdef64cf, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3089\u3080\u306B\u304F"
+    rank: 4
+    price: 1500
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3082\u3069\u308A\u304C\u3064\u304A"
+    rank: 4
+    price: 1500
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u307E\u3050\u308D"
+    rank: 4
+    price: 2000
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 5
+    sprite: {fileID: 3498470401697163024, guid: 478fe9e4a9aa4134381813ee435e9c88, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304B\u308B\u3073"
+    rank: 4
+    price: 2000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 2
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3076\u3069\u3046"
+    rank: 4
+    price: 2000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: 0}
+    size: 1.3
+    model: {fileID: 113239210557073384, guid: 8b3831cc532b4d444a5b4b1b4e5fff66, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u306D\u304E\u305F\u3093\u3057\u304A"
+    rank: 4
+    price: 2500
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3059\u3044\u304B"
+    rank: 4
+    price: 2500
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 3851199129449591006, guid: ec3a378c29195644d8017b99e9e41ee9, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3055\u304F\u3089\u3093\u307C"
+    rank: 4
+    price: 3000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 8709181005875338377, guid: 48a2424eb08f9794f9e30743147c9113, type: 3}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3075\u308B\u30FC\u3064\u3082\u308A"
+    rank: 4
+    price: 3000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u305A\u308F\u3044\u304B\u306B"
+    rank: 5
+    price: 10000
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 6
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u305F\u3044"
+    rank: 5
+    price: 10000
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 7
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3072\u3089\u3081"
+    rank: 5
+    price: 10000
+    menuIngredient: 1
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 0
+    sprite: {fileID: -4884370531699334514, guid: 7a54ac0d681c0df47ad84d07da877289, type: 3}
+    size: 1.5
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u308D\u30FC\u3059\u3068\u3073\u30FC\u3075"
+    rank: 5
+    price: 12000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 3
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3044\u3061\u307C"
+    rank: 5
+    price: 15000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 2
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u3044\u305B\u3048\u3073"
+    rank: 5
+    price: 15000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u304D\u3083\u3073\u3042"
+    rank: 5
+    price: 20000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 1
+    sprite: {fileID: 0}
+    size: 1
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  - name: "\u306A\u307E\u306F\u3080"
+    rank: 5
+    price: 30000
+    menuIngredient: 0
+    weight: 1
+    fragile: 0
+    breakLoad: 3
+    shape: 4
+    sprite: {fileID: 5660966175338769301, guid: 9a80d9d3a1cb28b45876abeec65e3291, type: 3}
+    size: 1.3
+    model: {fileID: 0}
+    modelRotation: {x: 0, y: 0, z: 0}
+    modelSize: 1
+  productCsv: {fileID: 4900000, guid: 12d984a5f4f149da8a01023bc59f0dab, type: 3}
+  csvGramsPerWeight: 100
   productShapes: 000000000200000005000000060000000400000007000000
   productSprites:
   - {fileID: 0}
@@ -1465,9 +1648,64 @@ MonoBehaviour:
   imageColliderDetail: 0.02
   imageColliderMaxPoints: 24
   breakHoldTime: 0.3
-  bagMaxWeight: 15
-  bagTearAt: 0.3
-  bagTearScatter: 4
+  bagMaxWeight: 50
+  bagTearDelay: 2
+  bagTearScatter: 1.5
+  modelOriginalSize: 0
+  modelUnitScale: 1
+  ownScreenFrameWidth: 0.3
+  shopScreenFrameWidth: 0.3
+  shopFrameLeftIsP1: 1
+  weightAffectsPhysics: 0
+  bagCreakStart: 0.7
+  bagCreakWords:
+  - "\u30DF\u30B7\u2026"
+  - "\u30DF\u30B7\u30DF\u30B7\u2026"
+  - "\u30AE\u30B7\u2026"
+  - "\u30AE\u30C1\u2026"
+  bagCreakSize: 1
+  menuList:
+  - name: "\u30AB\u30EC\u30FC"
+    ingredients:
+    - "\u304E\u3085\u3046\u306B\u304F"
+    - "\u3058\u3083\u304C\u3044\u3082"
+    - "\u306B\u3093\u3058\u3093"
+    - "\u3076\u308D\u3063\u3053\u308A\u30FC"
+    - "\u305F\u307E\u3054"
+  - name: "\u30AB\u30EB\u30DC\u30CA\u30FC\u30E9"
+    ingredients:
+    - "\u3059\u3071\u3052\u3066\u3043"
+    - "\u3079\u30FC\u3053\u3093"
+    - "\u305F\u307E\u3054"
+    - "\u304E\u3085\u3046\u306B\u3085\u3046"
+    - "\u3076\u308D\u3063\u3053\u308A\u30FC"
+  - name: "\u6D77\u9BAE\u4E3C"
+    ingredients:
+    - "\u307E\u3050\u308D"
+    - "\u305F\u3044"
+    - "\u3072\u3089\u3081"
+    - "\u305A\u308F\u3044\u304B\u306B"
+    - "\u3086\u3067\u3048\u3073"
+  - name: "\u8089\u3058\u3083\u304C"
+    ingredients:
+    - "\u304E\u3085\u3046\u306B\u304F"
+    - "\u3058\u3083\u304C\u3044\u3082"
+    - "\u306B\u3093\u3058\u3093"
+    - "\u3057\u3087\u3046\u3086"
+    - "\u3081\u3093\u3064\u3086"
+  - name: "\u3048\u3073\u3068\u30D6\u30ED\u30C3\u30B3\u30EA\u30FC\u306E\u30AA\u30A4\u30EB\u30D1\u30B9\u30BF"
+    ingredients:
+    - "\u3059\u3071\u3052\u3066\u3043"
+    - "\u3086\u3067\u3048\u3073"
+    - "\u3076\u308D\u3063\u3053\u308A\u30FC"
+    - "\u304A\u308A\u30FC\u3076\u304A\u3044\u308B"
+    - "\u3070\u305F\u30FC"
+  menuFixedIndex: -1
+  menuLabelPosition: {x: -0.45, y: 0.3}
+  menuLabelSize: 1
+  menuIngredientBoost: 0.25
+  menuBonusRate: 1.2
+  menuCompleteTime: 2.5
   refillDelay: 1.5
   bagX: 0
   bagWidth: 4
@@ -1882,3 +2120,4 @@ SceneRoots:
   - {fileID: 1908732607}
   - {fileID: 1984091497}
   - {fileID: 699965479}
+  - {fileID: 197897474}

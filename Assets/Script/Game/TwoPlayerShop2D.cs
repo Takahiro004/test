@@ -40,6 +40,7 @@ using UnityEngine.InputSystem;
 ///   TwoPlayerShop2D.Monitor.cs 縦型モニター用 / 横型モニター用の配置の切り替え
 ///   TwoPlayerShop2D.Screens.cs 1P/棚/2P をどのカメラ(ディスプレイ)に映すかの割り当て・入れ替え
 ///   TwoPlayerShop2D.Result.cs タイムアップのあとの勝ち負けの表示・もう一度
+///   TwoPlayerShop2D.CursorModel.cs カーソルを3Dモデル(手など)にする
 ///   TwoPlayerShop2D.Weight.cs 商品の重さ(仮の重さ)・最後に持ち上げたとき重すぎたら袋が破れる(0円)
 ///   TwoPlayerShop2D.Lift.cs   タイムアップのあと、結果発表の前にレジ袋を持ち上げる(こぼれた商品は合計から引く)
 ///   TwoPlayerShop2D.Kick.cs   キック(LBでゲージ → Aで威力 → 足が飛んで相手のレジ袋が揺れる)
@@ -194,9 +195,21 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
     [HideInInspector] public float dropHeight = 3.5f;
 
-    [Header("カーソル画像(未設定なら矢印を自動生成)")]
+    [Header("カーソル(画像か3Dモデル。どちらも未設定なら矢印を自動生成)")]
     public Sprite p1CursorSprite;
     public Sprite p2CursorSprite;
+    [Tooltip("1Pのカーソルの3Dモデル(プレハブ。手のモデルなど)。入れると画像の代わりに出る。空なら画像")]
+    public GameObject p1CursorModel;
+    [Tooltip("2Pのカーソルの3Dモデル(プレハブ)。空で 1P に入っていたら、1P と同じモデルを使う")]
+    public GameObject p2CursorModel;
+    [Tooltip("カーソルの3Dモデルの向き(度)。手のひらや指先がこちらを向かないときに変える。再生前に決める")]
+    public Vector3 cursorModelRotation;
+    [Tooltip("カーソルの3Dモデルの大きさ(1で画像のカーソルと同じくらい)。再生前に決める")]
+    public float cursorModelSize = 1f;
+    [Tooltip("掴む点(カーソルの位置)からモデルをずらす量(カーソルの大きさを1として)。指先で掴むように見せたいときに合わせる。再生前に決める")]
+    public Vector2 cursorModelOffset;
+    [Tooltip("2Pのカーソルの3Dモデルを左右反転する(右手のモデルを2Pでは左手に見せる)")]
+    public bool mirrorP2CursorModel = true;
     [HideInInspector] public float cursorScale = 1.2f;
 
     [Header("制限時間")]
@@ -671,6 +684,18 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         var p = new Player { name = pname, screen = screen, layer = ownLayer, color = color, shopPos = startPos, ownPos = Vector2.zero };
 
         // 棚画面に出すカーソル(レイヤー: 棚)
+        // 3Dモデルのカーソル(TwoPlayerShop2D.CursorModel.cs)。2P が空なら 1P と同じモデル
+        GameObject model = pname == "1P" ? p1CursorModel : (p2CursorModel != null ? p2CursorModel : p1CursorModel);
+        bool mirror = pname == "2P" && mirrorP2CursorModel;
+        if (model != null)
+        {
+            p.cursorShop = MakeModelCursor($"Cursor_{pname}_Shop", layerShop, model, mirror).transform;
+            p.cursorShop.position = startPos;
+            p.cursorOwn = MakeModelCursor($"Cursor_{pname}_Own", ownLayer, model, mirror).transform;
+            p.cursorOwn.position = Vector2.zero;
+            return p;
+        }
+
         p.cursorShop = MakeCursor($"Cursor_{pname}_Shop", color, layerShop, cursorSprite).transform;
         p.cursorShop.position = startPos;
 
