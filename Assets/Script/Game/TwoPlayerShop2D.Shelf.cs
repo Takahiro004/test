@@ -320,7 +320,9 @@ public partial class TwoPlayerShop2D
 
         var renderers = model.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) { Debug.LogWarning("[Shop2D] 棚の3Dモデルに見た目(Renderer)がありません"); return; }
-        foreach (var r in renderers) r.sortingOrder = -20;   // 商品・カーソルより奥に描く
+        // 商品の3Dモデルと同じく、画像(スプライト)と同じ順番の決め方で描く(背景の画像に隠れないように)。商品・カーソルより奥
+        UseSpriteOrder(renderers);
+        foreach (var r in renderers) r.sortingOrder = -20;
 
         Bounds b = renderers[0].bounds;
         foreach (var r in renderers) b.Encapsulate(r.bounds);
