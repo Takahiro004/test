@@ -325,6 +325,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public string bagStretchShape = "Stretch";
     [Tooltip("中の重さが破れる重さのこの割合を超えたら伸び始める(1 で破れる重さのとき一番伸びる)")]
     [Range(0f, 1f)] public float bagStretchStart = 0.6f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが上へ伸びる長さ(袋の高さの何倍か)。底は動かない")]
+    public float bagStretchAmount = 0.4f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが細くなる割合(0.4 なら幅が6割に)")]
+    [Range(0f, 1f)] public float bagHandleThin = 0.4f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、下のほうが横にふくらむ割合(0.25 なら幅が1.25倍に)")]
+    public float bagBottomBulge = 0.25f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、底の角が持ち上がって底が丸くなる大きさ(袋の高さの何倍か)")]
+    public float bagBottomRound = 0.12f;
     [Tooltip("破れる直前(上まで持ち上げたあと)に袋が震える大きさ(0なら震えない)")]
     public float bagTearShake = 0.04f;
     [Tooltip("袋が裂けるアニメーション(FBX の中のアニメーション)。破れる時間の Bag Tear Open Time 秒前から再生する")]
