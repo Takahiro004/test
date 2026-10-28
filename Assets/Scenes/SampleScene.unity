@@ -611,6 +611,8 @@ MonoBehaviour:
   removeOutsideBag: 1
   breakFragile: 1
   subtractSpilledFromTotal: 1
+  bagTearEnabled: 1
+  useTempWeights: 1
   clashEnabled: 1
   clashRematchOnTie: 1
   clashGaugeDiagonal: 1
@@ -631,6 +633,7 @@ MonoBehaviour:
   showGameTimer: 1
   showResultOnTimeUp: 1
   showResultBars: 1
+  bagLiftOnTimeUp: 1
   showEntryScreen: 1
   fixedPadAssignment: 1
   useKeyboard: 1
@@ -663,7 +666,7 @@ MonoBehaviour:
   p1CursorSprite: {fileID: 8957324059118975939, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   p2CursorSprite: {fileID: -863147454, guid: 2337135bb48189148a81daf72fc68fd1, type: 3}
   cursorScale: 1.2
-  gameTime: 120
+  gameTime: 100
   entryCountdown: 3
   entryTitle: "\u8A70\u3081\u653E\u984C\u30D0\u30C8\u30EB"
   timerWarningTime: 10
@@ -682,6 +685,11 @@ MonoBehaviour:
   resultBarBackBottom: {r: 0.97, g: 0.93, b: 0.84, a: 1}
   resultBarTextScale: 1.5
   textScale: 2
+  bagLiftDelay: 0.8
+  bagLiftRatio: 0.2
+  bagLiftTime: 1.5
+  bagLiftAnnounceTime: 1.5
+  bagLiftHoldTime: 1.5
   stickDeadzone: 0.2
   gravityScale: 2
   floorY: -4
@@ -1457,6 +1465,9 @@ MonoBehaviour:
   imageColliderDetail: 0.02
   imageColliderMaxPoints: 24
   breakHoldTime: 0.3
+  bagMaxWeight: 15
+  bagTearAt: 0.3
+  bagTearScatter: 4
   refillDelay: 1.5
   bagX: 0
   bagWidth: 4
