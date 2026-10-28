@@ -12,6 +12,7 @@ public partial class TwoPlayerShop2D
         public Transform back, left, right, bottom;
         public TextMesh totalLabel;
         public bool torn;              // 最後に持ち上げたとき破れた(TwoPlayerShop2D.Weight.cs)
+        public BagLook look;           // 3Dモデル・伸び・裂けるアニメーション(TwoPlayerShop2D.BagModel.cs)
     }
 
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
@@ -46,6 +47,7 @@ public partial class TwoPlayerShop2D
 
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
         SetTextSize(bag.totalLabel, HudTextSize);
+        BuildBagModel(p, bag);   // 袋の3Dモデル(TwoPlayerShop2D.BagModel.cs)
         return bag;
     }
 
@@ -97,6 +99,7 @@ public partial class TwoPlayerShop2D
             if (rightCol != null) { rightCol.size = new Vector2(1f + side, 1f); rightCol.offset = new Vector2(side / 2f, 0f); }
             SetTextSize(b.totalLabel, HudTextSize);
             b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
+            LayoutBagModel(b);
         }
     }
 

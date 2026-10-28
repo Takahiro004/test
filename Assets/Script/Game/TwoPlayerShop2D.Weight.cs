@@ -48,13 +48,19 @@ public partial class TwoPlayerShop2D
         return sum;
     }
 
+    // 持ち上げたとき破れる重さか(裂けるアニメーションを始めるかどうか)
+    bool WillTearOnLift(Player p)
+        => bagTearEnabled && p.bag != null && !p.bag.torn && BagWeight(p) > bagMaxWeight;
+
     // 最後に袋を持ち上げたとき(TwoPlayerShop2D.Lift.cs): 重すぎたら破れて、中身が散らばり、金額は0円
     // 破れたら true
     bool TryTearBagOnLift(Player p)
     {
         if (!bagTearEnabled || p.bag == null || p.bag.torn) return false;
         float weight = BagWeight(p);
-        if (weight <= bagMaxWeight) return false;
+        // 裂けるアニメーションを始めていたら、途中で少しこぼれて軽くなっても破れる(TwoPlayerShop2D.BagModel.cs)
+        bool started = p.bag.look != null && p.bag.look.tearStarted;
+        if (weight <= bagMaxWeight && !started) return false;
 
         var bag = p.bag;
         bag.torn = true;
@@ -66,6 +72,7 @@ public partial class TwoPlayerShop2D
         if (bottomCol != null) bottomCol.enabled = false;
         var bottomSr = bag.bottom.GetComponent<SpriteRenderer>();
         if (bottomSr != null) bottomSr.enabled = false;
+        SpawnTearPieces(p);   // ビニールの破片(TwoPlayerShop2D.BagModel.cs)
 
         // 中身を起こして、底から落とす(少し左右に散らす)
         foreach (var go in p.inBag)

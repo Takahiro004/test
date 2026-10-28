@@ -312,6 +312,30 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("破れたとき、底から落ちる中身が左右に散らばる強さ(0ならまっすぐ下へ落ちる)")]
     public float bagTearScatter = 1.5f;
 
+    [Header("レジ袋の3Dモデル・破れる演出(TwoPlayerShop2D.BagModel.cs)")]
+    [Tooltip("レジ袋の3Dモデル(プレハブ)。入れると袋の絵の代わりに、袋の幅・高さぴったりに引き伸ばして出す(当たり判定は今までどおり)。中の商品を見せるには、半透明のマテリアルにするか手前の面を無くしておく")]
+    public GameObject bagModel;
+    [Tooltip("袋の3Dモデルの向き(度)。プレハブの向きの上に足す")]
+    public Vector3 bagModelRotation = Vector3.zero;
+    [Tooltip("袋の3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1なら袋の幅・高さぴったり)")]
+    public Vector3 bagModelScale = Vector3.one;
+    [Tooltip("袋の3Dモデルの位置のずらし")]
+    public Vector3 bagModelOffset = Vector3.zero;
+    [Tooltip("持ち上げたとき重さで伸びる、モデルのシェイプキーの名前(Blender で付けた名前。英語がおすすめ)")]
+    public string bagStretchShape = "Stretch";
+    [Tooltip("中の重さが破れる重さのこの割合を超えたら伸び始める(1 で破れる重さのとき一番伸びる)")]
+    [Range(0f, 1f)] public float bagStretchStart = 0.6f;
+    [Tooltip("破れる直前(上まで持ち上げたあと)に袋が震える大きさ(0なら震えない)")]
+    public float bagTearShake = 0.04f;
+    [Tooltip("袋が裂けるアニメーション(FBX の中のアニメーション)。破れる時間の Bag Tear Open Time 秒前から再生する")]
+    public AnimationClip bagTearClip;
+    [Tooltip("裂けるアニメーションを始めてから、穴が開いて中身が落ちるまでの秒数(アニメーションで穴が開くところに合わせる)")]
+    public float bagTearOpenTime = 0.4f;
+    [Tooltip("破れたとき飛ぶビニールの破片の数(0なら出さない)")]
+    public int bagTearPieces = 10;
+    [Tooltip("ビニールの破片の色")]
+    public Color bagTearPieceColor = new Color(1f, 1f, 1f, 0.85f);
+
     [Header("3Dモデルの商品の大きさ")]
     [Tooltip("OFF: どのモデルも、縦横の長いほうがふつうの商品の大きさになる(モデルどうしの大きさの違いは無くなる)。ON: もらったモデルの大きさのまま出す(x Model Unit Scale)。どちらも、さらに一覧の Model Size をかける")]
     public bool modelOriginalSize = false;
