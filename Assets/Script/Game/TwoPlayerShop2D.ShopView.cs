@@ -152,13 +152,13 @@ public partial class TwoPlayerShop2D
 
         if (!IsPortrait)
         {
-            // 縦から戻したときは、範囲と向きを元に戻す
+            // 縦から戻したときは、範囲を元に戻す
             if (shopCameraChanged)
             {
                 cam.rect = shopBaseRect;
-                cam.transform.rotation = Quaternion.identity;
                 shopCameraChanged = false;
             }
+            SetShopCameraAngle(cam, 0f);
             shopAppliedRect = cam.rect;
             // 横の配置(16:9)が、どんな形の画面でも全部映るようにズームする(縦長の画面なら上下に余り)
             Vector2 land = ShopViewSize();
@@ -200,6 +200,15 @@ public partial class TwoPlayerShop2D
         // モニターを右回りに回したら、映像は左回りに回して描く(逆さに見えたらもう一方を選ぶ)
         float angle = shopOrientation == ShopOrientation.PortraitRotatedRight ? -90f
                     : shopOrientation == ShopOrientation.PortraitRotatedLeft ? 90f : 0f;
-        cam.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        SetShopCameraAngle(cam, angle);
+    }
+
+    // 棚のカメラの向き: 画面の回し(screenAngle)の上に shopCameraAngle を足す。
+    // 棚の真ん中(原点)を中心に、距離 10 のまま回す(傾けても棚が画面の真ん中に映る)
+    void SetShopCameraAngle(Camera cam, float screenAngle)
+    {
+        Quaternion rotation = Quaternion.Euler(0f, 0f, screenAngle) * Quaternion.Euler(shopCameraAngle);
+        cam.transform.rotation = rotation;
+        cam.transform.position = rotation * new Vector3(0f, 0f, -10f);
     }
 }
