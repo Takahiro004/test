@@ -115,6 +115,7 @@ public partial class TwoPlayerShop2D
             timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         UpdateGameTimer();
         UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
+        SyncModelOrder();         // 3Dモデルの商品の描く順番を、絵と同じにする(TwoPlayerShop2D.Products.cs)
 
         if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
         var cam = switcher.screens[screenShop].camera;
