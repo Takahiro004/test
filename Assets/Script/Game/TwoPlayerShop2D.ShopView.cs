@@ -106,7 +106,6 @@ public partial class TwoPlayerShop2D
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた
         FitPlayerCameras();
         UpdateOwnScreenFrames();   // 商品を持って自分の画面を操作中なら、その画面にプレイヤーの色の枠(TwoPlayerShop2D.Frame.cs)
-        UpdateShopScreenFrame();   // 棚の画面の枠(左右半分ずつプレイヤーの色)
 
         if (shopOrientation != appliedOrientation || portraitAspect != appliedPortraitAspect ||
             portraitViewWidth != appliedPortraitWidth || portraitColumns != appliedColumns ||
@@ -122,6 +121,7 @@ public partial class TwoPlayerShop2D
         if (cam == null) return;
         ApplyShopCamera(cam);
         ApplyShopBackCamera(cam);
+        UpdateShopScreenFrame();   // 棚の画面の枠(左右半分ずつプレイヤーの色。棚のカメラの向きが決まってから。TwoPlayerShop2D.Frame.cs)
     }
 
     // 縦のとき、棚のカメラは真ん中しか描かないので、左右の余りには前の映像が残ってしまう
@@ -205,8 +205,11 @@ public partial class TwoPlayerShop2D
 
     // 棚のカメラの向き: 画面の回し(screenAngle)の上に shopCameraAngle を足す。
     // 棚の真ん中(原点)を中心に、距離 10 のまま回す(傾けても棚が画面の真ん中に映る)
+    float shopScreenAngle;   // 今の画面の回し(棚の画面の枠を、見る人から見た上下左右に合わせるのに使う)
+
     void SetShopCameraAngle(Camera cam, float screenAngle)
     {
+        shopScreenAngle = screenAngle;
         Quaternion rotation = Quaternion.Euler(0f, 0f, screenAngle) * Quaternion.Euler(shopCameraAngle);
         cam.transform.rotation = rotation;
         cam.transform.position = rotation * new Vector3(0f, 0f, -10f);

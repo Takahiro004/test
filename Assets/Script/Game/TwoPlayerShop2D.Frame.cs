@@ -12,19 +12,29 @@ public partial class TwoPlayerShop2D
 {
     readonly Transform[][] ownFrames = new Transform[2][];   // [プレイヤー][上・下・左・右]
     Transform[] shopFrame;                                   // 棚の画面の枠: 上の左・上の右・下の左・下の右・左・右
+    Transform shopFrameRoot;
 
-    // LateUpdate から毎フレーム。棚の画面の枠(棚の画面は揺れないので、ゲームの座標の真ん中に置く)
+    // LateUpdate から毎フレーム(棚のカメラの向きが決まったあと)。棚の画面の枠。
+    // 袋の画面の枠と同じく、カメラの子にして画面のふちに置く(棚のカメラを傾けても、上下に隙間ができない)
     void UpdateShopScreenFrame()
     {
         if (shopFrame == null)
         {
             if (!showShopScreenFrame) return;
             shopFrame = new Transform[6];
-            var root = new GameObject("ShopFrame").transform;
+            shopFrameRoot = new GameObject("ShopFrame").transform;
+            shopFrameRoot.gameObject.layer = layerShop;
             for (int k = 0; k < 6; k++)
-                shopFrame[k] = MakeBagPart($"ShopFrame_{k}", root, layerShop, Color.white, 2800, false);   // 商品・カーソルより手前
+                shopFrame[k] = MakeBagPart($"ShopFrame_{k}", shopFrameRoot, layerShop, Color.white, 2800, false);   // 商品・カーソルより手前
         }
-        if (!showShopScreenFrame || p1 == null) { foreach (var b in shopFrame) b.gameObject.SetActive(false); return; }
+        var cam = switcher != null && screenShop >= 0 && screenShop < switcher.screens.Length ? switcher.screens[screenShop].camera : null;
+        if (!showShopScreenFrame || p1 == null || cam == null) { foreach (var b in shopFrame) b.gameObject.SetActive(false); return; }
+
+        // カメラの少し前。モニターを回しているときは、その回しだけ戻して、見る人から見た上下左右に合わせる
+        if (shopFrameRoot.parent != cam.transform) shopFrameRoot.SetParent(cam.transform, false);
+        shopFrameRoot.localPosition = new Vector3(0f, 0f, 1f);
+        shopFrameRoot.localRotation = Quaternion.Euler(0f, 0f, -shopScreenAngle);
+        shopFrameRoot.localScale = Vector3.one;
 
         // 棚にいる人の色: 2人なら左右半分ずつ、1人ならその人の色で全部、0人なら出さない
         var leftPlayer = shopFrameLeftIsP1 ? p1 : p2;
@@ -47,7 +57,8 @@ public partial class TwoPlayerShop2D
 
         static void SetBar(Transform tr, float x, float y, float width, float height, Color color)
         {
-            tr.position = new Vector3(x, y, 0f);
+            tr.localPosition = new Vector3(x, y, 0f);
+            tr.localRotation = Quaternion.identity;
             tr.localScale = new Vector3(width, height, 1f);
             tr.GetComponent<SpriteRenderer>().color = color;
         }
