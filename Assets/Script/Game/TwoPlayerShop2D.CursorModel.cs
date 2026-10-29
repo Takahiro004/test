@@ -4,16 +4,18 @@ using UnityEngine;
 // p1CursorModel / p2CursorModel にプレハブを入れると、画像のカーソルの代わりに出る。
 //  - 大きさ: 縦横の長いほうが cursorScale x cursorModelSize(画像のカーソルと同じくらい)
 //  - 掴む点(カーソルの位置)は、モデルの真ん中 + cursorModelOffset(カーソルの大きさを1として)
-//  - 描く順番は画像のカーソルと同じ 1000(商品より手前)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
+//  - 描く順番は画像のカーソルと同じ CursorOrder(2900。商品・画面の枠(2800)より手前、大きな文字・結果発表(3000〜)より奥)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
 public partial class TwoPlayerShop2D
 {
+    const int CursorOrder = 2900;   // カーソル(画像・3Dモデル)の描く順番
+
     GameObject MakeModelCursor(string objName, int layer, GameObject prefab, bool mirror)
     {
         var go = new GameObject(objName);
         var sr = go.AddComponent<SpriteRenderer>();   // 絵は無し(ほかの処理と同じ形にしておく)
-        sr.sortingOrder = 1000;
+        sr.sortingOrder = CursorOrder;
 
         // 左右反転は入れ物(Mirror)で、画面の横向きにかける。
         // モデル自身の大きさでかけると、プレハブを回してあるとき(例: 手のモデル)に、横ではなく奥行きが反転してしまう
@@ -47,7 +49,7 @@ public partial class TwoPlayerShop2D
             model.transform.localPosition = new Vector3(offset.x - center.x, offset.y - center.y, -backZ - 0.01f);
 
             UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
-            foreach (var r in renderers) r.sortingOrder = 1000;
+            foreach (var r in renderers) r.sortingOrder = CursorOrder;
         }
         if (mirror) holder.localScale = new Vector3(-1f, 1f, 1f);
 

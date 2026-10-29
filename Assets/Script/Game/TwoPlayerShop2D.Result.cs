@@ -64,6 +64,7 @@ public partial class TwoPlayerShop2D
             }
             p.inShop = true;
             p.cursorOwn.gameObject.SetActive(false);
+            p.cursorShop.gameObject.SetActive(false);   // 棚の画面の手も消す(持ち上げ・結果発表の画面に手が残らないように)
         }
     }
 
