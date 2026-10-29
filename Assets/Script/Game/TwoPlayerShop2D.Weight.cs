@@ -74,6 +74,7 @@ public partial class TwoPlayerShop2D
         if (bottomSr != null) bottomSr.enabled = false;
         SpawnTearPieces(p);   // ビニールの破片(TwoPlayerShop2D.BagModel.cs)
         StartCoroutine(OpenBagBottom(p));   // 底が真ん中から割れて左右に開く(当たり判定も。TwoPlayerShop2D.BagModel.cs)
+        if (bagSnapBack) StartCoroutine(SnapBackBag(p));   // 袋がゴムパッチンのように上へ跳ね戻る(TwoPlayerShop2D.BagModel.cs)
 
         // 中身を起こす。開いていく底の扉の上を滑って、真ん中から落ちる(少しだけ左右にばらつかせる)
         foreach (var go in p.inBag)

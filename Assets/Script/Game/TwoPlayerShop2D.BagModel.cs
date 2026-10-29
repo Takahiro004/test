@@ -29,6 +29,8 @@ public partial class TwoPlayerShop2D
         public readonly List<(SkinnedMeshRenderer renderer, int index)> stretchShapes = new List<(SkinnedMeshRenderer, int)>();
         public readonly List<(SkinnedMeshRenderer renderer, int index)> openShapes = new List<(SkinnedMeshRenderer, int)>();   // 底が開いた形
         public float open;             // 底の開き具合(0: 閉じている 〜 1: 開ききった)
+        public bool snapping;          // 破れてゴムパッチンのように跳ね戻っている最中(伸びは SnapBackBag が動かす)
+        public float snapOffset;       // 跳ね戻りで、持ち上げた高さから上下にずれている分
         public Transform flapLeft, flapRight;   // 破れたあとの底の当たり判定(左右2枚。ふちを軸に回る)
         public float stretch;          // 今の伸び(0〜1)
         public bool tearStarted;       // 裂けるアニメーションを始めた
@@ -124,7 +126,7 @@ public partial class TwoPlayerShop2D
     {
         var bag = p.bag;
         var look = bag?.look;
-        if (look == null) return;
+        if (look == null || look.snapping) return;   // 跳ね戻り中は SnapBackBag が形を動かす
 
         float ratio = BagWeight(p) / Mathf.Max(0.01f, bagMaxWeight);   // 破れる重さの何倍か
         bool willTear = bagTearEnabled && ratio > 1f;
@@ -283,6 +285,39 @@ public partial class TwoPlayerShop2D
         AnimationPlayableUtilities.PlayClip(animator, bagTearClip, out look.graph);   // 最後のコマで止まる(ループしない設定のとき)
     }
 
+    // 破れたとき(.Weight.cs から): ゴムパッチンのように、伸びていた袋が上へ跳ね戻る。
+    // 持ち上げた高さから bagSnapHeight だけ上へ飛び出し、上下にびよんびよんしながら bagSnapTime 秒で止まる(bagSnapBounces 回)。
+    // 伸びていた形も一緒に戻り、戻りすぎて一瞬縮む(伸びがマイナス = 持ち手が短く太くなる)
+    IEnumerator SnapBackBag(Player p)
+    {
+        var bag = p.bag;
+        var look = bag.look;
+        look.snapping = true;
+        float startStretch = Mathf.Max(look.stretch, 0.3f);   // 伸びが小さくても、少しは跳ねる
+        float duration = Mathf.Max(0.1f, bagSnapTime);
+        float omega = 2f * Mathf.PI * Mathf.Max(0.5f, bagSnapBounces) / duration;   // 揺れの速さ
+        float damping = 4f / duration;                                                // だんだん小さくなる速さ
+        for (float time = 0f; time < duration; time += Time.fixedDeltaTime)
+        {
+            float decay = Mathf.Exp(-damping * time);
+            look.snapOffset = bagSnapHeight * decay * Mathf.Sin(omega * time);       // 最初に上へ飛び出す
+            look.stretch = Mathf.Max(-0.5f, startStretch * decay * Mathf.Cos(omega * time));
+            if (!liftMoving) bag.body.MovePosition(new Vector2(0f, liftHeight + look.snapOffset));   // 持ち上げの動きが終わったあとは、ここで動かす
+            foreach (var (smr, index) in look.stretchShapes)
+                if (smr != null) smr.SetBlendShapeWeight(index, Mathf.Max(0f, look.stretch) * 100f);
+            if (look.mesh != null) DeformBagMesh(bag, look.stretch, Vector3.zero);
+            yield return new WaitForFixedUpdate();
+        }
+        look.snapOffset = 0f;
+        look.stretch = 0f;
+        if (look.mesh != null) DeformBagMesh(bag, 0f, Vector3.zero);
+        if (!liftMoving) bag.body.MovePosition(new Vector2(0f, liftHeight));
+        look.snapping = false;
+    }
+
+    // 跳ね戻りで、持ち上げた高さからずれている分(.Lift.cs が袋を動かすときに足す)
+    float BagSnapOffset(Player p) => p.bag?.look != null ? p.bag.look.snapOffset : 0f;
+
     // 破れたとき(.Weight.cs から): 底を左右2枚の扉にして、bagBottomOpenTime 秒で下へ開く。
     // 当たり判定(左右2枚)と見た目(網目 / モデルのシェイプキー)を一緒に動かす
     IEnumerator OpenBagBottom(Player p)
@@ -296,6 +331,12 @@ public partial class TwoPlayerShop2D
         // 左の扉は左下の角、右の扉は右下の角を軸にする(底の上の面の高さ)。扉の厚さは底と同じ
         look.flapLeft = MakeBottomFlap(p, "FlapLeft", bagX - half, half, t);
         look.flapRight = MakeBottomFlap(p, "FlapRight", bagX + half, -half, t);
+        if (bagSnapBack)
+        {
+            // 袋が上へ跳ね戻るときは、扉の当たり判定は使わない(中身を上へはじき飛ばさないように。中身はそのまま下へ落ちる)
+            look.flapLeft.GetComponent<Collider2D>().enabled = false;
+            look.flapRight.GetComponent<Collider2D>().enabled = false;
+        }
         if (look.holder == null && look.mesh == null) BuildBagMesh(p, bag);
 
         float duration = Mathf.Max(0.05f, bagBottomOpenTime);
