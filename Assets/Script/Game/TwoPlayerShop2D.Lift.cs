@@ -12,6 +12,7 @@ using UnityEngine;
 public partial class TwoPlayerShop2D
 {
     bool liftStarted, liftDone;
+    bool liftMoving;    // 持ち上げ・耐えるの間(袋はこの間 BagLiftRoutine が動かす)
     float liftHeight;   // 今持ち上げている高さ
 
     // 持ち上げている途中なら true(UpdateResult はそこで止まる)
@@ -73,6 +74,7 @@ public partial class TwoPlayerShop2D
         float tearTime = Mathf.Min(Mathf.Max(0.01f, bagLiftTime) + Mathf.Max(0f, bagTearDelay), total - Time.fixedDeltaTime);
         // 裂けるアニメーションは、破れる時間に穴が開くように bagTearOpenTime 秒前から始める(TwoPlayerShop2D.BagModel.cs)
         float tearStartTime = Mathf.Max(0f, tearTime - Mathf.Max(0f, bagTearOpenTime));
+        liftMoving = true;
         for (float time = 0f; time < total; time += Time.fixedDeltaTime)
         {
             float k = Mathf.Clamp01(time / Mathf.Max(0.01f, bagLiftTime));
@@ -88,8 +90,9 @@ public partial class TwoPlayerShop2D
                 if (TryTearBagOnLift(p1)) SetLiftBannerOf(p1, "袋が破れた…", new Color(1f, 0.3f, 0.25f));
                 if (TryTearBagOnLift(p2)) SetLiftBannerOf(p2, "袋が破れた…", new Color(1f, 0.3f, 0.25f));
             }
-            p1.bag.body.MovePosition(new Vector2(0f, liftHeight));
-            p2.bag.body.MovePosition(new Vector2(0f, liftHeight));
+            // 破れた袋は、ゴムパッチンの跳ね戻りの分だけ上下にずらす(TwoPlayerShop2D.BagModel.cs)
+            p1.bag.body.MovePosition(new Vector2(0f, liftHeight + BagSnapOffset(p1)));
+            p2.bag.body.MovePosition(new Vector2(0f, liftHeight + BagSnapOffset(p2)));
             CheckSpill(p1);
             CheckSpill(p2);
             UpdateBagLook(p1, k);   // 重さで伸びる・震える(TwoPlayerShop2D.BagModel.cs)
@@ -108,6 +111,7 @@ public partial class TwoPlayerShop2D
             }
             yield return new WaitForFixedUpdate();
         }
+        liftMoving = false;
         CheckSpill(p1);
         CheckSpill(p2);
 

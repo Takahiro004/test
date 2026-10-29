@@ -349,6 +349,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
     [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
     public float bagLegDrop = 0.1f;
+    [Tooltip("破れた瞬間、伸びていた袋がゴムパッチンのように上へ跳ね戻る(上下にびよんびよんして止まる。中身はそのまま下へ落ちる)")]
+    public bool bagSnapBack = true;
+    [Tooltip("跳ね戻りで、持ち上げた高さから上へ飛び出す高さ")]
+    public float bagSnapHeight = 1.5f;
+    [Tooltip("跳ね戻りが止まるまでの秒数")]
+    public float bagSnapTime = 1.2f;
+    [Tooltip("止まるまでに上下にびよんびよんする回数")]
+    public float bagSnapBounces = 3f;
     [Tooltip("袋の3Dモデルの、底が真ん中から左右に開いた形のシェイプキーの名前(破れたら 0→100 にする)")]
     public string bagOpenShape = "Open";
     [Tooltip("破れたとき飛ぶビニールの破片の数(0なら出さない)")]
