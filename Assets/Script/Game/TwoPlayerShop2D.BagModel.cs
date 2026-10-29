@@ -293,15 +293,17 @@ public partial class TwoPlayerShop2D
         var bag = p.bag;
         var look = bag.look;
         look.snapping = true;
-        float startStretch = Mathf.Max(look.stretch, 0.3f);   // 伸びが小さくても、少しは跳ねる
+        float startStretch = Mathf.Max(look.stretch, 0.5f);   // 伸びが小さくても、しっかり跳ねる
         float duration = Mathf.Max(0.1f, bagSnapTime);
         float omega = 2f * Mathf.PI * Mathf.Max(0.5f, bagSnapBounces) / duration;   // 揺れの速さ
         float damping = 4f / duration;                                                // だんだん小さくなる速さ
         for (float time = 0f; time < duration; time += Time.fixedDeltaTime)
         {
             float decay = Mathf.Exp(-damping * time);
-            look.snapOffset = bagSnapHeight * decay * Mathf.Sin(omega * time);       // 最初に上へ飛び出す
-            look.stretch = Mathf.Max(-0.5f, startStretch * decay * Mathf.Cos(omega * time));
+            // 時間の進み方を最初だけ速くして、パチンと一気に飛び出す(あとの揺れは今までどおり)
+            float phase = omega * duration * Mathf.Pow(time / duration, 0.6f);
+            look.snapOffset = bagSnapHeight * decay * Mathf.Sin(phase);       // 最初に上へ飛び出す
+            look.stretch = Mathf.Max(-0.6f, startStretch * decay * Mathf.Cos(phase));
             if (!liftMoving) bag.body.MovePosition(new Vector2(0f, liftHeight + look.snapOffset));   // 持ち上げの動きが終わったあとは、ここで動かす
             foreach (var (smr, index) in look.stretchShapes)
                 if (smr != null) smr.SetBlendShapeWeight(index, Mathf.Max(0f, look.stretch) * 100f);
