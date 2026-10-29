@@ -419,6 +419,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Sprite bagFrontSprite;
     [Tooltip("手前の袋の画像の色と透明度(A を下げるほど、中の商品がよく見える)")]
     public Color bagFrontColor = new Color(1f, 1f, 1f, 0.6f);
+    [Tooltip("奥の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagSpriteScale = Vector2.one;
+    [Tooltip("手前の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagFrontScale = Vector2.one;
     [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
     public float pricePopupTime = 1f;
