@@ -790,7 +790,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         float scale = cursorScale / Mathf.Max(size.x, size.y, 0.01f);
         go.transform.localScale = new Vector3(scale, scale, 1f);
 
-        sr.sortingOrder = 1000;   // 商品より常に手前
+        sr.sortingOrder = CursorOrder;   // 商品・画面の枠より常に手前
         go.layer = layer;
         // カーソルにコライダーは付けない(掴み判定の邪魔になるため)
         return go;
