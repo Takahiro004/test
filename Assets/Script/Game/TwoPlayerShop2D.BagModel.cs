@@ -34,6 +34,7 @@ public partial class TwoPlayerShop2D
         public bool tearStarted;       // 裂けるアニメーションを始めた
         public PlayableGraph graph;    // 裂けるアニメーションを再生する仕組み
         public Mesh mesh;              // モデルが無いとき、袋の絵を曲げる網目(初めて伸びたときに作る)
+        public Mesh frontMesh;         // 手前の袋の絵の網目(bagFrontSprite があるとき。奥と同じ点を使う)
         public Vector3[] vertices;
     }
 
@@ -83,8 +84,8 @@ public partial class TwoPlayerShop2D
         FindBlendShapes(model, bagStretchShape, bag.look.stretchShapes, "伸びない");
         FindBlendShapes(model, bagOpenShape, bag.look.openShapes, "底の開き方は当たり判定だけ");
 
-        // 袋の絵と仮の袋の四角は隠す(当たり判定はそのまま)
-        foreach (var part in new[] { bag.back, bag.left, bag.right, bag.bottom })
+        // 袋の絵(奥・手前)と仮の袋の四角は隠す(当たり判定はそのまま)
+        foreach (var part in new[] { bag.back, bag.front, bag.left, bag.right, bag.bottom })
             part.GetComponent<SpriteRenderer>().enabled = false;
 
         bag.look.holder = holder;
@@ -153,18 +154,29 @@ public partial class TwoPlayerShop2D
     float RowY(float v, float extra)
         => floorY + bagHeight * v + extra * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.3f, 1f, v));
 
-    // 袋の絵(SpriteRenderer)と同じ絵・同じ描く順番の網目を作り、絵のほうは隠す
+    // 袋の絵(奥の絵と、あれば手前の絵)と同じ絵・同じ描く順番の網目を作り、絵のほうは隠す。
+    // 奥と手前は同じ点(look.vertices)を使うので、伸びる・破れる形がそろう
     void BuildBagMesh(Player p, Bag bag)
     {
         var look = bag.look;
-        var sr = bag.back.GetComponent<SpriteRenderer>();
+        look.vertices = new Vector3[2 * (BagHalfColumns + 1) * (BagMeshRows + 1)];
+        look.mesh = MakeBagMeshLayer(p, bag, bag.back.GetComponent<SpriteRenderer>(), "BagMesh");
+        var frontSr = bag.front.GetComponent<SpriteRenderer>();
+        if (frontSr.sprite != null && bagFrontSprite != null)
+            look.frontMesh = MakeBagMeshLayer(p, bag, frontSr, "BagFrontMesh");
+    }
+
+    // 1枚の絵(SpriteRenderer)の網目を作る
+    Mesh MakeBagMeshLayer(Player p, Bag bag, SpriteRenderer sr, string objName)
+    {
+        var look = bag.look;
         var sprite = sr.sprite;
         // 絵の中の範囲(画像をまとめた1枚の中にあっても、その部分だけ使う)
         Vector2 uvMin = Vector2.one, uvMax = Vector2.zero;
         foreach (var uv in sprite.uv) { uvMin = Vector2.Min(uvMin, uv); uvMax = Vector2.Max(uvMax, uv); }
 
         // 左の半分と右の半分を別々の網目にする(真ん中の点は2つ。破れたら真ん中で割れる)
-        int n = 2 * (BagHalfColumns + 1) * (BagMeshRows + 1);
+        int n = look.vertices.Length;
         var uvs = new Vector2[n];
         var colors = new Color[n];
         for (int h = 0; h < 2; h++)
@@ -187,18 +199,17 @@ public partial class TwoPlayerShop2D
                     triangles[t++] = i + 1; triangles[t++] = up; triangles[t++] = up + 1;
                 }
 
-        look.vertices = new Vector3[n];
-        look.mesh = new Mesh { name = "BagMesh" };
-        look.mesh.MarkDynamic();
-        look.mesh.vertices = look.vertices;
-        look.mesh.uv = uvs;
-        look.mesh.colors = colors;
-        look.mesh.triangles = triangles;
+        var mesh = new Mesh { name = objName };
+        mesh.MarkDynamic();
+        mesh.vertices = look.vertices;
+        mesh.uv = uvs;
+        mesh.colors = colors;
+        mesh.triangles = triangles;
 
-        var go = new GameObject("BagMesh");
+        var go = new GameObject(objName);
         go.layer = p.layer;
         go.transform.SetParent(bag.root, false);
-        go.AddComponent<MeshFilter>().sharedMesh = look.mesh;
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
         var mr = go.AddComponent<MeshRenderer>();
         mr.sharedMaterial = sr.sharedMaterial;   // 絵と同じマテリアル
         var block = new MaterialPropertyBlock();
@@ -207,6 +218,7 @@ public partial class TwoPlayerShop2D
         mr.sortingLayerID = sr.sortingLayerID;
         mr.sortingOrder = sr.sortingOrder;
         sr.enabled = false;
+        return mesh;
     }
 
     // 網目の点を動かす。s は伸び(0〜1)。底(floorY)は動かさない。
@@ -247,6 +259,11 @@ public partial class TwoPlayerShop2D
         }
         look.mesh.vertices = look.vertices;
         look.mesh.RecalculateBounds();
+        if (look.frontMesh != null)
+        {
+            look.frontMesh.vertices = look.vertices;
+            look.frontMesh.RecalculateBounds();
+        }
         // 合計金額の表示も、伸びた持ち手の上へ
         bag.totalLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight + extra + 0.2f + HudTextSize * 4f, 0f);
     }
