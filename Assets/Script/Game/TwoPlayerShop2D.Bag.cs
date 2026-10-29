@@ -130,12 +130,26 @@ public partial class TwoPlayerShop2D
         foreach (var p in new[] { p1, p2 })
         {
             if (p == null || p.bag == null) continue;
+            ApplyBagBack(p.bag);
             ApplyBagFront(p.bag);
             bool show = bagFrameVisible && bagSprite == null && (p.bag.look == null || p.bag.look.holder == null);
             p.bag.left.GetComponent<SpriteRenderer>().enabled = show;
             p.bag.right.GetComponent<SpriteRenderer>().enabled = show;
             if (!p.bag.torn) p.bag.bottom.GetComponent<SpriteRenderer>().enabled = show;   // 破れた底は出さない
         }
+    }
+
+    // 奥の袋の絵: Bag Sprite(無ければ仮の袋の薄い背景)を、袋の幅・高さぴったりに引き伸ばす。
+    // 毎フレーム入れるので、再生中に画像を入れ替えてもすぐ反映する(前は再生を始めたときだけ読んでいた)
+    void ApplyBagBack(Bag b)
+    {
+        if (b.look != null && (b.look.holder != null || b.look.mesh != null)) return;   // 3Dモデル・網目のときは絵を出さない
+        var sr = b.back.GetComponent<SpriteRenderer>();
+        sr.sprite = bagSprite != null ? bagSprite : GetSquareSprite();
+        sr.color = bagSprite != null ? Color.white : new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f);
+        Vector2 size = sr.sprite.bounds.size;
+        b.back.localPosition = new Vector3(bagX, floorY + bagHeight / 2f, 0f);
+        b.back.localScale = new Vector3(bagWidth / Mathf.Max(size.x, 0.01f), bagHeight / Mathf.Max(size.y, 0.01f), 1f);
     }
 
     // 手前の薄い袋の絵: 奥の袋の絵と同じく、袋の幅・高さぴったりに引き伸ばす(再生中に絵・色を変えてもすぐ反映)。
