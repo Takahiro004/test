@@ -35,6 +35,7 @@ public partial class TwoPlayerShop2D
         public PlayableGraph graph;    // 裂けるアニメーションを再生する仕組み
         public Mesh mesh;              // モデルが無いとき、袋の絵を曲げる網目(初めて伸びたときに作る)
         public Mesh frontMesh;         // 手前の袋の絵の網目(bagFrontSprite があるとき。奥と同じ点を使う)
+        public Transform meshTransform, frontMeshTransform;   // 網目を出しているもの(画像の大きさ bagSpriteScale / bagFrontScale をかける)
         public Vector3[] vertices;
     }
 
@@ -160,14 +161,14 @@ public partial class TwoPlayerShop2D
     {
         var look = bag.look;
         look.vertices = new Vector3[2 * (BagHalfColumns + 1) * (BagMeshRows + 1)];
-        look.mesh = MakeBagMeshLayer(p, bag, bag.back.GetComponent<SpriteRenderer>(), "BagMesh");
+        look.mesh = MakeBagMeshLayer(p, bag, bag.back.GetComponent<SpriteRenderer>(), "BagMesh", out look.meshTransform);
         var frontSr = bag.front.GetComponent<SpriteRenderer>();
         if (frontSr.sprite != null && bagFrontSprite != null)
-            look.frontMesh = MakeBagMeshLayer(p, bag, frontSr, "BagFrontMesh");
+            look.frontMesh = MakeBagMeshLayer(p, bag, frontSr, "BagFrontMesh", out look.frontMeshTransform);
     }
 
     // 1枚の絵(SpriteRenderer)の網目を作る
-    Mesh MakeBagMeshLayer(Player p, Bag bag, SpriteRenderer sr, string objName)
+    Mesh MakeBagMeshLayer(Player p, Bag bag, SpriteRenderer sr, string objName, out Transform meshTransform)
     {
         var look = bag.look;
         var sprite = sr.sprite;
@@ -218,6 +219,7 @@ public partial class TwoPlayerShop2D
         mr.sortingLayerID = sr.sortingLayerID;
         mr.sortingOrder = sr.sortingOrder;
         sr.enabled = false;
+        meshTransform = go.transform;
         return mesh;
     }
 

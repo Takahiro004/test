@@ -143,13 +143,30 @@ public partial class TwoPlayerShop2D
     // 毎フレーム入れるので、再生中に画像を入れ替えてもすぐ反映する(前は再生を始めたときだけ読んでいた)
     void ApplyBagBack(Bag b)
     {
-        if (b.look != null && (b.look.holder != null || b.look.mesh != null)) return;   // 3Dモデル・網目のときは絵を出さない
+        if (b.look != null && b.look.holder != null) return;   // 3Dモデルのときは絵を出さない
+        if (b.look != null && b.look.mesh != null) { ScaleBagMesh(b.look.meshTransform, bagSpriteScale); return; }   // 網目になったあとは網目の大きさ
         var sr = b.back.GetComponent<SpriteRenderer>();
         sr.sprite = bagSprite != null ? bagSprite : GetSquareSprite();
         sr.color = bagSprite != null ? Color.white : new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f);
-        Vector2 size = sr.sprite.bounds.size;
-        b.back.localPosition = new Vector3(bagX, floorY + bagHeight / 2f, 0f);
-        b.back.localScale = new Vector3(bagWidth / Mathf.Max(size.x, 0.01f), bagHeight / Mathf.Max(size.y, 0.01f), 1f);
+        PlaceBagSprite(b.back, sr.sprite, bagSpriteScale);
+    }
+
+    // 袋の絵を、袋の幅・高さ x scale(X 横・Y 縦)に引き伸ばす。底(机の上)はそろえたまま、横は真ん中から広がる
+    void PlaceBagSprite(Transform tr, Sprite sprite, Vector2 scale)
+    {
+        Vector2 size = sprite.bounds.size;
+        float w = bagWidth * Mathf.Max(0.01f, scale.x), h = bagHeight * Mathf.Max(0.01f, scale.y);
+        tr.localPosition = new Vector3(bagX, floorY + h / 2f, 0f);
+        tr.localScale = new Vector3(w / Mathf.Max(size.x, 0.01f), h / Mathf.Max(size.y, 0.01f), 1f);
+    }
+
+    // 網目(伸びる・破れるときの袋の絵)も同じく、底の真ん中を中心に scale 倍する
+    void ScaleBagMesh(Transform tr, Vector2 scale)
+    {
+        if (tr == null) return;
+        float sx = Mathf.Max(0.01f, scale.x), sy = Mathf.Max(0.01f, scale.y);
+        tr.localScale = new Vector3(sx, sy, 1f);
+        tr.localPosition = new Vector3(bagX - bagX * sx, floorY - floorY * sy, 0f);
     }
 
     // 手前の薄い袋の絵: 奥の袋の絵と同じく、袋の幅・高さぴったりに引き伸ばす(再生中に絵・色を変えてもすぐ反映)。
@@ -157,14 +174,13 @@ public partial class TwoPlayerShop2D
     void ApplyBagFront(Bag b)
     {
         var sr = b.front.GetComponent<SpriteRenderer>();
+        if (b.look != null && b.look.frontMesh != null) ScaleBagMesh(b.look.frontMeshTransform, bagFrontScale);
         bool meshed = b.look != null && (b.look.holder != null || b.look.mesh != null);
         sr.enabled = bagFrontSprite != null && !meshed;
         if (!sr.enabled) return;
         sr.sprite = bagFrontSprite;
         sr.color = bagFrontColor;
-        Vector2 size = bagFrontSprite.bounds.size;
-        b.front.localPosition = new Vector3(bagX, floorY + bagHeight / 2f, 0f);
-        b.front.localScale = new Vector3(bagWidth / Mathf.Max(size.x, 0.01f), bagHeight / Mathf.Max(size.y, 0.01f), 1f);
+        PlaceBagSprite(b.front, bagFrontSprite, bagFrontScale);
     }
 
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
