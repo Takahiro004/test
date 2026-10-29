@@ -413,8 +413,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
     [Tooltip("袋の画像が無いときの仮の袋で、白いふち(U字の線)を見せる。OFF なら透明(当たり判定はそのまま。薄い背景は出る)")]
     public bool bagFrameVisible = false;
-    [Tooltip("袋の画像(未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
+    [Tooltip("袋の画像(一番奥。色の濃い袋がおすすめ。未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
     public Sprite bagSprite;
+    [Tooltip("手前の袋の画像(一番手前。色の薄い袋)。袋の中の商品より手前に重ねる(奥の画像 → 商品 → この画像の3枚)。空なら出さない")]
+    public Sprite bagFrontSprite;
+    [Tooltip("手前の袋の画像の色と透明度(A を下げるほど、中の商品がよく見える)")]
+    public Color bagFrontColor = new Color(1f, 1f, 1f, 0.6f);
     [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
     public float pricePopupTime = 1f;

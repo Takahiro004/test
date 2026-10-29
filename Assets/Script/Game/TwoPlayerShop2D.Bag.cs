@@ -4,12 +4,14 @@ using UnityEngine;
 // レジ袋・金額・袋の外の商品を消す(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 public partial class TwoPlayerShop2D
 {
-    // レジ袋(左右のふち + 底 + 背景 + 合計の表示)
+    // レジ袋(左右のふち + 底 + 背景 + 合計の表示)。
+    // 見た目は3枚の重なり: 一番奥に袋の絵(back。bagSprite)・まん中に袋の中の商品・一番手前に薄い袋の絵(front。bagFrontSprite)
     class Bag
     {
         public Transform root;
         public Rigidbody2D body;   // 揺らすとき用(Kinematic。動かすと中の商品を押す)
         public Transform back, left, right, bottom;
+        public Transform front;        // 手前の薄い袋の絵(商品より手前。当たり判定なし)
         public TextMesh totalLabel;
         public bool torn;              // 最後に持ち上げたとき破れた(TwoPlayerShop2D.Weight.cs)
         public BagLook look;           // 3Dモデル・伸び・裂けるアニメーション(TwoPlayerShop2D.BagModel.cs)
@@ -44,6 +46,10 @@ public partial class TwoPlayerShop2D
             foreach (var wall in new[] { bag.left, bag.right, bag.bottom })
                 wall.GetComponent<SpriteRenderer>().enabled = false;
         }
+
+        // 手前の薄い袋の絵(袋の中の商品より手前・持ち運び中の商品(999)より奥。絵は ApplyBagFrameVisibility で毎フレーム入れる)
+        bag.front = MakeBagPart("Front", root.transform, p.layer, bagFrontColor, BagFrontOrder, false);
+        bag.front.GetComponent<SpriteRenderer>().enabled = false;
 
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
         SetTextSize(bag.totalLabel, HudTextSize);
@@ -116,17 +122,35 @@ public partial class TwoPlayerShop2D
             if (p != null && p.bag != null) p.bag.totalLabel.gameObject.SetActive(showBagTotal);
     }
 
-    // 仮の袋(画像も3Dモデルも無い)の白いふちの見た目の ON/OFF(Update から毎フレーム。当たり判定はそのまま)
+    const int BagFrontOrder = 900;   // 手前の袋の絵の描く順番(落とした商品は 1, 2, 3…・持ち運び中は 999)
+
+    // 仮の袋(画像も3Dモデルも無い)の白いふちの見た目の ON/OFF・手前の袋の絵(Update から毎フレーム。当たり判定はそのまま)
     void ApplyBagFrameVisibility()
     {
         foreach (var p in new[] { p1, p2 })
         {
             if (p == null || p.bag == null) continue;
+            ApplyBagFront(p.bag);
             bool show = bagFrameVisible && bagSprite == null && (p.bag.look == null || p.bag.look.holder == null);
             p.bag.left.GetComponent<SpriteRenderer>().enabled = show;
             p.bag.right.GetComponent<SpriteRenderer>().enabled = show;
             if (!p.bag.torn) p.bag.bottom.GetComponent<SpriteRenderer>().enabled = show;   // 破れた底は出さない
         }
+    }
+
+    // 手前の薄い袋の絵: 奥の袋の絵と同じく、袋の幅・高さぴったりに引き伸ばす(再生中に絵・色を変えてもすぐ反映)。
+    // 3Dモデルの袋のときと、伸びて網目になったあと(TwoPlayerShop2D.BagModel.cs)は、絵のほうは出さない
+    void ApplyBagFront(Bag b)
+    {
+        var sr = b.front.GetComponent<SpriteRenderer>();
+        bool meshed = b.look != null && (b.look.holder != null || b.look.mesh != null);
+        sr.enabled = bagFrontSprite != null && !meshed;
+        if (!sr.enabled) return;
+        sr.sprite = bagFrontSprite;
+        sr.color = bagFrontColor;
+        Vector2 size = bagFrontSprite.bounds.size;
+        b.front.localPosition = new Vector3(bagX, floorY + bagHeight / 2f, 0f);
+        b.front.localScale = new Vector3(bagWidth / Mathf.Max(size.x, 0.01f), bagHeight / Mathf.Max(size.y, 0.01f), 1f);
     }
 
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
