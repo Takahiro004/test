@@ -397,9 +397,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public MenuRecipe[] menuList = MenuRecipe.Defaults();
     [Tooltip("この試合の献立を決める(Menu List の番号。0始まり)。-1 ならランダム")]
     public int menuFixedIndex = -1;
-    [Tooltip("袋の画面の献立の表示の場所(画面の真ん中が 0、右の端が 0.5、上の端が 0.5)。文字の左上の位置")]
+    [Tooltip("袋の画面の献立を、下の帯(プレイヤーの色)・食材のアイコン・メモ用紙で出す。OFF なら前の文字だけの表示(Menu Label Position / Size)")]
+    public bool menuPanelLayout = true;
+    [Tooltip("下の帯の高さ(画面の高さの割合)")]
+    [Range(0.02f, 0.5f)] public float menuBandHeight = 0.11f;
+    [Tooltip("ON: 1P はメモ用紙が左・アイコンが右(2P は逆)。OFF で入れ替え")]
+    public bool menuMemoLeftForP1 = true;
+    [Tooltip("メモ用紙の画像(空なら白い四角)")]
+    public Sprite menuMemoSprite;
+    [Tooltip("(Menu Panel Layout が OFF のとき)袋の画面の献立の表示の場所(画面の真ん中が 0、右の端が 0.5、上の端が 0.5)。文字の左上の位置")]
     public Vector2 menuLabelPosition = new Vector2(-0.45f, 0.3f);
-    [Tooltip("袋の画面の献立の文字の大きさ(1で普通)")]
+    [Tooltip("(Menu Panel Layout が OFF のとき)袋の画面の献立の文字の大きさ(1で普通)")]
     public float menuLabelSize = 1f;
     [Tooltip("まだ棚に出ていない献立の食材を、山札から引くときに優先する確率(0.25なら4回に1回)。残り時間が少なくなったら必ず出す")]
     [Range(0f, 1f)] public float menuIngredientBoost = 0.25f;
