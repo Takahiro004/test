@@ -349,6 +349,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
     [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
     public float bagLegDrop = 0.1f;
+    [Tooltip("袋持ち上げターンから、1P/2P の画面のカメラを持ち上げた袋(持ち手)と一緒に上へ動かす(机が映りすぎないように。結果発表のあいだも上がったまま)")]
+    public bool bagLiftCameraFollow = true;
     [Tooltip("破れた瞬間、伸びていた分だけ袋の下のほうが、ゴムパッチンのように持ち手のほうへパチンと戻る(元の長さ・形に戻る。持ち手は動かない。中身はそのまま下へ落ちる)。戻る長さは伸びの大きさ(Bag Stretch Amount)で決まる")]
     public bool bagSnapBack = true;
     [Tooltip("戻って揺れが止まるまでの秒数")]

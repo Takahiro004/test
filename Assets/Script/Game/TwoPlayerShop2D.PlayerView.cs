@@ -61,6 +61,9 @@ public partial class TwoPlayerShop2D
             var rotation = RotationOf(p);
             float angle = rotation == ScreenRotation.Right ? -90f : rotation == ScreenRotation.Left ? 90f : 0f;
             cam.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            // 袋持ち上げターンから: カメラを持ち上げた袋(持ち手)と一緒に上へ動かす(机が映りすぎないように。TwoPlayerShop2D.Lift.cs)
+            if (liftStarted && p.screenShakeRoutine == null)
+                cam.transform.position = new Vector3(cam.transform.position.x, CameraFollowY, cam.transform.position.z);
 
             if (!autoFitPlayerScreens) continue;   // OFF: ズームは DisplayTestSwitcher に任せる
             float aspect = Mathf.Max(0.01f, cam.aspect);   // 今の画面(表示の場所)の横:縦
