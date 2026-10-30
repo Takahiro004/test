@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 6e72395d54f765940a5c9fa98d02359c
+guid: af08650a412ba4c43870302c9f38eef9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5568808613802730860
-    second: zuwaigani_aiStandardSurface5_MetallicSmoothness_0
+      213: -7842863199773051154
+    second: siro_Height_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: zuwaigani_aiStandardSurface5_MetallicSmoothness_0
+      name: siro_Height_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1024
-        height: 1024
+        width: 2048
+        height: 2048
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c65e8dfede1684d40800000000000000
-      internalID: 5568808613802730860
+      spriteID: ee63b8b197d882390800000000000000
+      internalID: -7842863199773051154
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      zuwaigani_aiStandardSurface5_MetallicSmoothness_0: 5568808613802730860
+      siro_Height_0: -7842863199773051154
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

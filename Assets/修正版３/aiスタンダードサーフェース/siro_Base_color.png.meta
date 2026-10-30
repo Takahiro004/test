@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 653aee8ee419c4b409effca045ad4118
+guid: 15c420bce27b7114a8cc1a01c01bdefb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8257946645163188020
-    second: zuwaigani_aiStandardSurface5_AlbedoTransparency_0
+      213: 3665065551613585997
+    second: siro_Base_color_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: zuwaigani_aiStandardSurface5_AlbedoTransparency_0
+      name: siro_Base_color_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1024
-        height: 1024
+        width: 2048
+        height: 2048
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cc06be85741e56d80800000000000000
-      internalID: -8257946645163188020
+      spriteID: d4ae27a63bdecd230800000000000000
+      internalID: 3665065551613585997
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      zuwaigani_aiStandardSurface5_AlbedoTransparency_0: -8257946645163188020
+      siro_Base_color_0: 3665065551613585997
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

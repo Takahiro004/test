@@ -1794,7 +1794,7 @@ MonoBehaviour:
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
   shelfSprite: {fileID: 0}
-  shelfModel: {fileID: 4048624130938229444, guid: 8c830ee8ce38b2b479feef1cda32d41f, type: 3}
+  shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
   shelfModelOffset: {x: 0, y: 0.5, z: 0}
   shelfModelRotation: {x: 0, y: 0, z: 0}
   shelfModelScale: {x: 1.37, y: 1, z: 1}
