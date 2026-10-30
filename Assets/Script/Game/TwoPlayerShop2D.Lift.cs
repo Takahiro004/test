@@ -14,6 +14,10 @@ public partial class TwoPlayerShop2D
     bool liftStarted, liftDone;
     float liftHeight;   // 今持ち上げている高さ
 
+    // 1P/2P のカメラが持ち手について上がる高さ(bagLiftCameraFollow。持ち上げたあと・結果発表のあいだも上がったまま)。
+    // 画面に固定して出す文字(持ち上げの文字・結果・献立)も、この分だけ上へずらす
+    float CameraFollowY => bagLiftCameraFollow ? liftHeight : 0f;
+
     // 持ち上げている途中なら true(UpdateResult はそこで止まる)
     bool UpdateBagLift()
     {
@@ -77,6 +81,8 @@ public partial class TwoPlayerShop2D
         {
             float k = Mathf.Clamp01(time / Mathf.Max(0.01f, bagLiftTime));
             liftHeight = target * Mathf.SmoothStep(0f, 1f, k);
+            for (int i = 0; i < 2; i++)   // 持ち上げの文字も、カメラと一緒に上がる
+                if (liftTexts[i] != null) liftTexts[i].transform.position = new Vector3(bagX, PlayerViewSize().y * 0.3f + CameraFollowY, 0f);
             if (time >= tearStartTime)
             {
                 if (WillTearOnLift(p1)) StartBagTear(p1);

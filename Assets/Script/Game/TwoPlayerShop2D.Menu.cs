@@ -97,7 +97,7 @@ public partial class TwoPlayerShop2D
             if (!show) continue;
 
             Vector2 view = PlayerViewSize();
-            label.transform.position = new Vector3(view.x * menuLabelPosition.x, view.y * menuLabelPosition.y, 0f);
+            label.transform.position = new Vector3(view.x * menuLabelPosition.x, view.y * menuLabelPosition.y + CameraFollowY, 0f);   // 持ち上げでカメラが上がったら一緒に
             SetTextSize(label, HudTextSize * 0.7f * Mathf.Max(0.1f, menuLabelSize));
 
             var sb = new System.Text.StringBuilder();

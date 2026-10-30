@@ -30,7 +30,7 @@ public partial class TwoPlayerShop2D
         public readonly List<(SkinnedMeshRenderer renderer, int index)> openShapes = new List<(SkinnedMeshRenderer, int)>();   // 底が開いた形
         public float open;             // 底の開き具合(0: 閉じている 〜 1: 開ききった)
         public bool snapping;          // 破れてゴムパッチンのように跳ね戻っている最中(伸びは SnapBackBag が動かす)
-        public float contract = 1f;    // 破れて縮み上がった袋の長さ(元の何倍か。持ち手のほうへ縮む)
+        public float snapLift;         // 破れて伸びが戻った分、袋の絵を上へずらす長さ(持ち手の先を動かさないため)
         public Transform flapLeft, flapRight;   // 破れたあとの底の当たり判定(左右2枚。ふちを軸に回る)
         public float stretch;          // 今の伸び(0〜1)
         public bool tearStarted;       // 裂けるアニメーションを始めた
@@ -235,7 +235,6 @@ public partial class TwoPlayerShop2D
         float holeTop = Mathf.Clamp(bagBottomFlapHeight, 0.01f, 1f);     // 穴の上のふち(下からの割合)
         float leg = Mathf.Clamp(bagLegWidth, 0.01f, 0.45f);               // 脚の幅(袋の幅の割合)
         float holeY = RowY(holeTop, extra);
-        float topY = RowY(1f, extra);   // 持ち手の先(縮み上がるときに動かないところ)
         for (int r = 0; r <= BagMeshRows; r++)
         {
             float v = (float)r / BagMeshRows;   // 0: 底 〜 1: 持ち手の先
@@ -259,7 +258,7 @@ public partial class TwoPlayerShop2D
                         point.y = Mathf.Lerp(point.y, holeY, look.open * inner);
                         point.y -= Mathf.Max(0f, bagLegDrop) * bagHeight * look.open * (1f - inner) * below;   // 脚が垂れる
                     }
-                    point.y = topY - (topY - point.y) * look.contract;   // 破れたら、持ち手(上のふち)のほうへ縮み上がる
+                    point.y += look.snapLift;   // 破れて伸びが戻った分だけ上へ(持ち手の先は動かない)
                     look.vertices[BagMeshIndex(h, r, c)] = (Vector3)point + shake;
                 }
         }
@@ -271,7 +270,7 @@ public partial class TwoPlayerShop2D
             look.frontMesh.RecalculateBounds();
         }
         // 合計金額の表示も、伸びた持ち手の上へ
-        bag.totalLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight + extra + 0.2f + HudTextSize * 4f, 0f);
+        bag.totalLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight + extra + look.snapLift + 0.2f + HudTextSize * 4f, 0f);
     }
 
     // 破れる bagTearOpenTime 秒前(.Lift.cs から): 裂けるアニメーションを始める。1回だけ
@@ -287,33 +286,34 @@ public partial class TwoPlayerShop2D
         AnimationPlayableUtilities.PlayClip(animator, bagTearClip, out look.graph);   // 最後のコマで止まる(ループしない設定のとき)
     }
 
-    // 破れたとき(.Weight.cs から): ゴムパッチンのように、伸びていた袋の下のほうが持ち手のほうへ一気に縮み上がる。
-    // 持ち手(袋の上のふち)は動かさない。袋の長さが bagSnapLength 倍まで縮み、行きすぎて少し揺れてから bagSnapTime 秒で止まる(bagSnapBounces 回)。
-    // 伸びていた形も一緒に戻る。見た目だけ(当たり判定の壁はそのまま。中身はそのまま下へ落ちる)
+    // 破れたとき(.Weight.cs から): ゴムパッチンのように、伸びていた分だけ袋の下のほうが持ち手のほうへパチンと戻る。
+    // 持ち手(袋の上のふち)は動かさない。伸び(stretch)を 0 に戻しながら、その分だけ袋を上へずらす(snapLift)ので、
+    // 袋は元の長さ・元の形に戻る。戻りすぎて一瞬縮み、bagSnapBounces 回揺れて bagSnapTime 秒で止まる。
+    // 見た目だけ(当たり判定の壁はそのまま。中身はそのまま下へ落ちる)
     IEnumerator SnapBackBag(Player p)
     {
         var bag = p.bag;
         var look = bag.look;
         look.snapping = true;
         float startStretch = look.stretch;
-        float final = Mathf.Clamp(bagSnapLength, 0.05f, 1f);   // 縮みきったときの長さ(元の何倍か)
+        float perStretch = bagHeight * Mathf.Max(0f, bagStretchAmount);   // 伸び 1 のとき、持ち手が上へ伸びていた長さ
         float duration = Mathf.Max(0.1f, bagSnapTime);
         float omega = 2f * Mathf.PI * Mathf.Max(0.5f, bagSnapBounces) / duration;   // 揺れの速さ
         float damping = 4f / duration;                                                // だんだん小さくなる速さ
         for (float time = 0f; time < duration; time += Time.fixedDeltaTime)
         {
             float decay = Mathf.Exp(-damping * time);
-            // 時間の進み方を最初だけ速くして、パチンと一気に縮む(あとの揺れはだんだん小さく)
+            // 時間の進み方を最初だけ速くして、パチンと一気に戻る(あとの揺れはだんだん小さく)
             float phase = omega * duration * Mathf.Pow(time / duration, 0.6f);
-            look.contract = Mathf.Max(0.05f, final + (1f - final) * decay * Mathf.Cos(phase));   // 1 → final(行きすぎて揺れる)
-            look.stretch = startStretch * decay * Mathf.Max(0f, Mathf.Cos(phase));
+            look.stretch = Mathf.Max(-0.5f, startStretch * decay * Mathf.Cos(phase));   // 伸び → 0(戻りすぎて一瞬マイナス = 縮む)
+            look.snapLift = perStretch * (startStretch - look.stretch);                 // 持ち手の先が動かないように、縮んだ分だけ上へ
             foreach (var (smr, index) in look.stretchShapes)
-                if (smr != null) smr.SetBlendShapeWeight(index, look.stretch * 100f);
+                if (smr != null) smr.SetBlendShapeWeight(index, Mathf.Max(0f, look.stretch) * 100f);
             if (look.mesh != null) DeformBagMesh(bag, look.stretch, Vector3.zero);
             yield return new WaitForFixedUpdate();
         }
-        look.contract = final;   // 縮んだまま
         look.stretch = 0f;
+        look.snapLift = perStretch * startStretch;   // 元の形のまま、持ち手からぶら下がる
         if (look.mesh != null) DeformBagMesh(bag, 0f, Vector3.zero);
         look.snapping = false;
     }

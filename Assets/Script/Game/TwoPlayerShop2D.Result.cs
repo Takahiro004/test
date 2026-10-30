@@ -65,6 +65,7 @@ public partial class TwoPlayerShop2D
             p.inShop = true;
             p.cursorOwn.gameObject.SetActive(false);
             p.cursorShop.gameObject.SetActive(false);   // 棚の画面の手も消す(持ち上げ・結果発表の画面に手が残らないように)
+            if (p.kickLabel != null) p.kickLabel.gameObject.SetActive(false);   // 「LB: キック OK」も消す(もう蹴れない。カメラが上がると置いていかれるため)
         }
     }
 
@@ -461,7 +462,7 @@ public partial class TwoPlayerShop2D
         string text = result > 0 ? "あなたの\n勝ち！" : result < 0 ? "あなたの\n負け！" : "引き分け！";
         var main = MakeText("Result", root.transform, p.layer, text, result < 0 ? new Color(0.75f, 0.8f, 0.95f) : Color.white, 3002);
         SetTextSize(main, 0.22f * size);
-        main.transform.position = Vector3.zero;   // 画面の真ん中(合計金額は棚の画面に出す)
+        main.transform.position = new Vector3(0f, CameraFollowY, 0f);   // 画面の真ん中(持ち上げでカメラが上がった分も。合計金額は棚の画面に出す)
     }
 
     // どちらかのコントローラー(参加していないものも)、またはキーボード(Space / Enter)で A
