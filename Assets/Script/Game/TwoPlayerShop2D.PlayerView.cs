@@ -51,6 +51,9 @@ public partial class TwoPlayerShop2D
     void FitPlayerCameras()
     {
         Vector2 view = PlayerViewSize();
+        // 袋持ち上げターンから、カメラをゆっくり引いて全体を映す(bagLiftCameraZoom 倍の範囲。1秒くらいで引ききる)
+        liftZoom = Mathf.MoveTowards(liftZoom, liftStarted ? 1f : 0f, Time.deltaTime);
+        float zoom = Mathf.Lerp(1f, Mathf.Max(0.1f, bagLiftCameraZoom), Mathf.SmoothStep(0f, 1f, liftZoom));
         foreach (var p in new[] { p1, p2 })
         {
             if (p == null || p.screen < 0 || p.screen >= switcher.screens.Length) continue;
@@ -67,9 +70,9 @@ public partial class TwoPlayerShop2D
 
             if (!autoFitPlayerScreens) continue;   // OFF: ズームは DisplayTestSwitcher に任せる
             float aspect = Mathf.Max(0.01f, cam.aspect);   // 今の画面(表示の場所)の横:縦
-            cam.orthographicSize = rotation == ScreenRotation.None
+            cam.orthographicSize = zoom * (rotation == ScreenRotation.None
                 ? Mathf.Max(view.y / 2f, view.x / 2f / aspect)
-                : Mathf.Max(view.x / 2f, view.y / 2f / aspect);
+                : Mathf.Max(view.x / 2f, view.y / 2f / aspect));
         }
     }
 }
