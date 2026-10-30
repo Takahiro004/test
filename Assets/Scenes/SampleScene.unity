@@ -1545,7 +1545,7 @@ MonoBehaviour:
     shape: 6
     sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 3779199582768937276, guid: 263b295217b041e49b021257b856cca7, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u305F\u3044"
