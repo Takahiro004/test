@@ -349,13 +349,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
     [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
     public float bagLegDrop = 0.1f;
-    [Tooltip("破れた瞬間、伸びていた袋の下のほうが、ゴムパッチンのように持ち手のほうへ一気に縮み上がる(持ち手は動かない。中身はそのまま下へ落ちる)")]
+    [Tooltip("破れた瞬間、伸びていた分だけ袋の下のほうが、ゴムパッチンのように持ち手のほうへパチンと戻る(元の長さ・形に戻る。持ち手は動かない。中身はそのまま下へ落ちる)。戻る長さは伸びの大きさ(Bag Stretch Amount)で決まる")]
     public bool bagSnapBack = true;
-    [Tooltip("縮み上がったあとの袋の長さ(元の長さの何倍か。小さいほど持ち手のほうへ縮む)")]
-    [Range(0.05f, 1f)] public float bagSnapLength = 0.35f;
-    [Tooltip("縮み上がって揺れが止まるまでの秒数")]
+    [Tooltip("戻って揺れが止まるまでの秒数")]
     public float bagSnapTime = 0.9f;
-    [Tooltip("止まるまでに上下にびよんびよんする回数(縮みすぎて戻る揺れ)")]
+    [Tooltip("止まるまでに上下にびよんびよんする回数(戻りすぎて縮む揺れ)")]
     public float bagSnapBounces = 3f;
     [Tooltip("袋の3Dモデルの、底が真ん中から左右に開いた形のシェイプキーの名前(破れたら 0→100 にする)")]
     public string bagOpenShape = "Open";
