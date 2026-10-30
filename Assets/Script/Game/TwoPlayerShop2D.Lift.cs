@@ -17,6 +17,7 @@ public partial class TwoPlayerShop2D
     // 1P/2P のカメラが持ち手について上がる高さ(bagLiftCameraFollow。持ち上げたあと・結果発表のあいだも上がったまま)。
     // 画面に固定して出す文字(持ち上げの文字・結果・献立)も、この分だけ上へずらす
     float CameraFollowY => bagLiftCameraFollow ? liftHeight : 0f;
+    float liftZoom;     // カメラを引く進み具合(0〜1。.PlayerView.cs の FitPlayerCameras が動かす)
 
     // 持ち上げている途中なら true(UpdateResult はそこで止まる)
     bool UpdateBagLift()
