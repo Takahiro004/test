@@ -1675,8 +1675,9 @@ MonoBehaviour:
   bagBottomFlapHeight: 0.05
   bagLegWidth: 0.1
   bagLegDrop: 0.1
+  bagLiftCameraFollow: 1
+  bagLiftCameraZoom: 1.5
   bagSnapBack: 1
-  bagSnapLength: 0.35
   bagSnapTime: 1.2
   bagSnapBounces: 3
   bagOpenShape: Open
@@ -1732,6 +1733,10 @@ MonoBehaviour:
     - "\u304A\u308A\u30FC\u3076\u304A\u3044\u308B"
     - "\u3070\u305F\u30FC"
   menuFixedIndex: -1
+  menuPanelLayout: 1
+  menuBandHeight: 0.11
+  menuMemoLeftForP1: 1
+  menuMemoSprite: {fileID: 0}
   menuLabelPosition: {x: -0.45, y: 0.3}
   menuLabelSize: 1
   menuIngredientBoost: 0.25
@@ -1789,7 +1794,7 @@ MonoBehaviour:
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
   shelfSprite: {fileID: 0}
-  shelfModel: {fileID: 0}
+  shelfModel: {fileID: 4048624130938229444, guid: 8c830ee8ce38b2b479feef1cda32d41f, type: 3}
   shelfModelOffset: {x: 0, y: 0.5, z: 0}
   shelfModelRotation: {x: 0, y: 0, z: 0}
   shelfModelScale: {x: 1.37, y: 1, z: 1}
