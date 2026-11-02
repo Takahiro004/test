@@ -1751,10 +1751,12 @@ MonoBehaviour:
   bagColor: {r: 1, g: 1, b: 1, a: 0.85}
   bagFrameVisible: 0
   bagSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
-  bagFrontSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
+  bagFrontSprite: {fileID: 0}
   bagFrontColor: {r: 1, g: 1, b: 1, a: 0.6}
   bagSpriteScale: {x: 1.2, y: 1.5}
   bagFrontScale: {x: 1.2, y: 1.5}
+  bagSpriteOffset: {x: 0, y: 0}
+  bagFrontOffset: {x: 0, y: 0}
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
   pricePopupTime: 1
   removeAfterStopTime: 0.5
