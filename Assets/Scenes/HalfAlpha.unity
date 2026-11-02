@@ -306,7 +306,7 @@ MonoBehaviour:
   splitView: 1
   baseOrthoSize: 5
   targetAspect: 1.7777778
-  showOverlayLabel: 1
+  showOverlayLabel: 0
 --- !u!4 &179057529
 Transform:
   m_ObjectHideFlags: 0
@@ -733,7 +733,7 @@ MonoBehaviour:
   rotateHeldProduct: 1
   createFloor: 1
   createBag: 1
-  menuMission: 1
+  menuMission: 0
   showOwnScreenFrame: 1
   showShopScreenFrame: 1
   showBagTotal: 0
@@ -741,8 +741,8 @@ MonoBehaviour:
   removeOutsideBag: 1
   breakFragile: 1
   subtractSpilledFromTotal: 1
-  bagTearEnabled: 1
-  bagCreakEnabled: 1
+  bagTearEnabled: 0
+  bagCreakEnabled: 0
   useTempWeights: 1
   clashEnabled: 1
   clashRematchOnTie: 1
@@ -756,7 +756,7 @@ MonoBehaviour:
   autoFitPlayerScreens: 1
   fillPlayerScreen: 1
   showShelf: 1
-  shelfSlide: 1
+  shelfSlide: 0
   randomRefill: 1
   showPriceTags: 1
   autoFitShopScreen: 1
@@ -764,7 +764,7 @@ MonoBehaviour:
   showGameTimer: 1
   showResultOnTimeUp: 1
   showResultBars: 1
-  bagLiftOnTimeUp: 1
+  bagLiftOnTimeUp: 0
   showEntryScreen: 1
   fixedPadAssignment: 1
   useKeyboard: 1
