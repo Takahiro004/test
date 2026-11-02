@@ -441,6 +441,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 bagSpriteScale = Vector2.one;
     [Tooltip("手前の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
     public Vector2 bagFrontScale = Vector2.one;
+    [Tooltip("奥の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagSpriteOffset = Vector2.zero;
+    [Tooltip("手前の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagFrontOffset = Vector2.zero;
     [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
     [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
     public float pricePopupTime = 1f;
