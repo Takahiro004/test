@@ -128,7 +128,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool shelfSlide = true;
     [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
     public bool randomRefill = true;
-    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色")]
+    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
     public bool showPriceTags = true;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
     public bool autoFitShopScreen = true;
@@ -541,6 +541,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelRotation = Vector3.zero;
     [Tooltip("3Dモデルの大きさ。X=横・Y=縦・Z=奥行きを別々に変えられる(全部1なら棚の範囲にちょうど収まる)")]
     public Vector3 shelfModelScale = Vector3.one;
+    [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 shelfProductOffset = Vector2.zero;
     [Tooltip("棚の画面のカメラの角度(度)。X=上下に傾ける(プラスで見下ろす)・Y=左右に振る・Z=画面を回す。棚の真ん中を中心に回る。全部0で真正面")]
     public Vector3 shopCameraAngle = Vector3.zero;
 

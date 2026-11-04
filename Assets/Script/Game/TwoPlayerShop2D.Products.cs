@@ -266,7 +266,7 @@ public partial class TwoPlayerShop2D
             SetTextSize(tag, 0.012f * size);
             tag.anchor = TextAnchor.UpperCenter;
             tag.alignment = TextAlignment.Center;
-            tag.transform.localPosition = new Vector3(x, rowTop - 0.1f, 0f);
+            tag.transform.localPosition = new Vector3(x + shelfProductOffset.x, rowTop - 0.1f + shelfProductOffset.y, 0f);   // 商品と一緒にずらす
             slots[i].tag = tag;
             SetSlotTag(slots[i]);
         }
