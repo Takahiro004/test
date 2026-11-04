@@ -208,7 +208,7 @@ public partial class TwoPlayerShop2D
             priceOf[go] = price;          // こぼれたときに引く金額も、袋に入ったときの金額にする
             p.total += price;
             p.bag.totalLabel.text = $"¥{p.total}";
-            if (showPricePopup) StartCoroutine(PricePopup(p, c, price));
+            if (showPricePopup) StartCoroutine(PricePopup(p, c, price, infoOf.TryGetValue(go, out var bagInfo) ? bagInfo.name : go.name));
             CheckMenuMission(p);          // 献立の食材がそろったか
 
             lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
@@ -327,9 +327,11 @@ public partial class TwoPlayerShop2D
     }
 
     // 金額を表示して、上へ浮かびながら消える
-    System.Collections.IEnumerator PricePopup(Player p, Vector2 pos, int price)
+    System.Collections.IEnumerator PricePopup(Player p, Vector2 pos, int price, string productName)
     {
-        var label = MakeText("PricePopup", null, p.layer, $"+¥{price}", new Color(1f, 0.95f, 0.3f), 1002);
+        // 商品名(白)を金額(黄色)の上に出す
+        var label = MakeText("PricePopup", null, p.layer, $"<color=#FFFFFF>{productName}</color>\n+¥{price}", new Color(1f, 0.95f, 0.3f), 1002);
+        label.richText = true;
         SetTextSize(label, HudTextSize);
         var color = label.color;
         float time = 0f;

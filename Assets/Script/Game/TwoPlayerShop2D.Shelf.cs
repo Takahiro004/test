@@ -9,7 +9,8 @@ using UnityEngine;
 //    shelfSlideInterval 秒ごとに、左から次の棚が shelfSlideTime 秒でスライドしてくる(今の棚は右へ出ていく)。
 //    棚は「1画面ぶんの棚(段 x 列)」を2つ輪のようにつないだもの。右の画面の外へ出た棚は、左の画面の外へ回って、また入ってくる。
 //    回るとき(画面の外)に、商品を入れ替える(ランダム補充なら山札から引き直す。TwoPlayerShop2D.Deck.cs)
-//  - 商品は、全部が画面に映っていないと取れない(CanGrabOnShelf)
+//  - 商品は、全部が画面に映っていないと取れない(CanGrabOnShelf)。
+//    ただし棚の1マスより大きい商品(大きいかになど)は、はみ出すのが当たり前なので、真ん中が画面に映っていれば取れる
 public partial class TwoPlayerShop2D
 {
     Transform shelfRoot;   // 棚の見た目(仮の棚 / 画像 / 3Dモデル)をまとめる親
@@ -269,6 +270,10 @@ public partial class TwoPlayerShop2D
         Vector2 half = ShopViewSize() / 2f + new Vector2(0.02f, 0.02f);   // 少しだけゆとり
         Rect r;
         if (!ShapeRect(go, out r)) return true;
+        // 1マスより大きい商品は例外: 真ん中が画面に映っていれば取れる(全部は映りきらないため。2026-11-04 プログラマー)
+        Rect a = ShelfArea();
+        if (r.width > a.width / ShelfColumns || r.height > a.height / ShelfRows)
+            return Mathf.Abs(r.center.x) <= half.x && Mathf.Abs(r.center.y) <= half.y;
         return r.xMin >= -half.x && r.xMax <= half.x && r.yMin >= -half.y && r.yMax <= half.y;
     }
 
