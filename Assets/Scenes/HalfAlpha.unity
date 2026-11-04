@@ -769,6 +769,7 @@ MonoBehaviour:
   fixedPadAssignment: 1
   useKeyboard: 1
   showOverlayLabel: 0
+  quitOnEscape: 1
   screenP1: 1
   screenShop: 0
   screenP2: 2
@@ -1792,6 +1793,11 @@ MonoBehaviour:
   landscapeRows: 2
   shelfSlideInterval: 8
   shelfSlideTime: 1
+  deskSprite: {fileID: 0}
+  deskModel: {fileID: 0}
+  deskModelRotation: {x: 0, y: 0, z: 0}
+  deskVisualScale: {x: 1, y: 1, z: 1}
+  deskVisualOffset: {x: 0, y: 0, z: 0}
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25

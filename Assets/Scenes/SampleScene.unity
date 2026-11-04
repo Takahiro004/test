@@ -769,6 +769,7 @@ MonoBehaviour:
   fixedPadAssignment: 1
   useKeyboard: 1
   showOverlayLabel: 0
+  quitOnEscape: 1
   screenP1: 1
   screenShop: 0
   screenP2: 2
@@ -1755,6 +1756,8 @@ MonoBehaviour:
   bagFrontColor: {r: 1, g: 1, b: 1, a: 0.6}
   bagSpriteScale: {x: 1.2, y: 1.5}
   bagFrontScale: {x: 1.2, y: 1.5}
+  bagSpriteOffset: {x: 0, y: 0}
+  bagFrontOffset: {x: 0, y: 0}
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
   pricePopupTime: 1
   removeAfterStopTime: 0.5
@@ -1790,15 +1793,25 @@ MonoBehaviour:
   landscapeRows: 2
   shelfSlideInterval: 8
   shelfSlideTime: 1
+  deskSprite: {fileID: 0}
+  deskModel: {fileID: 1117069708664459499, guid: 5b4de255caf75c443bd8d771d2601cc4, type: 3}
+  deskModelRotation: {x: 0, y: 0, z: 0}
+  deskVisualScale: {x: 1, y: 1, z: 1}
+  deskVisualOffset: {x: 0, y: 2, z: 0}
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
   shelfSprite: {fileID: 0}
   shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
-  shelfModelOffset: {x: 0, y: 0.5, z: 0}
+  shelfModelOffset: {x: 0, y: -0.15, z: 0}
   shelfModelRotation: {x: 0, y: 0, z: 0}
   shelfModelScale: {x: 1.37, y: 1, z: 1}
-  shopCameraAngle: {x: 10, y: 0, z: 0}
+  shelfProductOffset: {x: 0, y: 0}
+  shelfRowOffsets:
+  - {x: 0, y: 0}
+  - {x: 0, y: 0}
+  - {x: 0, y: 0.5}
+  shopCameraAngle: {x: 0, y: 0, z: 0}
   arrangeCameras: 1
 --- !u!4 &699965479
 Transform:
