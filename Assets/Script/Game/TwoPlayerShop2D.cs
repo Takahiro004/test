@@ -526,6 +526,18 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("棚がスライドする動きの秒数")]
     public float shelfSlideTime = 1f;
 
+    [Header("机の見た目(1P/2Pの画面。画像か3Dモデルを入れると、仮の机の代わりに出る。TwoPlayerShop2D.Desk.cs)")]
+    [Tooltip("机の画像。入れると仮の机の代わりに、画面に見えている机の幅で出す(縦横の比率はそのまま・上の面を机の高さに)。当たり判定は今までどおり")]
+    public Sprite deskSprite;
+    [Tooltip("机の3Dモデル(プレハブ)。入れると画像より優先して出す(机の幅に合わせ、上の面を机の高さに)。当たり判定は今までどおり")]
+    public GameObject deskModel;
+    [Tooltip("机の3Dモデルの向き(度)。プレハブの向きの上に足す")]
+    public Vector3 deskModelRotation = Vector3.zero;
+    [Tooltip("机の画像・3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1で机の幅ぴったり)。再生中に変えてもすぐ反映")]
+    public Vector3 deskVisualScale = Vector3.one;
+    [Tooltip("机の画像・3Dモデルの位置のずらし。X=右・Y=上・Z=奥(見た目だけ。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector3 deskVisualOffset = Vector3.zero;
+
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]
     public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
@@ -880,6 +892,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         ApplyMonitorMode();
         ApplyPlayerLayout();
         if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
+        UpdateDeskLook();            // 机の画像・3Dモデル(TwoPlayerShop2D.Desk.cs)
 
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
         ApplyBagFrameVisibility();   // 仮の袋の白いふちを見せるか(TwoPlayerShop2D.Bag.cs)
