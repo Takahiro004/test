@@ -804,7 +804,7 @@ MonoBehaviour:
   cursorModelOffset: {x: 0, y: 0}
   mirrorP2CursorModel: 1
   cursorScale: 1.2
-  gameTime: 120
+  gameTime: 10
   entryCountdown: 3
   entryTitle: "\u8A70\u3081\u653E\u984C\u30D0\u30C8\u30EB"
   timerWarningTime: 10
@@ -1796,8 +1796,10 @@ MonoBehaviour:
   deskSprite: {fileID: 0}
   deskModel: {fileID: 1117069708664459499, guid: 5b4de255caf75c443bd8d771d2601cc4, type: 3}
   deskModelRotation: {x: 0, y: 0, z: 0}
-  deskVisualScale: {x: 1, y: 1, z: 1}
+  deskVisualScale: {x: 1, y: 2, z: 1}
   deskVisualOffset: {x: 0, y: 2, z: 0}
+  deskCoverZoom: 1
+  deskCoverMargin: 1.2
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
