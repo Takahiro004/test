@@ -543,6 +543,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelScale = Vector3.one;
     [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 shelfProductOffset = Vector2.zero;
+    [Tooltip("棚の商品(と値札)を、段ごとにずらす。Element 0 が一番上の段、1 がその下…(X=右・Y=上)。Shelf Product Offset に足す。段の数だけ要素を増やす。再生中に変えてもすぐ反映")]
+    public Vector2[] shelfRowOffsets = new Vector2[0];
     [Tooltip("棚の画面のカメラの角度(度)。X=上下に傾ける(プラスで見下ろす)・Y=左右に振る・Z=画面を回す。棚の真ん中を中心に回る。全部0で真正面")]
     public Vector3 shopCameraAngle = Vector3.zero;
 
