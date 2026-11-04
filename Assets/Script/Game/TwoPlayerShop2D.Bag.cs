@@ -148,7 +148,10 @@ public partial class TwoPlayerShop2D
         var sr = b.back.GetComponent<SpriteRenderer>();
         sr.sprite = bagSprite != null ? bagSprite : GetSquareSprite();
         sr.color = bagSprite != null ? Color.white : new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f);
-        PlaceBagSprite(b.back, sr.sprite, bagSpriteScale, bagSpriteOffset);
+        // 画像の大きさ・ずらしは画像のときだけ。仮の袋の薄い背景は袋の大きさぴったり
+        // (前は仮の背景にも Bag Sprite Scale がかかり、画面いっぱいに広がって白いモヤに見えた)
+        if (bagSprite != null) PlaceBagSprite(b.back, sr.sprite, bagSpriteScale, bagSpriteOffset);
+        else PlaceBagSprite(b.back, sr.sprite, Vector2.one, Vector2.zero);
     }
 
     // 袋の絵を、袋の幅・高さ x scale(X 横・Y 縦)に引き伸ばす。底(机の上)はそろえたまま、横は真ん中から広がる。

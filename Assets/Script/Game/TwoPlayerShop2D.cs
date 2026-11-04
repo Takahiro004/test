@@ -150,6 +150,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool useKeyboard = true;
     [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
     public bool showOverlayLabel = true;
+    [Tooltip("Esc キーでゲームを終わらせる(ビルドしたゲームだけ。エディターでは止まらない)。コントローラー登録の途中の Esc は、登録をやめるほう")]
+    public bool quitOnEscape = true;
 
     [Header("画面の割り当て(0始まり。DisplayTestSwitcher の Screens の番号)")]
     [Tooltip("1Pの画面を、Screens の何番のカメラに映すか(0, 1, 2)。再生中に入れ替えてもすぐ反映。3つは別々の番号にする")]
@@ -867,6 +869,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void Update()
     {
+        // Esc でゲームを終わらせる(コントローラー登録の途中は、登録をやめるほうに使う。TwoPlayerShop2D.Pads.cs)
+        if (quitOnEscape && padRegisterStep == 0 && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            Debug.Log("[Shop2D] Esc でゲームを終わらせる");
+            Application.Quit();
+        }
         if (switcher == null || p1 == null) return;
 
         ApplyMonitorMode();
