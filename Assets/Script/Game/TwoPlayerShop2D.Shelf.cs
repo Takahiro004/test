@@ -14,7 +14,8 @@ public partial class TwoPlayerShop2D
 {
     Transform shelfRoot;   // 棚の見た目(仮の棚 / 画像 / 3Dモデル)をまとめる親
     (int cols, int rows, bool show, float board, Color back, Color boardColor, Sprite sprite, GameObject model,
-     Vector3 offset, Vector3 rotation, Vector3 scale, ShopOrientation orientation, float aspect, float width, float top) appliedShelf;
+     Vector3 offset, Vector3 rotation, Vector3 scale, ShopOrientation orientation, float aspect, float width, float top,
+     Vector2 productOffset, bool tags) appliedShelf;
 
     int ShelfColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);
     int ShelfRows => Mathf.Max(1, IsPortrait ? portraitRows : landscapeRows);
@@ -63,8 +64,9 @@ public partial class TwoPlayerShop2D
         int cols = ShelfColumns, rows = ShelfRows;
         float cellW = a.width / cols, cellH = a.height / rows;
         int section = i / ShelfCount, j = i % ShelfCount;   // どの棚の、何番目か
-        float x = a.xMin + cellW * (j % cols + 0.5f) + SectionOffset(section);
-        float rowTop = a.yMax - cellH * (j / cols);
+        // shelfProductOffset だけ、棚の商品をまとめてずらす(X 右・Y 上)
+        float x = a.xMin + cellW * (j % cols + 0.5f) + SectionOffset(section) + shelfProductOffset.x;
+        float rowTop = a.yMax - cellH * (j / cols) + shelfProductOffset.y;
         if (!showShelf) return new Vector2(x, rowTop - cellH / 2f);
         return new Vector2(x, rowTop - cellH + shelfBoardThickness);
     }
@@ -129,9 +131,10 @@ public partial class TwoPlayerShop2D
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す
     }
 
-    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float) CurrentShelfSettings()
+    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float, Vector2, bool) CurrentShelfSettings()
         => (ShelfColumns, ShelfRows, showShelf, shelfBoardThickness, shelfBackColor, shelfBoardColor, shelfSprite, shelfModel,
-            shelfModelOffset, shelfModelRotation, shelfModelScale, shopOrientation, portraitAspect, portraitViewWidth, portraitTopSpace);
+            shelfModelOffset, shelfModelRotation, shelfModelScale, shopOrientation, portraitAspect, portraitViewWidth, portraitTopSpace,
+            shelfProductOffset, showPriceTags);
 
     // 棚の見た目を作り直す(ApplyShopLayout から呼ぶ)
     void BuildShelfVisual()
