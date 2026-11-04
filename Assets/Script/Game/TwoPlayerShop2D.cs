@@ -87,7 +87,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showShopScreenFrame = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
-    [Tooltip("レジ袋: 商品が入ったときに「+¥金額」を出す")]
+    [Tooltip("レジ袋: 商品が入ったときに、商品名と「+¥金額」を出す(商品名は金額の上)")]
     public bool showPricePopup = true;
     [Tooltip("レジ袋: 袋の外に落ちた商品を消す(袋に入らなかったもの・袋から場外に落ちたもの)")]
     public bool removeOutsideBag = true;
