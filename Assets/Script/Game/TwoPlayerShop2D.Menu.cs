@@ -98,7 +98,8 @@ public partial class TwoPlayerShop2D
         {
             var p = i == 0 ? p1 : p2;
             if (p == null) continue;
-            bool show = menuMission && currentMenu != null && currentMenu.ingredients != null;
+            // 袋持ち上げターンが始まったら隠す(カメラを引くと、画面の下の帯が宙に浮いて見えるため)
+            bool show = menuMission && currentMenu != null && currentMenu.ingredients != null && !liftStarted;
             UpdateMenuPanel(i, p, show && menuPanelLayout);
             if (menuPanelLayout)
             {

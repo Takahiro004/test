@@ -537,6 +537,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 deskVisualScale = Vector3.one;
     [Tooltip("机の画像・3Dモデルの位置のずらし。X=右・Y=上・Z=奥(見た目だけ。当たり判定は動かない)。再生中に変えてもすぐ反映")]
     public Vector3 deskVisualOffset = Vector3.zero;
+    [Tooltip("机は2人の共通の机なので、袋持ち上げターンでカメラを引いても端が見えないように、机の画像・3Dモデルを横だけ引いたときの幅(x Bag Lift Camera Zoom)まで伸ばす")]
+    public bool deskCoverZoom = true;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
     [Tooltip("仮の棚の背板の色")]

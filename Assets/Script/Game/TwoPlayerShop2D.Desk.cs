@@ -4,6 +4,8 @@ using UnityEngine;
 // 1P/2P の画面の机の見た目(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「机の見た目」)
 //  - deskModel(3Dモデル)か deskSprite(画像)を入れると、仮の机(暗い灰色の四角)の代わりに出す。両方なら3Dモデル
 //  - 机の上の面(床の高さ floorY)に、画面に見えている机の幅(wallX x 2)で合わせる。画像は縦横の比率を変えずに、上の面をそろえる
+//  - 机は2人の共通の机という設定なので、袋持ち上げターンでカメラを引いても端が見えないように、横だけ引いたときの幅
+//    (x bagLiftCameraZoom)まで伸ばす(deskCoverZoom。高さ・奥行きは画面に見えている机の幅のときのまま)
 //  - さらに deskVisualScale(X 横・Y 縦・Z 奥行き)と deskVisualOffset(X 右・Y 上・Z 奥)をかける
 //  - 見た目だけ。当たり判定(商品が乗る床・左右の見えない壁)は今までどおり
 //  - Update から毎フレーム並べるので、再生中に変えてもすぐ反映する
@@ -35,6 +37,8 @@ public partial class TwoPlayerShop2D
             bool useImage = !useModel && deskSprite != null;
             floor.GetComponent<SpriteRenderer>().enabled = !useModel && !useImage;   // 仮の机は、差し替えたら隠す
             float deskW = wallX * 2f;   // 画面に見えている机の幅
+            // 横の長さ: カメラを引いたときに映る幅まで伸ばす(端が見えないように)
+            float coverW = deskW * (deskCoverZoom && bagLiftOnTimeUp ? Mathf.Max(1f, bagLiftCameraZoom) : 1f);
 
             // 画像の机
             if (useImage)
@@ -43,7 +47,7 @@ public partial class TwoPlayerShop2D
                 d.image.enabled = true;
                 d.image.sprite = deskSprite;
                 Vector2 size = deskSprite.bounds.size;
-                float w = deskW * Mathf.Max(0.01f, deskVisualScale.x);
+                float w = coverW * Mathf.Max(0.01f, deskVisualScale.x);
                 float h = deskW * size.y / Mathf.Max(0.01f, size.x) * Mathf.Max(0.01f, deskVisualScale.y);   // 縦横の比率はそのまま
                 d.image.transform.localPosition = new Vector3(deskVisualOffset.x, floorY - h / 2f + deskVisualOffset.y, 0f);   // 上の面を机の高さに
                 d.image.transform.localRotation = Quaternion.identity;
@@ -60,8 +64,9 @@ public partial class TwoPlayerShop2D
             if (useModel && d.holder == null) BuildDeskModel(d, root, layer);
             if (d.holder != null)
             {
-                float k = deskW / Mathf.Max(0.01f, d.size.x);   // 机の幅に合わせる(縦・奥行きも同じ割合)
-                Vector3 scale = k * new Vector3(Mathf.Max(0.01f, deskVisualScale.x), Mathf.Max(0.01f, deskVisualScale.y), Mathf.Max(0.01f, deskVisualScale.z));
+                float k = deskW / Mathf.Max(0.01f, d.size.x);    // 机の幅に合わせる(縦・奥行きも同じ割合)
+                float kx = coverW / Mathf.Max(0.01f, d.size.x);  // 横だけ、カメラを引いたときの幅まで
+                Vector3 scale = new Vector3(kx * Mathf.Max(0.01f, deskVisualScale.x), k * Mathf.Max(0.01f, deskVisualScale.y), k * Mathf.Max(0.01f, deskVisualScale.z));
                 d.holder.localScale = scale;
                 // 上の面を机の高さ・横は真ん中・手前の面を z = 0 に合わせる(商品の3Dモデルは z = 0 より少し奥)
                 Vector3 c = Vector3.Scale(d.center, scale), e = Vector3.Scale(d.size / 2f, scale);
