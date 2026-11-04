@@ -872,6 +872,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
         ApplyBagFrameVisibility();   // 仮の袋の白いふちを見せるか(TwoPlayerShop2D.Bag.cs)
         UpdateMenuLabels();          // この試合の献立と、そろった食材(TwoPlayerShop2D.Menu.cs)
+        // 袋の位置・大きさを変えたら、壁(当たり判定)と合計金額の表示も動かす(エントリー画面で調整しているときも。
+        // タイムアップのあとは、持ち上げた袋がずれないように動かさない)
+        if (createBag && p1.bag != null && !(showResultOnTimeUp && IsTimeUp) &&
+            (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
+             bagWallThickness != appliedBagWall || floorY != appliedBagFloorY ||
+             bagWallOuterThickness != appliedBagOuter)) LayoutBags();
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;
@@ -880,9 +886,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (showResultOnTimeUp && IsTimeUp) { UpdateResult(); return; }
         if (createBag && p1.bag != null)
         {
-            if (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
-                bagWallThickness != appliedBagWall || floorY != appliedBagFloorY ||
-                bagWallOuterThickness != appliedBagOuter) LayoutBags();
             CheckBag(p1);
             CheckBag(p2);
         }
