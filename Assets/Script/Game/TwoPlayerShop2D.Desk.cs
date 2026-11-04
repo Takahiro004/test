@@ -5,7 +5,8 @@ using UnityEngine;
 //  - deskModel(3Dモデル)か deskSprite(画像)を入れると、仮の机(暗い灰色の四角)の代わりに出す。両方なら3Dモデル
 //  - 机の上の面(床の高さ floorY)に、画面に見えている机の幅(wallX x 2)で合わせる。画像は縦横の比率を変えずに、上の面をそろえる
 //  - 机は2人の共通の机という設定なので、袋持ち上げターンでカメラを引いても端が見えないように、横だけ引いたときの幅
-//    (x bagLiftCameraZoom)まで伸ばす(deskCoverZoom。高さ・奥行きは画面に見えている机の幅のときのまま)
+//    (x bagLiftCameraZoom)の、さらに deskCoverMargin 倍まで伸ばし、端がいつも画面の外(見切れる)にする
+//    (deskCoverZoom。高さ・奥行きは画面に見えている机の幅のときのまま)
 //  - さらに deskVisualScale(X 横・Y 縦・Z 奥行き)と deskVisualOffset(X 右・Y 上・Z 奥)をかける
 //  - 見た目だけ。当たり判定(商品が乗る床・左右の見えない壁)は今までどおり
 //  - Update から毎フレーム並べるので、再生中に変えてもすぐ反映する
@@ -37,8 +38,10 @@ public partial class TwoPlayerShop2D
             bool useImage = !useModel && deskSprite != null;
             floor.GetComponent<SpriteRenderer>().enabled = !useModel && !useImage;   // 仮の机は、差し替えたら隠す
             float deskW = wallX * 2f;   // 画面に見えている机の幅
-            // 横の長さ: カメラを引いたときに映る幅まで伸ばす(端が見えないように)
-            float coverW = deskW * (deskCoverZoom && bagLiftOnTimeUp ? Mathf.Max(1f, bagLiftCameraZoom) : 1f);
+            // 横の長さ: 机の端がいつも画面の外になるように、カメラを引いたときに映る幅 x deskCoverMargin まで伸ばす
+            float coverW = deskCoverZoom
+                ? deskW * (bagLiftOnTimeUp ? Mathf.Max(1f, bagLiftCameraZoom) : 1f) * Mathf.Max(1f, deskCoverMargin)
+                : deskW;
 
             // 画像の机
             if (useImage)
