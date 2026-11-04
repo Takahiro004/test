@@ -64,11 +64,30 @@ public partial class TwoPlayerShop2D
         int cols = ShelfColumns, rows = ShelfRows;
         float cellW = a.width / cols, cellH = a.height / rows;
         int section = i / ShelfCount, j = i % ShelfCount;   // どの棚の、何番目か
-        // shelfProductOffset だけ、棚の商品をまとめてずらす(X 右・Y 上)
-        float x = a.xMin + cellW * (j % cols + 0.5f) + SectionOffset(section) + shelfProductOffset.x;
-        float rowTop = a.yMax - cellH * (j / cols) + shelfProductOffset.y;
+        // shelfProductOffset だけ棚の商品をまとめてずらし、さらに段ごとに shelfRowOffsets だけずらす(X 右・Y 上)
+        Vector2 shift = ProductShift(j / cols);
+        float x = a.xMin + cellW * (j % cols + 0.5f) + SectionOffset(section) + shift.x;
+        float rowTop = a.yMax - cellH * (j / cols) + shift.y;
         if (!showShelf) return new Vector2(x, rowTop - cellH / 2f);
         return new Vector2(x, rowTop - cellH + shelfBoardThickness);
+    }
+
+    // 棚の商品のずらし: 全部まとめて(shelfProductOffset) + その段だけ(shelfRowOffsets。0 が一番上の段)
+    Vector2 ProductShift(int row)
+    {
+        Vector2 shift = shelfProductOffset;
+        if (shelfRowOffsets != null && row >= 0 && row < shelfRowOffsets.Length) shift += shelfRowOffsets[row];
+        return shift;
+    }
+
+    // 段ごとのずらしを再生中に変えたか(配列は中身を比べる)
+    Vector2[] appliedRowOffsets = new Vector2[0];
+    bool RowOffsetsChanged()
+    {
+        var now = shelfRowOffsets ?? new Vector2[0];
+        if (now.Length != appliedRowOffsets.Length) return true;
+        for (int i = 0; i < now.Length; i++) if (now[i] != appliedRowOffsets[i]) return true;
+        return false;
     }
 
     // 棚に置いてある商品を、その場所へ動かす(棚を出すときは、商品の一番下を板の上に合わせる)
@@ -127,7 +146,7 @@ public partial class TwoPlayerShop2D
     void UpdateShelfIfChanged()
     {
         var now = CurrentShelfSettings();
-        if (now == appliedShelf && RingSections == appliedPhaseCount) return;
+        if (now == appliedShelf && RingSections == appliedPhaseCount && !RowOffsetsChanged()) return;
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す
     }
 
@@ -140,6 +159,7 @@ public partial class TwoPlayerShop2D
     void BuildShelfVisual()
     {
         appliedShelf = CurrentShelfSettings();
+        appliedRowOffsets = (Vector2[])(shelfRowOffsets ?? new Vector2[0]).Clone();
         appliedPhaseCount = RingSections;
         if (shelfRoot != null) Destroy(shelfRoot.gameObject);
         shelfRoot = null;
