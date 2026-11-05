@@ -49,16 +49,14 @@ using UnityEngine.InputSystem;
 /// </summary>
 public partial class TwoPlayerShop2D : MonoBehaviour
 {
-    [Header("参照")]
+    [Header("参照・文字(フォント)。文字は再生する前に決める")]
     public DisplayTestSwitcher switcher;
-
-    [Header("文字(フォント)。再生する前に決める")]
     [Tooltip("ゲーム中の文字のフォント(.ttf / .otf を Assets に入れて、ここへドラッグ)。日本語が入っているフォントにする。空なら Unity の標準フォント")]
     public Font textFont;
     [Tooltip("文字の解像度(1〜4)。大きいほどくっきりする(見た目の大きさは変わらない)。2 で前の2倍")]
     [Range(1, 4)] public int textResolution = 2;
 
-    [Header("モニターの置き方(縦型モニター用 / 横型モニター用を切り替える)")]
+    [Header("モニターの置き方と画面の配置(机・袋の位置と大きさは Portrait Layout の中)")]
     [Tooltip("縦型モニター: 本番 / 横型(縦と同じ見た目): 横のモニターの真ん中に本番と同じ縦長の画面を出す / 横型(横いっぱい): 横のモニターに合わせて並べ直す。再生中に変えてもすぐ反映(商品・カーソルの大きさは新しく出たものから)")]
     public MonitorMode monitorMode = MonitorMode.Portrait;
     [Tooltip("縦型モニターのとき、棚の画面を90度回して描くか(Windows は横のまま棚のモニターだけ倒したとき用。逆さならもう一方)。1P/2P は「1P/2Pの画面」の P1/P2 Screen Rotation")]
@@ -67,40 +65,112 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public LayoutProfile portraitLayout = LayoutProfile.PortraitDefault();
     [Tooltip("横の配置(横型(横いっぱい)で使う)")]
     public LayoutProfile landscapeLayout = LayoutProfile.LandscapeDefault();
+    [Tooltip("縦の画面の横:縦の比率(9:16 なら 0.5625)。横型(縦と同じ見た目)のときは、この形を横のモニターの真ん中に出す")]
+    public float playerViewAspect = 9f / 16f;
+    [Tooltip("机(床)と見えない壁を、画面の外まで何倍に広げるか(2で画面に見えている机の2倍。左右に半分ずつはみ出す)。商品は画面の外へ飛び出せる。カーソルと袋は画面の中のまま")]
+    [Range(1f, 4f)] public float deskExtend = 2f;
+    [Tooltip("縦型モニターのとき、1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
+    public ScreenRotation p1ScreenRotation = ScreenRotation.None;
+    [Tooltip("縦型モニターのとき、2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
+    public ScreenRotation p2ScreenRotation = ScreenRotation.None;
+    // 下の8つは「モニターの置き方」で選んだ配置(portraitLayout / landscapeLayout)から毎フレーム入る
+    [HideInInspector] public float playerViewWidth = 10f;
+    [HideInInspector] [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
+    [HideInInspector] [Range(0.2f, 1f)] public float deskWidthRatio = 1f;
+    [HideInInspector] public float deskThickness = 0.5f;
+    [HideInInspector] [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
+    [HideInInspector] [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
+    [HideInInspector] [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
+    [HideInInspector] [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
+    // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
+    [HideInInspector] public float dropHeight = 3.5f;
+    [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
+    [HideInInspector] public float cursorScale = 1.2f;
+    [HideInInspector] public float productSize = 1.4f;
+    [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
+    [HideInInspector] public float wallX = 8.9f;     // 自動で計算(画面に見えている机の端。カーソル・袋はこの中)
+    [HideInInspector] public float bagX = 0f;        // 自動で計算(bagXRatio)
+    [HideInInspector] public float bagWidth = 5f;    // 自動で計算(bagWidthRatio)
+    [HideInInspector] public float bagHeight = 4f;   // 自動で計算(bagHeightRatio)
 
-    [Header("機能のON/OFF(チェックを外すとその機能が止まる。★は再生前に決める)")]
-    [Tooltip("棚: 取られた商品を同じ場所に補充する")]
-    public bool refillShelf = true;
+    [Header("画面の割り当て(0始まり。DisplayTestSwitcher の Screens の番号)・背景の色")]
+    [Tooltip("1Pの画面を、Screens の何番のカメラに映すか(0, 1, 2)。再生中に入れ替えてもすぐ反映。3つは別々の番号にする")]
+    public int screenP1 = 0;     // 初期: ディスプレイ1 = 1P
+    [Tooltip("棚の画面を、Screens の何番のカメラに映すか。棚をメインディスプレイに出すなら、そのカメラの番号にする")]
+    public int screenShop = 1;   // 初期: ディスプレイ2 = 商品棚
+    [Tooltip("2Pの画面を、Screens の何番のカメラに映すか")]
+    public int screenP2 = 2;     // 初期: ディスプレイ3 = 2P
+    [Tooltip("背景の色は、画面の番号ではなく役割について回る(入れ替えても 1P は赤のまま)")]
+    public Color p1BackColor = new Color(0.45f, 0.12f, 0.12f);
+    public Color shopBackColor = new Color(0.12f, 0.40f, 0.15f);
+    public Color p2BackColor = new Color(0.12f, 0.20f, 0.50f);
+    public bool arrangeCameras = true;
+
+    [Header("表示用レイヤー番号(名前の登録は不要)")]
+    public int layerP1 = 8;
+    public int layerShop = 9;
+    public int layerP2 = 10;
+
+    [Header("機能のON/OFF: 操作・画面(チェックを外すとその機能が止まる)")]
     [Tooltip("自分の画面: 商品を持っている間は横にだけ動く。OFFなら上下にも動ける")]
     public bool horizontalOnlyOnOwnScreen = true;
     [Tooltip("自分の画面: 商品を持っている間、RB で90度ずつ回せる(キーボード予備: 1P E / 2P 右Ctrl)")]
     public bool rotateHeldProduct = true;
-    [Tooltip("★自分の画面: 床と左右の壁を作る")]
-    public bool createFloor = true;
-    [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
-    public bool createBag = true;
-    [Tooltip("献立ミッション: 献立の食材5品が全部自分の袋に入ったら「○○完成！」。それ以降に袋に入れた商品の金額が Menu Bonus Rate 倍")]
-    public bool menuMission = true;
+    [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
+    public bool autoFitPlayerScreens = true;
     [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
     public bool showOwnScreenFrame = true;
     [Tooltip("棚の画面: 棚を操作しているプレイヤーの色の枠を出す。1人なら全部その人の色、2人なら縦に半分ずつ(どちらが左かは Shop Frame Left Is P1)")]
     public bool showShopScreenFrame = true;
+    [Tooltip("エントリー画面: 再生したらまずエントリー画面を出し、1P/2P が A で参加したらカウントダウンして開始(制限時間は開始から数える)。OFF ならすぐ始まる")]
+    public bool showEntryScreen = true;
+    [Tooltip("コントローラー: F2(またはビューボタン長押し)で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
+    public bool fixedPadAssignment = true;
+    [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
+    public bool useKeyboard = true;
+    [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
+    public bool showOverlayLabel = true;
+    [Tooltip("Esc キーでゲームを終わらせる(ビルドしたゲームだけ。エディターでは止まらない)。コントローラー登録の途中の Esc は、登録をやめるほう")]
+    public bool quitOnEscape = true;
+    [HideInInspector] public bool fillPlayerScreen = true;
+
+    [Header("機能のON/OFF: 棚")]
+    [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
+    public bool showShelf = true;
+    [Tooltip("棚: 取られた商品を同じ場所に補充する")]
+    public bool refillShelf = true;
+    [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
+    public bool randomRefill = true;
+    [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
+    public bool shelfSlide = true;
+    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
+    public bool showPriceTags = true;
+    [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
+    public bool autoFitShopScreen = true;
+    [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
+    public bool showTimerPlaceholder = true;
+
+    [Header("機能のON/OFF: 袋・商品")]
+    [Tooltip("★自分の画面: 床と左右の壁を作る")]
+    public bool createFloor = true;
+    [Tooltip("★自分の画面: レジ袋を置く(合計金額も袋といっしょに出る)")]
+    public bool createBag = true;
     [Tooltip("レジ袋: 袋の上に合計金額を出す")]
     public bool showBagTotal = true;
     [Tooltip("レジ袋: 商品が入ったときに、商品名と「+¥金額」を出す(商品名は金額の上)")]
     public bool showPricePopup = true;
     [Tooltip("レジ袋: 袋の外に落ちた商品を消す(袋に入らなかったもの・袋から場外に落ちたもの)")]
     public bool removeOutsideBag = true;
-    [Tooltip("レジ袋: 割れる商品(一覧の Fragile。たまご など)の上に重さが乗ると、割れて袋から消え、金額を合計から引く")]
-    public bool breakFragile = true;
     [Tooltip("レジ袋: 袋から場外に落ちて消えた商品の金額を、合計から引く")]
     public bool subtractSpilledFromTotal = true;
-    [Tooltip("タイムアップ: 最後に袋を持ち上げたとき、袋の中の商品の重さの合計が Bag Max Weight を超えていたら袋の底が破れて、中身が落ちて散らばり、その人の金額は0円になる(Bag Lift On Time Up が ON のとき)")]
-    public bool bagTearEnabled = true;
-    [Tooltip("レジ袋: 袋の中が重くなってきたら(破れる重さに近づいたら)、袋のまわりに「ミシ…」などの擬音を出す。重いほどたくさん出る")]
-    public bool bagCreakEnabled = true;
+    [Tooltip("レジ袋: 割れる商品(一覧の Fragile。たまご など)の上に重さが乗ると、割れて袋から消え、金額を合計から引く")]
+    public bool breakFragile = true;
     [Tooltip("商品の重さ: 仮の重さを使う(名前から決めた適当な値。飲み物・魚・肉は重く、お菓子は軽い)。OFF なら商品の一覧の Weight を使う")]
     public bool useTempWeights = true;
+    [Tooltip("献立ミッション: 献立の食材5品が全部自分の袋に入ったら「○○完成！」。それ以降に袋に入れた商品の金額が Menu Bonus Rate 倍")]
+    public bool menuMission = true;
+
+    [Header("機能のON/OFF: 掴み合い・キック")]
     [Tooltip("掴み合い: 2人が同じ商品を続けて掴んだら掴み合いになる")]
     public bool clashEnabled = true;
     [Tooltip("掴み合い: 引き分けならやり直す。OFFならランダムで勝ちを決める")]
@@ -119,21 +189,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kickShakeScreen = true;
     [Tooltip("キック: 蹴った人のレジ袋・画面も揺れる(強さは Kick Self Shake)")]
     public bool kickShakeSelf = true;
-    [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
-    public bool autoFitPlayerScreens = true;
-    [HideInInspector] public bool fillPlayerScreen = true;
-    [Tooltip("棚の画面: 仮の棚(背板・柱・段の板)を出して、商品を板の上に乗せる。OFFなら今までどおり商品だけが浮いて並ぶ。棚の画像・3Dモデルは「棚の見た目」に入れる")]
-    public bool showShelf = true;
-    [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
-    public bool shelfSlide = true;
-    [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
-    public bool randomRefill = true;
-    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
-    public bool showPriceTags = true;
-    [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
-    public bool autoFitShopScreen = true;
-    [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
-    public bool showTimerPlaceholder = true;
+
+    [Header("機能のON/OFF: 制限時間・タイムアップ")]
     [Tooltip("棚の画面: 残りのプレイ時間(制限時間)を出す。縦のときは上の空き場所、横のときは画面の上")]
     public bool showGameTimer = true;
     [Tooltip("タイムアップ: 操作を止めて、棚の画面を左右2つに分けて勝ち負けを出す。Aボタンでもう一度。OFFなら「タイムアップ！」と出るだけで続けられる")]
@@ -142,79 +199,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showResultBars = true;
     [Tooltip("タイムアップ: 結果発表の前に「袋持ち上げターン」。1P/2P のレジ袋を持ち上げて数秒耐える。袋からこぼれて落ちた商品は消えて、その金額を合計から引く(詰め放題の「持ち上げてこぼれたら無し」)")]
     public bool bagLiftOnTimeUp = true;
-    [Tooltip("エントリー画面: 再生したらまずエントリー画面を出し、1P/2P が A で参加したらカウントダウンして開始(制限時間は開始から数える)。OFF ならすぐ始まる")]
-    public bool showEntryScreen = true;
-    [Tooltip("コントローラー: F2(またはビューボタン長押し)で登録した 1P用・2P用のコントローラーを、いつも同じ側にする(登録はパソコンに保存される)。OFF なら、最初に A を押した方が 1P")]
-    public bool fixedPadAssignment = true;
-    [Tooltip("キーボードも予備として使える(1P: WASD+Space+Q / 2P: 矢印+Enter+右Shift)")]
-    public bool useKeyboard = true;
-    [Tooltip("画面の左上に、今起きたこと・コントローラーの状態を出す(確認用)")]
-    public bool showOverlayLabel = true;
-    [Tooltip("Esc キーでゲームを終わらせる(ビルドしたゲームだけ。エディターでは止まらない)。コントローラー登録の途中の Esc は、登録をやめるほう")]
-    public bool quitOnEscape = true;
+    [Tooltip("タイムアップ: 最後に袋を持ち上げたとき、袋の中の商品の重さの合計が Bag Max Weight を超えていたら袋の底が破れて、中身が落ちて散らばり、その人の金額は0円になる(Bag Lift On Time Up が ON のとき)")]
+    public bool bagTearEnabled = true;
+    [Tooltip("レジ袋: 袋の中が重くなってきたら(破れる重さに近づいたら)、袋のまわりに「ミシ…」などの擬音を出す。重いほどたくさん出る")]
+    public bool bagCreakEnabled = true;
 
-    [Header("画面の割り当て(0始まり。DisplayTestSwitcher の Screens の番号)")]
-    [Tooltip("1Pの画面を、Screens の何番のカメラに映すか(0, 1, 2)。再生中に入れ替えてもすぐ反映。3つは別々の番号にする")]
-    public int screenP1 = 0;     // 初期: ディスプレイ1 = 1P
-    [Tooltip("棚の画面を、Screens の何番のカメラに映すか。棚をメインディスプレイに出すなら、そのカメラの番号にする")]
-    public int screenShop = 1;   // 初期: ディスプレイ2 = 商品棚
-    [Tooltip("2Pの画面を、Screens の何番のカメラに映すか")]
-    public int screenP2 = 2;     // 初期: ディスプレイ3 = 2P
-    [Tooltip("背景の色は、画面の番号ではなく役割について回る(入れ替えても 1P は赤のまま)")]
-    public Color p1BackColor = new Color(0.45f, 0.12f, 0.12f);
-    public Color shopBackColor = new Color(0.12f, 0.40f, 0.15f);
-    public Color p2BackColor = new Color(0.12f, 0.20f, 0.50f);
-
-    [Header("表示用レイヤー番号(名前の登録は不要)")]
-    public int layerP1 = 8;
-    public int layerShop = 9;
-    public int layerP2 = 10;
-
-    [Header("カーソル")]
-    public float cursorSpeed = 8f;
-    public Color p1Color = new Color(1f, 0.3f, 0.3f);
-    public Color p2Color = new Color(0.3f, 0.5f, 1f);
-
-    [Header("1P/2Pの画面(レジ袋の画面)。袋・机などの大きさは「モニターの置き方」の配置で変える")]
-    [Tooltip("縦の画面の横:縦の比率(9:16 なら 0.5625)。横型(縦と同じ見た目)のときは、この形を横のモニターの真ん中に出す")]
-    public float playerViewAspect = 9f / 16f;
-    // 下の8つは「モニターの置き方」で選んだ配置(portraitLayout / landscapeLayout)から毎フレーム入る
-    [HideInInspector] public float playerViewWidth = 10f;
-    [HideInInspector] [Range(0f, 0.5f)] public float floorFromBottom = 0.04f;
-    [HideInInspector] [Range(0.2f, 1f)] public float deskWidthRatio = 1f;
-    [HideInInspector] public float deskThickness = 0.5f;
-    [HideInInspector] [Range(0f, 1.2f)] public float dropHeightRatio = 0.85f;
-    [HideInInspector] [Range(0.1f, 1f)] public float bagWidthRatio = 0.8f;
-    [HideInInspector] [Range(0.05f, 1f)] public float bagHeightRatio = 0.65f;
-    [HideInInspector] [Range(-0.5f, 0.5f)] public float bagXRatio = 0f;
-    [Tooltip("机(床)と見えない壁を、画面の外まで何倍に広げるか(2で画面に見えている机の2倍。左右に半分ずつはみ出す)。商品は画面の外へ飛び出せる。カーソルと袋は画面の中のまま")]
-    [Range(1f, 4f)] public float deskExtend = 2f;
-    [Tooltip("縦型モニターのとき、1Pの画面(ディスプレイ1)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
-    public ScreenRotation p1ScreenRotation = ScreenRotation.None;
-    [Tooltip("縦型モニターのとき、2Pの画面(ディスプレイ3)を90度回して描く。Windows は横のまま、モニターだけ縦に置いたとき用(逆さに見えたらもう一方)。横型のときは回さない")]
-    public ScreenRotation p2ScreenRotation = ScreenRotation.None;
-
-    // 下の6つは、上の割合から自動で計算する(Inspector には出さない)
-    [HideInInspector] public float dropHeight = 3.5f;
-
-    [Header("カーソル(画像か3Dモデル。どちらも未設定なら矢印を自動生成)")]
-    public Sprite p1CursorSprite;
-    public Sprite p2CursorSprite;
-    [Tooltip("1Pのカーソルの3Dモデル(プレハブ。手のモデルなど)。入れると画像の代わりに出る。空なら画像")]
-    public GameObject p1CursorModel;
-    [Tooltip("2Pのカーソルの3Dモデル(プレハブ)。空で 1P に入っていたら、1P と同じモデルを使う")]
-    public GameObject p2CursorModel;
-    [Tooltip("カーソルの3Dモデルの向き(度)。手のひらや指先がこちらを向かないときに変える。再生前に決める")]
-    public Vector3 cursorModelRotation;
-    [Tooltip("カーソルの3Dモデルの大きさ(1で画像のカーソルと同じくらい)。再生前に決める")]
-    public float cursorModelSize = 1f;
-    [Tooltip("掴む点(カーソルの位置)からモデルをずらす量(カーソルの大きさを1として)。指先で掴むように見せたいときに合わせる。再生前に決める")]
-    public Vector2 cursorModelOffset;
-    [Tooltip("2Pのカーソルの3Dモデルを左右反転する(右手のモデルを2Pでは左手に見せる)")]
-    public bool mirrorP2CursorModel = true;
-    [HideInInspector] public float cursorScale = 1.2f;
-
-    [Header("制限時間")]
+    [Header("制限時間・エントリー・結果発表")]
     [Tooltip("1ゲームのプレイ時間(秒)。再生を始めたときから数える。120で2分")]
     public float gameTime = 120f;
     [Tooltip("エントリー画面: 2人そろってから始まるまでのカウントダウンの秒数")]
@@ -251,33 +241,87 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("結果発表: 文字(金額・名前・見出し・目盛り)の大きさ。1で前の大きさ")]
     public float resultBarTextScale = 1.5f;
 
-    [HideInInspector] public float textScale = 2f;   // 「モニターの置き方」の配置から入る
-
-    [Header("タイムアップ: 袋を持ち上げる(機能のON/OFF の Bag Lift On Time Up)")]
-    [Tooltip("タイムアップしてから持ち上げ始めるまでの秒数(落ちている途中の商品が袋に入るのを待つ)")]
-    public float bagLiftDelay = 0.8f;
-    [Tooltip("持ち上げる高さ(1P/2Pの画面の高さを1として。0.2なら2割)。袋の上の合計金額が画面からはみ出さない高さまでで止まる")]
-    [Range(0f, 0.6f)] public float bagLiftRatio = 0.2f;
-    [Tooltip("持ち上げるのにかかる秒数(小さいほど速く持ち上がり、商品がこぼれやすい)")]
-    public float bagLiftTime = 1.5f;
-    [Tooltip("「袋持ち上げターン！」を出してから、持ち上げ始めるまでの秒数")]
-    public float bagLiftAnnounceTime = 1.5f;
-    [Tooltip("持ち上げたまま耐える秒数(「耐えろ！ あと3」と数える)。耐えたら合計金額の結果発表へ")]
-    public float bagLiftHoldTime = 3f;
-
-    [Header("コントローラー")]
+    [Header("カーソル・コントローラー")]
+    public float cursorSpeed = 8f;
+    public Color p1Color = new Color(1f, 0.3f, 0.3f);
+    public Color p2Color = new Color(0.3f, 0.5f, 1f);
     [Tooltip("スティックの遊び(これ未満は無視)")]
     public float stickDeadzone = 0.2f;
 
-    [Header("落下(物理)")]
-    [Tooltip("重力の強さ(大きいほど速く落ちる)")]
-    public float gravityScale = 2f;
-    [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
-    float BagFloorY => floorY + bagPositionOffset.y;  // 袋の底の高さ(机の高さ + 袋の位置のずらし)
-    [HideInInspector] public float wallX = 8.9f;     // 自動で計算(画面に見えている机の端。カーソル・袋はこの中)
-    float DeskOuterX => wallX * Mathf.Max(1f, deskExtend);   // 本当の机の端と見えない壁(画面の外まで続く)
-    [Tooltip("ONなら、落下中に商品が回転しない")]
-    public bool freezeRotation = false;
+    [Header("カーソル(画像か3Dモデル。どちらも未設定なら矢印を自動生成)")]
+    public Sprite p1CursorSprite;
+    public Sprite p2CursorSprite;
+    [Tooltip("1Pのカーソルの3Dモデル(プレハブ。手のモデルなど)。入れると画像の代わりに出る。空なら画像")]
+    public GameObject p1CursorModel;
+    [Tooltip("2Pのカーソルの3Dモデル(プレハブ)。空で 1P に入っていたら、1P と同じモデルを使う")]
+    public GameObject p2CursorModel;
+    [Tooltip("カーソルの3Dモデルの向き(度)。手のひらや指先がこちらを向かないときに変える。再生前に決める")]
+    public Vector3 cursorModelRotation;
+    [Tooltip("カーソルの3Dモデルの大きさ(1で画像のカーソルと同じくらい)。再生前に決める")]
+    public float cursorModelSize = 1f;
+    [Tooltip("掴む点(カーソルの位置)からモデルをずらす量(カーソルの大きさを1として)。指先で掴むように見せたいときに合わせる。再生前に決める")]
+    public Vector2 cursorModelOffset;
+    [Tooltip("2Pのカーソルの3Dモデルを左右反転する(右手のモデルを2Pでは左手に見せる)")]
+    public bool mirrorP2CursorModel = true;
+
+    [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
+    [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
+    public float ownScreenFrameWidth = 0.3f;
+    [Tooltip("棚の画面の枠の太さ")]
+    public float shopScreenFrameWidth = 0.3f;
+    [Tooltip("2人とも棚にいるとき、棚の画面の枠の左半分を 1P の色にする。OFF なら 左 = 2P・右 = 1P")]
+    public bool shopFrameLeftIsP1 = true;
+
+    [Header("棚の画面(画面2)。縦/横は「モニターの置き方」で決まる")]
+    [Tooltip("縦のときの画面の横:縦の比率(9:16なら0.5625)。モニターが決まったら合わせる")]
+    public float portraitAspect = 9f / 16f;
+    [Tooltip("縦のときに映る横幅。小さいほど棚が大きく映る")]
+    public float portraitViewWidth = 8f;
+    [Tooltip("縦のとき、上を空ける割合(タイマー用。0.2なら上の2割)")]
+    [Range(0f, 0.5f)] public float portraitTopSpace = 0.2f;
+    [Tooltip("棚の画面のカメラの角度(度)。X=上下に傾ける(プラスで見下ろす)・Y=左右に振る・Z=画面を回す。棚の真ん中を中心に回る。全部0で真正面")]
+    public Vector3 shopCameraAngle = Vector3.zero;
+    [HideInInspector] public ShopOrientation shopOrientation = ShopOrientation.Landscape;
+
+    [Header("棚の段と列(商品の数 = 段 x 列。再生中に変えてもすぐ反映)")]
+    [Tooltip("縦のときの棚の列の数(横に並ぶ数)")]
+    public int portraitColumns = 2;
+    [Tooltip("縦のときの棚の段の数(縦に並ぶ数)")]
+    public int portraitRows = 3;
+    [Tooltip("横のときの棚の列の数")]
+    public int landscapeColumns = 3;
+    [Tooltip("横のときの棚の段の数")]
+    public int landscapeRows = 2;
+
+    [Header("棚の補充・スライド")]
+    [Tooltip("取られてから補充されるまでの秒数")]
+    public float refillDelay = 1.5f;
+    [Tooltip("次の棚がスライドしてくるまでの秒数(スライドが終わってから数える)")]
+    public float shelfSlideInterval = 8f;
+    [Tooltip("棚がスライドする動きの秒数")]
+    public float shelfSlideTime = 1f;
+
+    [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
+    [Tooltip("仮の棚の背板の色")]
+    public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
+    [Tooltip("仮の棚の柱・段の板の色")]
+    public Color shelfBoardColor = new Color(0.62f, 0.45f, 0.28f);
+    [Tooltip("段の板の厚さ(商品はこの上に乗る)")]
+    public float shelfBoardThickness = 0.25f;
+    [Tooltip("棚の画像。入れると仮の棚の代わりに、棚の範囲いっぱいに引き伸ばして出す。商品の位置は段と列で決まるので、絵の板の位置と段の数を合わせる")]
+    public Sprite shelfSprite;
+    [Tooltip("棚の3Dモデル(プレハブ)。入れると仮の棚・画像の代わりに、棚の範囲に収まる大きさで商品の奥に出す。暗く・黒く見えたらマテリアルを Unlit にする")]
+    public GameObject shelfModel;
+    [Tooltip("3Dモデルの位置のずらし")]
+    public Vector3 shelfModelOffset = Vector3.zero;
+    [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える(例: Y を 180)")]
+    public Vector3 shelfModelRotation = Vector3.zero;
+    [Tooltip("3Dモデルの大きさ。X=横・Y=縦・Z=奥行きを別々に変えられる(全部1なら棚の範囲にちょうど収まる)")]
+    public Vector3 shelfModelScale = Vector3.one;
+    [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 shelfProductOffset = Vector2.zero;
+    [Tooltip("棚の商品(と値札)を、段ごとにずらす。Element 0 が一番上の段、1 がその下…(X=右・Y=上)。Shelf Product Offset に足す。段の数だけ要素を増やす。再生中に変えてもすぐ反映")]
+    public Vector2[] shelfRowOffsets = new Vector2[0];
 
     [Header("商品の一覧(棚の左上から順に並ぶ。画像・3Dモデルは各商品の Sprite / Model に入れる)")]
     [Tooltip("1行が商品1つ(名前・ランク・金額・献立の食材か・仮の図形・画像・3Dモデル)。棚のマス(段 x 列)より多いぶんは棚に出ない。並べたい順に入れ替える。空にすると前の設定(Product Shapes など)を使う")]
@@ -286,114 +330,83 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public TextAsset productCsv;
     [Tooltip("表の重さがグラム(見出しに g が付いている)のとき、何グラムを重さ 1 にするか")]
     public float csvGramsPerWeight = 100f;
-
     // 前の設定(商品の一覧が空のときだけ使う。Inspector には出さない)
     [HideInInspector] public ProductShape[] productShapes = {
         ProductShape.Square, ProductShape.Triangle, ProductShape.Rectangle,
         ProductShape.LShape, ProductShape.Hexagon, ProductShape.TShape
     };
-
     [HideInInspector] public Sprite[] productSprites = new Sprite[6];
-    [HideInInspector] public float productSize = 1.4f;
     [HideInInspector] public float productImageSize = 2f;   // 前の設定(今は productSize を使う)
 
-    [Header("画像の商品の当たり判定(画像の形を、点の数を減らして簡単にする。細かすぎると物理の計算が重くなる)")]
+    [Header("3Dモデルの商品の大きさ・画像の商品の当たり判定")]
+    [Tooltip("OFF: どのモデルも、縦横の長いほうがふつうの商品の大きさになる(モデルどうしの大きさの違いは無くなる)。ON: もらったモデルの大きさのまま出す(x Model Unit Scale)。どちらも、さらに一覧の Model Size をかける")]
+    public bool modelOriginalSize = false;
+    [Tooltip("Model Original Size が ON のとき、モデルの大きさにかける倍率(モデルの1メートル = ゲームの何マスか。ゲームの商品はだいたい 1.4 マス)")]
+    public float modelUnitScale = 1f;
     [Tooltip("形をどれだけ大まかにするか(画像の大きさに対する割合)。小さいほど画像の形に近いが重くなる")]
     [Range(0.005f, 0.1f)] public float imageColliderDetail = 0.02f;
     [Tooltip("当たり判定の点の数の上限。多いほど画像の形に近いが重くなる")]
     [Range(4, 64)] public int imageColliderMaxPoints = 24;
 
-    [Header("割れる商品(どれが割れるか・どのくらいの重さで割れるかは、商品の一覧の Fragile / Break Load)")]
+    [Header("落下(物理)・重さ・割れる商品")]
+    [Tooltip("重力の強さ(大きいほど速く落ちる)")]
+    public float gravityScale = 2f;
+    [Tooltip("ONなら、落下中に商品が回転しない")]
+    public bool freezeRotation = false;
+    [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
+    public bool weightAffectsPhysics = false;
     [Tooltip("重さが Break Load を超えた状態がこの秒数続いたら割れる(落ちてきた瞬間の衝撃では割れないように)")]
     public float breakHoldTime = 0.3f;
 
-    [Header("袋が破れる(最後に持ち上げたとき。機能のON/OFF の Bag Tear Enabled)")]
-    [Tooltip("袋の中の商品の重さの合計がこれを超えていたら、持ち上げたときに破れる(重さ 1 の商品が何個ぶんか)。重さは画面には出さない")]
-    public float bagMaxWeight = 15f;
-    [Tooltip("上まで持ち上げてから、破れるまでの秒数(耐えている途中で破れる。Bag Lift Hold Time より長くすると、耐える時間の最後に破れる)")]
-    public float bagTearDelay = 2f;
-    [Tooltip("破れたとき、袋の底から出た中身が左右へ流れる強さ(速さはばらばら。速いものは画面の外へ流れて消え、遅いものは机に残る。0ならまっすぐ下へ落ちる)")]
-    public float bagTearScatter = 1.5f;
+    [Header("机の見た目(1P/2Pの画面。画像か3Dモデルを入れると、仮の机の代わりに出る)")]
+    [Tooltip("机の画像。入れると仮の机の代わりに、画面に見えている机の幅で出す(縦横の比率はそのまま・上の面を机の高さに)。当たり判定は今までどおり")]
+    public Sprite deskSprite;
+    [Tooltip("机の3Dモデル(プレハブ)。入れると画像より優先して出す(机の幅に合わせ、上の面を机の高さに)。当たり判定は今までどおり")]
+    public GameObject deskModel;
+    [Tooltip("机の3Dモデルの向き(度)。プレハブの向きの上に足す")]
+    public Vector3 deskModelRotation = Vector3.zero;
+    [Tooltip("机の画像・3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1で机の幅ぴったり)。再生中に変えてもすぐ反映")]
+    public Vector3 deskVisualScale = Vector3.one;
+    [Tooltip("机の画像・3Dモデルの位置のずらし。X=右・Y=上・Z=奥(見た目だけ。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector3 deskVisualOffset = Vector3.zero;
+    [Tooltip("机は2人の共通の机なので、机の端がいつも画面の外に見切れるように、机の画像・3Dモデルを横だけ伸ばす(カメラを引いたときの幅 x Bag Lift Camera Zoom の、さらに Desk Cover Margin 倍)")]
+    public bool deskCoverZoom = true;
+    [Tooltip("Desk Cover Zoom のとき、さらに横を何倍に伸ばすか(机の端がいつも画面の外に見切れるように。1.2 なら左右に1割ずつはみ出す)")]
+    public float deskCoverMargin = 1.2f;
 
-    [Header("レジ袋の3Dモデル・破れる演出(TwoPlayerShop2D.BagModel.cs)")]
-    [Tooltip("レジ袋の3Dモデル(プレハブ)。入れると袋の絵の代わりに、袋の幅・高さぴったりに引き伸ばして出す(当たり判定は今までどおり)。中の商品を見せるには、半透明のマテリアルにするか手前の面を無くしておく")]
-    public GameObject bagModel;
-    [Tooltip("袋の3Dモデルの向き(度)。プレハブの向きの上に足す")]
-    public Vector3 bagModelRotation = Vector3.zero;
-    [Tooltip("袋の3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1なら袋の幅・高さぴったり)")]
-    public Vector3 bagModelScale = Vector3.one;
-    [Tooltip("袋の3Dモデルの位置のずらし")]
-    public Vector3 bagModelOffset = Vector3.zero;
-    [Tooltip("持ち上げたとき重さで伸びる、モデルのシェイプキーの名前(Blender で付けた名前。英語がおすすめ)")]
-    public string bagStretchShape = "Stretch";
-    [Tooltip("中の重さが破れる重さのこの割合を超えたら伸び始める(1 で破れる重さのとき一番伸びる)")]
-    [Range(0f, 1f)] public float bagStretchStart = 0.6f;
-    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが上へ伸びる長さ(袋の高さの何倍か)。底は動かない")]
-    public float bagStretchAmount = 0.4f;
-    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが細くなる割合(0.4 なら幅が6割に)")]
-    [Range(0f, 1f)] public float bagHandleThin = 0.4f;
-    [Tooltip("モデルが無いとき: 一番伸びたとき、下のほうが横にふくらむ割合(0.25 なら幅が1.25倍に)")]
-    public float bagBottomBulge = 0.25f;
-    [Tooltip("モデルが無いとき: 一番伸びたとき、底の角が持ち上がって底が丸くなる大きさ(袋の高さの何倍か)")]
-    public float bagBottomRound = 0.12f;
-    [Tooltip("破れる直前(上まで持ち上げたあと)に袋が震える大きさ(0なら震えない)")]
-    public float bagTearShake = 0.04f;
-    [Tooltip("袋が裂けるアニメーション(FBX の中のアニメーション)。破れる時間の Bag Tear Open Time 秒前から再生する")]
-    public AnimationClip bagTearClip;
-    [Tooltip("裂けるアニメーションを始めてから、穴が開いて中身が落ちるまでの秒数(アニメーションで穴が開くところに合わせる)")]
-    public float bagTearOpenTime = 0.4f;
-    [Tooltip("破れたとき、底の当たり判定(左右2枚の扉)が下へ開く角度(度)。見た目は穴が開く形")]
-    [Range(10f, 180f)] public float bagBottomOpenAngle = 75f;
-    [Tooltip("底が開ききるまでの秒数")]
-    public float bagBottomOpenTime = 0.5f;
-    [Tooltip("モデルが無いとき: 破れて底に開く穴の高さ(袋の高さの割合)")]
-    [Range(0.05f, 1f)] public float bagBottomFlapHeight = 0.3f;
-    [Tooltip("モデルが無いとき: 穴の左右に残る、脚のようなふちの幅(袋の幅の割合)")]
-    [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
-    [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
-    public float bagLegDrop = 0.1f;
-    [Tooltip("袋持ち上げターンから、1P/2P の画面のカメラを持ち上げた袋(持ち手)と一緒に上へ動かす(机が映りすぎないように。結果発表のあいだも上がったまま)")]
-    public bool bagLiftCameraFollow = true;
-    [Tooltip("袋持ち上げターンから、1P/2P の画面のカメラを引いて広く映す倍率(1 なら引かない。1.5 なら 1.5 倍の範囲)。Auto Fit Player Screens が ON のときだけ")]
-    public float bagLiftCameraZoom = 1.5f;
-    [Tooltip("破れた瞬間、伸びていた分だけ袋の下のほうが、ゴムパッチンのように持ち手のほうへパチンと戻る(元の長さ・形に戻る。持ち手は動かない。中身はそのまま下へ落ちる)。戻る長さは伸びの大きさ(Bag Stretch Amount)で決まる")]
-    public bool bagSnapBack = true;
-    [Tooltip("戻って揺れが止まるまでの秒数")]
-    public float bagSnapTime = 0.9f;
-    [Tooltip("止まるまでに上下にびよんびよんする回数(戻りすぎて縮む揺れ)")]
-    public float bagSnapBounces = 3f;
-    [Tooltip("袋の3Dモデルの、底が真ん中から左右に開いた形のシェイプキーの名前(破れたら 0→100 にする)")]
-    public string bagOpenShape = "Open";
-    [Tooltip("破れたとき飛ぶビニールの破片の数(0なら出さない)")]
-    public int bagTearPieces = 10;
-    [Tooltip("ビニールの破片の色")]
-    public Color bagTearPieceColor = new Color(1f, 1f, 1f, 0.85f);
+    [Header("レジ袋(1P/2Pの画面。大きさ・左右の位置は Portrait Layout の中)")]
+    [Tooltip("袋のふちの太さ")]
+    public float bagWallThickness = 0.3f;
+    [Tooltip("袋の左右のふちの当たり判定を、見た目より外側へ厚くする長さ(商品がふちをすり抜けないように。見た目は変わらない)")]
+    public float bagWallOuterThickness = 0.6f;
+    public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
+    [Tooltip("袋(当たり判定ごと)の位置のずらし。X=右・Y=上(ゲームの長さ。0.1 ずつくらいで細かく動かせる)。Y をプラスにすると袋が机から浮く。袋の画像も一緒に動く。再生中に変えてもすぐ反映")]
+    public Vector2 bagPositionOffset = Vector2.zero;
+    [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
+    public bool bagFrameVisible = false;
+    [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
+    public Color bagFrameColor = new Color(1f, 0.2f, 0.2f, 0.6f);
+    [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
+    public float pricePopupTime = 1f;
+    [Tooltip("袋の外で止まってから消えるまでの秒数(袋のふちや他の商品の上に乗ったとき)")]
+    public float removeAfterStopTime = 0.5f;
+    [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
 
-    [Header("3Dモデルの商品の大きさ")]
-    [Tooltip("OFF: どのモデルも、縦横の長いほうがふつうの商品の大きさになる(モデルどうしの大きさの違いは無くなる)。ON: もらったモデルの大きさのまま出す(x Model Unit Scale)。どちらも、さらに一覧の Model Size をかける")]
-    public bool modelOriginalSize = false;
-    [Tooltip("Model Original Size が ON のとき、モデルの大きさにかける倍率(モデルの1メートル = ゲームの何マスか。ゲームの商品はだいたい 1.4 マス)")]
-    public float modelUnitScale = 1f;
-
-    [Header("操作中の画面の枠(商品を持って自分の画面を操作しているとき)")]
-    [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
-    public float ownScreenFrameWidth = 0.3f;
-    [Tooltip("棚の画面の枠の太さ")]
-    public float shopScreenFrameWidth = 0.3f;
-    [Tooltip("2人とも棚にいるとき、棚の画面の枠の左半分を 1P の色にする。OFF なら 左 = 2P・右 = 1P")]
-    public bool shopFrameLeftIsP1 = true;
-
-    [Header("物理の重さ")]
-    [Tooltip("ON なら、商品ごとの重さを物理の重さ(mass)にも使う(重い商品ほど下の商品を強く押す)。OFF なら全部同じ重さで動く(袋のふちをすり抜けにくい)。袋が破れる重さはどちらでも同じ")]
-    public bool weightAffectsPhysics = false;
-
-    [Header("袋がきしむ擬音(破れる重さに近づいたら「ミシ…」)")]
-    [Tooltip("擬音が出はじめる重さ(破れる重さ Bag Max Weight を1として。0.7なら7割)")]
-    [Range(0f, 0.99f)] public float bagCreakStart = 0.7f;
-    [Tooltip("出す擬音(この中からランダム)")]
-    public string[] bagCreakWords = { "ミシ…", "ミシミシ…", "ギシ…", "ギチ…" };
-    [Tooltip("擬音の文字の大きさ(1で普通)")]
-    public float bagCreakSize = 1f;
+    [Header("レジ袋の画像(奥 → 袋の中の商品 → 手前 の3枚)")]
+    [Tooltip("袋の画像(一番奥。色の濃い袋がおすすめ。未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
+    public Sprite bagSprite;
+    [Tooltip("奥の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagSpriteScale = Vector2.one;
+    [Tooltip("奥の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagSpriteOffset = Vector2.zero;
+    [Tooltip("手前の袋の画像(一番手前。色の薄い袋)。袋の中の商品より手前に重ねる(奥の画像 → 商品 → この画像の3枚)。空なら出さない")]
+    public Sprite bagFrontSprite;
+    [Tooltip("手前の袋の画像の色と透明度(A を下げるほど、中の商品がよく見える)")]
+    public Color bagFrontColor = new Color(1f, 1f, 1f, 0.6f);
+    [Tooltip("手前の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagFrontScale = Vector2.one;
+    [Tooltip("手前の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagFrontOffset = Vector2.zero;
 
     [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
     [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)。1試合に、この中から1つだけ出る")]
@@ -418,45 +431,6 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float menuBonusRate = 1.2f;
     [Tooltip("「○○完成！」を出しておく秒数")]
     public float menuCompleteTime = 2.5f;
-
-    [Header("棚の補充")]
-    [Tooltip("取られてから補充されるまでの秒数")]
-    public float refillDelay = 1.5f;
-
-    [Header("レジ袋(1P/2Pの画面)")]
-    [HideInInspector] public float bagX = 0f;        // 自動で計算(bagXRatio)
-    [HideInInspector] public float bagWidth = 5f;    // 自動で計算(bagWidthRatio)
-    [HideInInspector] public float bagHeight = 4f;   // 自動で計算(bagHeightRatio)
-    [Tooltip("袋のふちの太さ")]
-    public float bagWallThickness = 0.3f;
-    [Tooltip("袋の左右のふちの当たり判定を、見た目より外側へ厚くする長さ(商品がふちをすり抜けないように。見た目は変わらない)")]
-    public float bagWallOuterThickness = 0.6f;
-    public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
-    [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
-    public bool bagFrameVisible = false;
-    [Tooltip("袋(当たり判定ごと)の位置のずらし。X=右・Y=上(ゲームの長さ。0.1 ずつくらいで細かく動かせる)。Y をプラスにすると袋が机から浮く。袋の画像も一緒に動く。再生中に変えてもすぐ反映")]
-    public Vector2 bagPositionOffset = Vector2.zero;
-    [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
-    public Color bagFrameColor = new Color(1f, 0.2f, 0.2f, 0.6f);
-    [Tooltip("袋の画像(一番奥。色の濃い袋がおすすめ。未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
-    public Sprite bagSprite;
-    [Tooltip("手前の袋の画像(一番手前。色の薄い袋)。袋の中の商品より手前に重ねる(奥の画像 → 商品 → この画像の3枚)。空なら出さない")]
-    public Sprite bagFrontSprite;
-    [Tooltip("手前の袋の画像の色と透明度(A を下げるほど、中の商品がよく見える)")]
-    public Color bagFrontColor = new Color(1f, 1f, 1f, 0.6f);
-    [Tooltip("奥の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
-    public Vector2 bagSpriteScale = Vector2.one;
-    [Tooltip("手前の袋の画像の大きさ。X=横・Y=縦(1 で袋の幅・高さぴったり。底はそろえたまま。当たり判定は変わらない)。再生中に変えてもすぐ反映")]
-    public Vector2 bagFrontScale = Vector2.one;
-    [Tooltip("奥の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
-    public Vector2 bagSpriteOffset = Vector2.zero;
-    [Tooltip("手前の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
-    public Vector2 bagFrontOffset = Vector2.zero;
-    [HideInInspector] public int[] productPrices = { 100, 150, 200, 250, 300, 500 };
-    [Tooltip("袋に入ったときに出る金額の表示時間(秒)")]
-    public float pricePopupTime = 1f;
-    [Tooltip("袋の外で止まってから消えるまでの秒数(袋のふちや他の商品の上に乗ったとき)")]
-    public float removeAfterStopTime = 0.5f;
 
     [Header("掴み合い(2人が同じ商品を掴んだとき)")]
     [Tooltip("1人が掴んでからこの秒数以内に、もう1人が同じ場所でAを押すと掴み合いになる。0なら掴み合いなし")]
@@ -506,73 +480,91 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("相手のレジ袋が揺れる秒数")]
     public float kickShakeTime = 1f;
 
-    [Header("棚の画面(画面2)。縦/横は「モニターの置き方」で決まる")]
-    [HideInInspector] public ShopOrientation shopOrientation = ShopOrientation.Landscape;
-    [Tooltip("縦のときの画面の横:縦の比率(9:16なら0.5625)。モニターが決まったら合わせる")]
-    public float portraitAspect = 9f / 16f;
-    [Tooltip("縦のときに映る横幅。小さいほど棚が大きく映る")]
-    public float portraitViewWidth = 8f;
-    [Tooltip("縦のとき、上を空ける割合(タイマー用。0.2なら上の2割)")]
-    [Range(0f, 0.5f)] public float portraitTopSpace = 0.2f;
+    [Header("タイムアップ: 袋を持ち上げる(機能のON/OFF の Bag Lift On Time Up)・カメラ")]
+    [Tooltip("タイムアップしてから持ち上げ始めるまでの秒数(落ちている途中の商品が袋に入るのを待つ)")]
+    public float bagLiftDelay = 0.8f;
+    [Tooltip("持ち上げる高さ(1P/2Pの画面の高さを1として。0.2なら2割)。袋の上の合計金額が画面からはみ出さない高さまでで止まる")]
+    [Range(0f, 0.6f)] public float bagLiftRatio = 0.2f;
+    [Tooltip("持ち上げるのにかかる秒数(小さいほど速く持ち上がり、商品がこぼれやすい)")]
+    public float bagLiftTime = 1.5f;
+    [Tooltip("「袋持ち上げターン！」を出してから、持ち上げ始めるまでの秒数")]
+    public float bagLiftAnnounceTime = 1.5f;
+    [Tooltip("持ち上げたまま耐える秒数(「耐えろ！ あと3」と数える)。耐えたら合計金額の結果発表へ")]
+    public float bagLiftHoldTime = 3f;
+    [Tooltip("袋持ち上げターンから、1P/2P の画面のカメラを持ち上げた袋(持ち手)と一緒に上へ動かす(机が映りすぎないように。結果発表のあいだも上がったまま)")]
+    public bool bagLiftCameraFollow = true;
+    [Tooltip("袋持ち上げターンから、1P/2P の画面のカメラを引いて広く映す倍率(1 なら引かない。1.5 なら 1.5 倍の範囲)。Auto Fit Player Screens が ON のときだけ")]
+    public float bagLiftCameraZoom = 1.5f;
 
-    [Header("棚の段と列(商品の数 = 段 x 列。再生中に変えてもすぐ反映)")]
-    [Tooltip("縦のときの棚の列の数(横に並ぶ数)")]
-    public int portraitColumns = 2;
-    [Tooltip("縦のときの棚の段の数(縦に並ぶ数)")]
-    public int portraitRows = 3;
-    [Tooltip("横のときの棚の列の数")]
-    public int landscapeColumns = 3;
-    [Tooltip("横のときの棚の段の数")]
-    public int landscapeRows = 2;
+    [Header("袋が破れる・きしむ(機能のON/OFF の Bag Tear Enabled / Bag Creak Enabled)")]
+    [Tooltip("袋の中の商品の重さの合計がこれを超えていたら、持ち上げたときに破れる(重さ 1 の商品が何個ぶんか)。重さは画面には出さない")]
+    public float bagMaxWeight = 15f;
+    [Tooltip("上まで持ち上げてから、破れるまでの秒数(耐えている途中で破れる。Bag Lift Hold Time より長くすると、耐える時間の最後に破れる)")]
+    public float bagTearDelay = 2f;
+    [Tooltip("破れたとき、袋の底から出た中身が左右へ流れる強さ(速さはばらばら。速いものは画面の外へ流れて消え、遅いものは机に残る。0ならまっすぐ下へ落ちる)")]
+    public float bagTearScatter = 1.5f;
+    [Tooltip("擬音が出はじめる重さ(破れる重さ Bag Max Weight を1として。0.7なら7割)")]
+    [Range(0f, 0.99f)] public float bagCreakStart = 0.7f;
+    [Tooltip("出す擬音(この中からランダム)")]
+    public string[] bagCreakWords = { "ミシ…", "ミシミシ…", "ギシ…", "ギチ…" };
+    [Tooltip("擬音の文字の大きさ(1で普通)")]
+    public float bagCreakSize = 1f;
 
-    [Header("棚のスライド(数秒ごとに、左から次の棚がスライドしてくる)")]
-    [Tooltip("次の棚がスライドしてくるまでの秒数(スライドが終わってから数える)")]
-    public float shelfSlideInterval = 8f;
-    [Tooltip("棚がスライドする動きの秒数")]
-    public float shelfSlideTime = 1f;
+    [Header("袋が破れる演出(伸びる・底が開く・ゴムパッチン)")]
+    [Tooltip("中の重さが破れる重さのこの割合を超えたら伸び始める(1 で破れる重さのとき一番伸びる)")]
+    [Range(0f, 1f)] public float bagStretchStart = 0.6f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが上へ伸びる長さ(袋の高さの何倍か)。底は動かない")]
+    public float bagStretchAmount = 0.4f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、持ち手のほうが細くなる割合(0.4 なら幅が6割に)")]
+    [Range(0f, 1f)] public float bagHandleThin = 0.4f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、下のほうが横にふくらむ割合(0.25 なら幅が1.25倍に)")]
+    public float bagBottomBulge = 0.25f;
+    [Tooltip("モデルが無いとき: 一番伸びたとき、底の角が持ち上がって底が丸くなる大きさ(袋の高さの何倍か)")]
+    public float bagBottomRound = 0.12f;
+    [Tooltip("破れる直前(上まで持ち上げたあと)に袋が震える大きさ(0なら震えない)")]
+    public float bagTearShake = 0.04f;
+    [Tooltip("破れたとき、底の当たり判定(左右2枚の扉)が下へ開く角度(度)。見た目は穴が開く形")]
+    [Range(10f, 180f)] public float bagBottomOpenAngle = 75f;
+    [Tooltip("底が開ききるまでの秒数")]
+    public float bagBottomOpenTime = 0.5f;
+    [Tooltip("モデルが無いとき: 破れて底に開く穴の高さ(袋の高さの割合)")]
+    [Range(0.05f, 1f)] public float bagBottomFlapHeight = 0.3f;
+    [Tooltip("モデルが無いとき: 穴の左右に残る、脚のようなふちの幅(袋の幅の割合)")]
+    [Range(0.02f, 0.4f)] public float bagLegWidth = 0.1f;
+    [Tooltip("モデルが無いとき: 脚が下へ垂れる長さ(袋の高さの割合)")]
+    public float bagLegDrop = 0.1f;
+    [Tooltip("破れた瞬間、伸びていた分だけ袋の下のほうが、ゴムパッチンのように持ち手のほうへパチンと戻る(元の長さ・形に戻る。持ち手は動かない。中身はそのまま下へ落ちる)。戻る長さは伸びの大きさ(Bag Stretch Amount)で決まる")]
+    public bool bagSnapBack = true;
+    [Tooltip("戻って揺れが止まるまでの秒数")]
+    public float bagSnapTime = 0.9f;
+    [Tooltip("止まるまでに上下にびよんびよんする回数(戻りすぎて縮む揺れ)")]
+    public float bagSnapBounces = 3f;
+    [Tooltip("破れたとき飛ぶビニールの破片の数(0なら出さない)")]
+    public int bagTearPieces = 10;
+    [Tooltip("ビニールの破片の色")]
+    public Color bagTearPieceColor = new Color(1f, 1f, 1f, 0.85f);
 
-    [Header("机の見た目(1P/2Pの画面。画像か3Dモデルを入れると、仮の机の代わりに出る。TwoPlayerShop2D.Desk.cs)")]
-    [Tooltip("机の画像。入れると仮の机の代わりに、画面に見えている机の幅で出す(縦横の比率はそのまま・上の面を机の高さに)。当たり判定は今までどおり")]
-    public Sprite deskSprite;
-    [Tooltip("机の3Dモデル(プレハブ)。入れると画像より優先して出す(机の幅に合わせ、上の面を机の高さに)。当たり判定は今までどおり")]
-    public GameObject deskModel;
-    [Tooltip("机の3Dモデルの向き(度)。プレハブの向きの上に足す")]
-    public Vector3 deskModelRotation = Vector3.zero;
-    [Tooltip("机の画像・3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1で机の幅ぴったり)。再生中に変えてもすぐ反映")]
-    public Vector3 deskVisualScale = Vector3.one;
-    [Tooltip("机の画像・3Dモデルの位置のずらし。X=右・Y=上・Z=奥(見た目だけ。当たり判定は動かない)。再生中に変えてもすぐ反映")]
-    public Vector3 deskVisualOffset = Vector3.zero;
-    [Tooltip("机は2人の共通の机なので、机の端がいつも画面の外に見切れるように、机の画像・3Dモデルを横だけ伸ばす(カメラを引いたときの幅 x Bag Lift Camera Zoom の、さらに Desk Cover Margin 倍)")]
-    public bool deskCoverZoom = true;
-    [Tooltip("Desk Cover Zoom のとき、さらに横を何倍に伸ばすか(机の端がいつも画面の外に見切れるように。1.2 なら左右に1割ずつはみ出す)")]
-    public float deskCoverMargin = 1.2f;
+    [Header("レジ袋の3Dモデル(まだ使っていない。入れると袋の画像の代わりに出る)")]
+    [Tooltip("レジ袋の3Dモデル(プレハブ)。入れると袋の絵の代わりに、袋の幅・高さぴったりに引き伸ばして出す(当たり判定は今までどおり)。中の商品を見せるには、半透明のマテリアルにするか手前の面を無くしておく")]
+    public GameObject bagModel;
+    [Tooltip("袋の3Dモデルの向き(度)。プレハブの向きの上に足す")]
+    public Vector3 bagModelRotation = Vector3.zero;
+    [Tooltip("袋の3Dモデルの大きさ。X=横・Y=縦・Z=奥行き(全部1なら袋の幅・高さぴったり)")]
+    public Vector3 bagModelScale = Vector3.one;
+    [Tooltip("袋の3Dモデルの位置のずらし")]
+    public Vector3 bagModelOffset = Vector3.zero;
+    [Tooltip("持ち上げたとき重さで伸びる、モデルのシェイプキーの名前(Blender で付けた名前。英語がおすすめ)")]
+    public string bagStretchShape = "Stretch";
+    [Tooltip("袋の3Dモデルの、底が真ん中から左右に開いた形のシェイプキーの名前(破れたら 0→100 にする)")]
+    public string bagOpenShape = "Open";
+    [Tooltip("袋が裂けるアニメーション(FBX の中のアニメーション)。破れる時間の Bag Tear Open Time 秒前から再生する")]
+    public AnimationClip bagTearClip;
+    [Tooltip("裂けるアニメーションを始めてから、穴が開いて中身が落ちるまでの秒数(アニメーションで穴が開くところに合わせる)")]
+    public float bagTearOpenTime = 0.4f;
 
-    [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)")]
-    [Tooltip("仮の棚の背板の色")]
-    public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
-    [Tooltip("仮の棚の柱・段の板の色")]
-    public Color shelfBoardColor = new Color(0.62f, 0.45f, 0.28f);
-    [Tooltip("段の板の厚さ(商品はこの上に乗る)")]
-    public float shelfBoardThickness = 0.25f;
-    [Tooltip("棚の画像。入れると仮の棚の代わりに、棚の範囲いっぱいに引き伸ばして出す。商品の位置は段と列で決まるので、絵の板の位置と段の数を合わせる")]
-    public Sprite shelfSprite;
-    [Tooltip("棚の3Dモデル(プレハブ)。入れると仮の棚・画像の代わりに、棚の範囲に収まる大きさで商品の奥に出す。暗く・黒く見えたらマテリアルを Unlit にする")]
-    public GameObject shelfModel;
-    [Tooltip("3Dモデルの位置のずらし")]
-    public Vector3 shelfModelOffset = Vector3.zero;
-    [Tooltip("3Dモデルの向き(度)。正面がこちらを向かないときに変える(例: Y を 180)")]
-    public Vector3 shelfModelRotation = Vector3.zero;
-    [Tooltip("3Dモデルの大きさ。X=横・Y=縦・Z=奥行きを別々に変えられる(全部1なら棚の範囲にちょうど収まる)")]
-    public Vector3 shelfModelScale = Vector3.one;
-    [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
-    public Vector2 shelfProductOffset = Vector2.zero;
-    [Tooltip("棚の商品(と値札)を、段ごとにずらす。Element 0 が一番上の段、1 がその下…(X=右・Y=上)。Shelf Product Offset に足す。段の数だけ要素を増やす。再生中に変えてもすぐ反映")]
-    public Vector2[] shelfRowOffsets = new Vector2[0];
-    [Tooltip("棚の画面のカメラの角度(度)。X=上下に傾ける(プラスで見下ろす)・Y=左右に振る・Z=画面を回す。棚の真ん中を中心に回る。全部0で真正面")]
-    public Vector3 shopCameraAngle = Vector3.zero;
-
-    [Header("動作")]
-    public bool arrangeCameras = true;
+    // 自動で計算する値など(Inspector には出ない)
+    float BagFloorY => floorY + bagPositionOffset.y;  // 袋の底の高さ(机の高さ + 袋の位置のずらし)
+    float DeskOuterX => wallX * Mathf.Max(1f, deskExtend);   // 本当の机の端と見えない壁(画面の外まで続く)
 
     class Player
     {
