@@ -382,6 +382,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
     [Tooltip("袋(当たり判定ごと)の位置のずらし。X=右・Y=上(ゲームの長さ。0.1 ずつくらいで細かく動かせる)。Y をプラスにすると袋が机から浮く。袋の画像も一緒に動く。再生中に変えてもすぐ反映")]
     public Vector2 bagPositionOffset = Vector2.zero;
+    [Tooltip("当たり判定の袋(商品が入る範囲)だけの、幅・高さの足し引き。X=幅・Y=高さ(ゲームの長さ。袋の画像は変わらない)。底はそのままで上へ伸びる。Bag Frame Visible を ON にして合わせる。再生中に変えてもすぐ反映")]
+    public Vector2 bagHitSize = Vector2.zero;
+    [Tooltip("当たり判定の袋(商品が入る範囲)だけの、位置のずらし。X=右・Y=上(ゲームの長さ。袋の画像は動かない)。再生中に変えてもすぐ反映")]
+    public Vector2 bagHitOffset = Vector2.zero;
     [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
     public bool bagFrameVisible = false;
     [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
@@ -564,6 +568,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     // 自動で計算する値など(Inspector には出ない)
     float BagFloorY => floorY + bagPositionOffset.y;  // 袋の底の高さ(机の高さ + 袋の位置のずらし)
+    // 当たり判定の袋(商品が入る範囲)。見た目の袋(bagX・BagFloorY・bagWidth・bagHeight)に、当たり判定だけのずらし・足し引きをする
+    float BagHitX => bagX + bagHitOffset.x;
+    float BagHitFloorY => BagFloorY + bagHitOffset.y;
+    float BagHitWidth => Mathf.Max(0.1f, bagWidth + bagHitSize.x);
+    float BagHitHeight => Mathf.Max(0.1f, bagHeight + bagHitSize.y);
     float DeskOuterX => wallX * Mathf.Max(1f, deskExtend);   // 本当の机の端と見えない壁(画面の外まで続く)
 
     class Player
@@ -903,7 +912,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (createBag && p1.bag != null && !(showResultOnTimeUp && IsTimeUp) &&
             (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
              bagWallThickness != appliedBagWall || BagFloorY != appliedBagFloorY ||
-             bagWallOuterThickness != appliedBagOuter)) LayoutBags();
+             bagWallOuterThickness != appliedBagOuter || bagHitSize != appliedBagHitSize || bagHitOffset != appliedBagHitOffset)) LayoutBags();
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;

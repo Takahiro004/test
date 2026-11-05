@@ -327,10 +327,10 @@ public partial class TwoPlayerShop2D
         // 袋の中身(このあと .Weight.cs で袋の中の一覧は空になる)は、底から出たら左右へ流す
         StartCoroutine(FlowSpilledItems(p, new List<GameObject>(p.inBag)));
         float t = Mathf.Max(0.05f, bagWallThickness);
-        float half = bagWidth / 2f;
+        float half = BagHitWidth / 2f;   // 扉は当たり判定の袋の底に合わせる
         // 左の扉は左下の角、右の扉は右下の角を軸にする(底の上の面の高さ)。扉の厚さは底と同じ
-        look.flapLeft = MakeBottomFlap(p, "FlapLeft", bagX - half, half, t);
-        look.flapRight = MakeBottomFlap(p, "FlapRight", bagX + half, -half, t);
+        look.flapLeft = MakeBottomFlap(p, "FlapLeft", BagHitX - half, half, t);
+        look.flapRight = MakeBottomFlap(p, "FlapRight", BagHitX + half, -half, t);
         if (bagSnapBack)
         {
             // 袋が上へ跳ね戻るときは、扉の当たり判定は使わない(中身を上へはじき飛ばさないように。中身はそのまま下へ落ちる)
@@ -365,7 +365,7 @@ public partial class TwoPlayerShop2D
         float edge = PlayerViewSize().x / 2f + 0.5f;   // 画面の端(ここより外へ出たら消す)
         for (float time = 0f; time < 8f && items.Count > 0; time += Time.fixedDeltaTime)
         {
-            float bottom = BagFloorY + liftHeight - 0.1f;   // 今の袋の底
+            float bottom = BagHitFloorY + liftHeight - 0.1f;   // 今の袋の底(当たり判定)
             for (int i = items.Count - 1; i >= 0; i--)
             {
                 var go = items[i];
@@ -399,7 +399,7 @@ public partial class TwoPlayerShop2D
         var go = new GameObject(objName);
         go.layer = p.layer;
         go.transform.SetParent(p.bag.root, false);
-        go.transform.localPosition = new Vector3(pivotX, BagFloorY + thickness, 0f);
+        go.transform.localPosition = new Vector3(pivotX, BagHitFloorY + thickness, 0f);
         var col = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(Mathf.Abs(length), thickness);
         col.offset = new Vector2(length / 2f, -thickness / 2f);
