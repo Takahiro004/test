@@ -19,6 +19,7 @@ public partial class TwoPlayerShop2D
 
     readonly Dictionary<GameObject, float> stoppedTime = new Dictionary<GameObject, float>();   // 袋の外で止まっている時間
     float appliedBagX, appliedBagWidth, appliedBagHeight, appliedBagWall, appliedBagFloorY, appliedBagOuter;
+    Vector2 appliedBagHitSize, appliedBagHitOffset;
 
     // ---------- レジ袋 ----------
 
@@ -76,6 +77,7 @@ public partial class TwoPlayerShop2D
     {
         appliedBagX = bagX; appliedBagWidth = bagWidth; appliedBagHeight = bagHeight;
         appliedBagWall = bagWallThickness; appliedBagFloorY = BagFloorY; appliedBagOuter = bagWallOuterThickness;
+        appliedBagHitSize = bagHitSize; appliedBagHitOffset = bagHitOffset;
 
         float t = bagWallThickness;
         foreach (var p in new[] { p1, p2 })
@@ -86,9 +88,11 @@ public partial class TwoPlayerShop2D
             // 画像は大きさがまちまちなので、袋の幅・高さぴったりに引き伸ばす
             Vector2 backSize = b.back.GetComponent<SpriteRenderer>().sprite.bounds.size;
             b.back.localScale = new Vector3(bagWidth / Mathf.Max(backSize.x, 0.01f), bagHeight / Mathf.Max(backSize.y, 0.01f), 1f);
-            SetRect(b.left, bagX - bagWidth / 2f + t / 2f, BagFloorY + bagHeight / 2f, t, bagHeight);
-            SetRect(b.right, bagX + bagWidth / 2f - t / 2f, BagFloorY + bagHeight / 2f, t, bagHeight);
-            SetRect(b.bottom, bagX, BagFloorY + t / 2f, bagWidth, t);
+            // ふちと底(当たり判定)は、当たり判定だけのずらし・足し引き(Bag Hit Offset / Size)をした範囲に置く
+            float hx = BagHitX, hy = BagHitFloorY, hw = BagHitWidth, hh = BagHitHeight;
+            SetRect(b.left, hx - hw / 2f + t / 2f, hy + hh / 2f, t, hh);
+            SetRect(b.right, hx + hw / 2f - t / 2f, hy + hh / 2f, t, hh);
+            SetRect(b.bottom, hx, hy + t / 2f, hw, t);
             // 底の当たり判定だけ下へ厚くする(見た目はそのまま)。商品をたくさん積んでも底を突き抜けにくくする
             var bottomCol = b.bottom.GetComponent<BoxCollider2D>();
             if (bottomCol != null)
@@ -196,8 +200,8 @@ public partial class TwoPlayerShop2D
     void CheckBag(Player p)
     {
         float t = bagWallThickness;
-        float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
-        float top = BagFloorY + bagHeight;
+        float left = BagHitX - BagHitWidth / 2f + t, right = BagHitX + BagHitWidth / 2f - t;   // 当たり判定の袋の内側
+        float top = BagHitFloorY + BagHitHeight;
 
         for (int i = p.dropped.Count - 1; i >= 0; i--)
         {
@@ -254,7 +258,7 @@ public partial class TwoPlayerShop2D
         // 袋に入ったあと、袋から出て場外に落ちた商品(床に着いた / 袋の左右の外で止まった / 下へ抜けた)
         // → 消して、その金額を合計から引く。袋の上に積み上がっただけ(袋の幅の中)なら消さない
         float t = bagWallThickness;
-        float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
+        float left = BagHitX - BagHitWidth / 2f + t, right = BagHitX + BagHitWidth / 2f - t;   // 当たり判定の袋の内側
         for (int i = p.inBag.Count - 1; i >= 0; i--)
         {
             var go = p.inBag[i];

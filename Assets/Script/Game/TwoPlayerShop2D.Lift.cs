@@ -182,7 +182,7 @@ public partial class TwoPlayerShop2D
     // 持ち上げた袋の底より下へ落ちた商品は、こぼれたとして消し、合計から引く
     void CheckSpill(Player p)
     {
-        float bottom = BagFloorY + liftHeight - 0.2f;   // 今の袋の底(少しめり込んでいても袋の中)
+        float bottom = BagHitFloorY + liftHeight - 0.2f;   // 今の袋の底(少しめり込んでいても袋の中)
         for (int i = p.inBag.Count - 1; i >= 0; i--)
         {
             var go = p.inBag[i];
