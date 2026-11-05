@@ -75,20 +75,20 @@ public partial class TwoPlayerShop2D
     void LayoutBags()
     {
         appliedBagX = bagX; appliedBagWidth = bagWidth; appliedBagHeight = bagHeight;
-        appliedBagWall = bagWallThickness; appliedBagFloorY = floorY; appliedBagOuter = bagWallOuterThickness;
+        appliedBagWall = bagWallThickness; appliedBagFloorY = BagFloorY; appliedBagOuter = bagWallOuterThickness;
 
         float t = bagWallThickness;
         foreach (var p in new[] { p1, p2 })
         {
             var b = p.bag;
             if (b == null) continue;
-            SetRect(b.back, bagX, floorY + bagHeight / 2f, bagWidth, bagHeight);
+            SetRect(b.back, bagX, BagFloorY + bagHeight / 2f, bagWidth, bagHeight);
             // 画像は大きさがまちまちなので、袋の幅・高さぴったりに引き伸ばす
             Vector2 backSize = b.back.GetComponent<SpriteRenderer>().sprite.bounds.size;
             b.back.localScale = new Vector3(bagWidth / Mathf.Max(backSize.x, 0.01f), bagHeight / Mathf.Max(backSize.y, 0.01f), 1f);
-            SetRect(b.left, bagX - bagWidth / 2f + t / 2f, floorY + bagHeight / 2f, t, bagHeight);
-            SetRect(b.right, bagX + bagWidth / 2f - t / 2f, floorY + bagHeight / 2f, t, bagHeight);
-            SetRect(b.bottom, bagX, floorY + t / 2f, bagWidth, t);
+            SetRect(b.left, bagX - bagWidth / 2f + t / 2f, BagFloorY + bagHeight / 2f, t, bagHeight);
+            SetRect(b.right, bagX + bagWidth / 2f - t / 2f, BagFloorY + bagHeight / 2f, t, bagHeight);
+            SetRect(b.bottom, bagX, BagFloorY + t / 2f, bagWidth, t);
             // 底の当たり判定だけ下へ厚くする(見た目はそのまま)。商品をたくさん積んでも底を突き抜けにくくする
             var bottomCol = b.bottom.GetComponent<BoxCollider2D>();
             if (bottomCol != null)
@@ -105,7 +105,7 @@ public partial class TwoPlayerShop2D
             var rightCol = b.right.GetComponent<BoxCollider2D>();
             if (rightCol != null) { rightCol.size = new Vector2(1f + side, 1f); rightCol.offset = new Vector2(side / 2f, 0f); }
             SetTextSize(b.totalLabel, HudTextSize);
-            b.totalLabel.transform.position = new Vector3(bagX, floorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
+            b.totalLabel.transform.position = new Vector3(bagX, BagFloorY + bagHeight + 0.2f + HudTextSize * 4f, 0f);
             LayoutBagModel(b);
         }
     }
@@ -165,7 +165,7 @@ public partial class TwoPlayerShop2D
     {
         Vector2 size = sprite.bounds.size;
         float w = bagWidth * Mathf.Max(0.01f, scale.x), h = bagHeight * Mathf.Max(0.01f, scale.y);
-        tr.localPosition = new Vector3(bagX + offset.x, floorY + h / 2f + offset.y, 0f);
+        tr.localPosition = new Vector3(bagX + offset.x, BagFloorY + h / 2f + offset.y, 0f);
         tr.localScale = new Vector3(w / Mathf.Max(size.x, 0.01f), h / Mathf.Max(size.y, 0.01f), 1f);
     }
 
@@ -175,7 +175,7 @@ public partial class TwoPlayerShop2D
         if (tr == null) return;
         float sx = Mathf.Max(0.01f, scale.x), sy = Mathf.Max(0.01f, scale.y);
         tr.localScale = new Vector3(sx, sy, 1f);
-        tr.localPosition = new Vector3(bagX - bagX * sx + offset.x, floorY - floorY * sy + offset.y, 0f);
+        tr.localPosition = new Vector3(bagX - bagX * sx + offset.x, BagFloorY - BagFloorY * sy + offset.y, 0f);
     }
 
     // 手前の薄い袋の絵: 奥の袋の絵と同じく、袋の幅・高さぴったりに引き伸ばす(再生中に絵・色を変えてもすぐ反映)。
@@ -197,7 +197,7 @@ public partial class TwoPlayerShop2D
     {
         float t = bagWallThickness;
         float left = bagX - bagWidth / 2f + t, right = bagX + bagWidth / 2f - t;
-        float top = floorY + bagHeight;
+        float top = BagFloorY + bagHeight;
 
         for (int i = p.dropped.Count - 1; i >= 0; i--)
         {

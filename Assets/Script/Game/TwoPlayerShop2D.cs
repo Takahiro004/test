@@ -273,6 +273,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("重力の強さ(大きいほど速く落ちる)")]
     public float gravityScale = 2f;
     [HideInInspector] public float floorY = -4.5f;   // 自動で計算(floorFromBottom)
+    float BagFloorY => floorY + bagPositionOffset.y;  // 袋の底の高さ(机の高さ + 袋の位置のずらし)
     [HideInInspector] public float wallX = 8.9f;     // 自動で計算(画面に見えている机の端。カーソル・袋はこの中)
     float DeskOuterX => wallX * Mathf.Max(1f, deskExtend);   // 本当の机の端と見えない壁(画面の外まで続く)
     [Tooltip("ONなら、落下中に商品が回転しない")]
@@ -433,6 +434,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
     [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
     public bool bagFrameVisible = false;
+    [Tooltip("袋(当たり判定ごと)の位置のずらし。X=右・Y=上(ゲームの長さ。0.1 ずつくらいで細かく動かせる)。Y をプラスにすると袋が机から浮く。袋の画像も一緒に動く。再生中に変えてもすぐ反映")]
+    public Vector2 bagPositionOffset = Vector2.zero;
     [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
     public Color bagFrameColor = new Color(1f, 0.2f, 0.2f, 0.6f);
     [Tooltip("袋の画像(一番奥。色の濃い袋がおすすめ。未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
@@ -907,7 +910,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         // タイムアップのあとは、持ち上げた袋がずれないように動かさない)
         if (createBag && p1.bag != null && !(showResultOnTimeUp && IsTimeUp) &&
             (bagX != appliedBagX || bagWidth != appliedBagWidth || bagHeight != appliedBagHeight ||
-             bagWallThickness != appliedBagWall || floorY != appliedBagFloorY ||
+             bagWallThickness != appliedBagWall || BagFloorY != appliedBagFloorY ||
              bagWallOuterThickness != appliedBagOuter)) LayoutBags();
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)

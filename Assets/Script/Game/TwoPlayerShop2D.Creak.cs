@@ -48,7 +48,7 @@ public partial class TwoPlayerShop2D
         float halfView = PlayerViewSize().x / 2f;
         float x = bagX + side * (bagWidth / 2f + Random.Range(-0.6f, 0.4f));
         x = Mathf.Clamp(x, -halfView + halfWidth + 0.1f, halfView - halfWidth - 0.1f);
-        Vector3 basePos = new Vector3(x, floorY + bagHeight * Random.Range(0.75f, 1.1f), 0f);
+        Vector3 basePos = new Vector3(x, BagFloorY + bagHeight * Random.Range(0.75f, 1.1f), 0f);
         label.transform.localRotation = Quaternion.Euler(0f, 0f, side * -Random.Range(5f, 20f));   // 少し傾ける
 
         const float duration = 1.1f;

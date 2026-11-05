@@ -168,7 +168,7 @@ public partial class TwoPlayerShop2D
         if (target.shakeRoutine != null) StopCoroutine(target.shakeRoutine);
         target.shakeRoutine = StartCoroutine(ShakeBagRoutine(target, direction, power));
         if (kicked)
-            StartCoroutine(Popup(target.layer, new Vector2(bagX, floorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
+            StartCoroutine(Popup(target.layer, new Vector2(bagX, BagFloorY + bagHeight + 1.4f), "キックされた！", new Color(1f, 0.4f, 0.3f), 0.1f));
     }
 
     // プレイヤーの画面(カメラ)を、direction(+1 右 / -1 左)へ押されたように揺らす

@@ -67,7 +67,7 @@ public partial class TwoPlayerShop2D
 
         // 持ち上げる高さ: 画面の高さの bagLiftRatio。袋の上の合計金額が画面の上からはみ出さないところまで
         float viewTop = PlayerViewSize().y / 2f;
-        float labelTop = floorY + bagHeight + 0.2f + HudTextSize * 8f;
+        float labelTop = BagFloorY + bagHeight + 0.2f + HudTextSize * 8f;
         float target = Mathf.Clamp(PlayerViewSize().y * bagLiftRatio, 0f, Mathf.Max(0f, viewTop - labelTop));
 
         // 3. 持ち上げる → 4. 持ち上げたまま耐える(「耐えろ！ あと3」)
@@ -182,7 +182,7 @@ public partial class TwoPlayerShop2D
     // 持ち上げた袋の底より下へ落ちた商品は、こぼれたとして消し、合計から引く
     void CheckSpill(Player p)
     {
-        float bottom = floorY + liftHeight - 0.2f;   // 今の袋の底(少しめり込んでいても袋の中)
+        float bottom = BagFloorY + liftHeight - 0.2f;   // 今の袋の底(少しめり込んでいても袋の中)
         for (int i = p.inBag.Count - 1; i >= 0; i--)
         {
             var go = p.inBag[i];

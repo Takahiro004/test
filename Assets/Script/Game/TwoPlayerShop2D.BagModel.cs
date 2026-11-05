@@ -117,7 +117,7 @@ public partial class TwoPlayerShop2D
         float sy = bagHeight / Mathf.Max(0.01f, look.size.y);
         Vector3 scale = Vector3.Scale(new Vector3(sx, sy, (sx + sy) / 2f), bagModelScale);
         look.holder.localScale = scale;
-        look.basePosition = new Vector3(bagX, floorY + bagHeight / 2f, 0f) - Vector3.Scale(look.center, scale) + bagModelOffset;
+        look.basePosition = new Vector3(bagX, BagFloorY + bagHeight / 2f, 0f) - Vector3.Scale(look.center, scale) + bagModelOffset;
         look.holder.localPosition = look.basePosition;
     }
 
@@ -155,7 +155,7 @@ public partial class TwoPlayerShop2D
 
     // 網目の行の高さ(v: 0 底 〜 1 持ち手の先)。伸びは上のほう(持ち手)ほど大きい
     float RowY(float v, float extra)
-        => floorY + bagHeight * v + extra * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.3f, 1f, v));
+        => BagFloorY + bagHeight * v + extra * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.3f, 1f, v));
 
     // 袋の絵(奥の絵と、あれば手前の絵)と同じ絵・同じ描く順番の網目を作り、絵のほうは隠す。
     // 奥と手前は同じ点(look.vertices)を使うので、伸びる・破れる形がそろう
@@ -225,7 +225,7 @@ public partial class TwoPlayerShop2D
         return mesh;
     }
 
-    // 網目の点を動かす。s は伸び(0〜1)。底(floorY)は動かさない。
+    // 網目の点を動かす。s は伸び(0〜1)。底(BagFloorY)は動かさない。
     // 破れたら(look.open)、袋の形は崩さずに、底の真ん中に四角い穴が開く(「冂」の形)。
     // 下のほう(bagBottomFlapHeight)の真ん中の点を穴の上のふちまで引き上げ、左右のふち(bagLegWidth)だけ脚のように少し下へ垂らす(bagLegDrop)
     void DeformBagMesh(Bag bag, float s, Vector3 shake)
@@ -270,7 +270,7 @@ public partial class TwoPlayerShop2D
             look.frontMesh.RecalculateBounds();
         }
         // 合計金額の表示も、伸びた持ち手の上へ
-        bag.totalLabel.transform.localPosition = new Vector3(bagX, floorY + bagHeight + extra + look.snapLift + 0.2f + HudTextSize * 4f, 0f);
+        bag.totalLabel.transform.localPosition = new Vector3(bagX, BagFloorY + bagHeight + extra + look.snapLift + 0.2f + HudTextSize * 4f, 0f);
     }
 
     // 破れる bagTearOpenTime 秒前(.Lift.cs から): 裂けるアニメーションを始める。1回だけ
@@ -365,7 +365,7 @@ public partial class TwoPlayerShop2D
         float edge = PlayerViewSize().x / 2f + 0.5f;   // 画面の端(ここより外へ出たら消す)
         for (float time = 0f; time < 8f && items.Count > 0; time += Time.fixedDeltaTime)
         {
-            float bottom = floorY + liftHeight - 0.1f;   // 今の袋の底
+            float bottom = BagFloorY + liftHeight - 0.1f;   // 今の袋の底
             for (int i = items.Count - 1; i >= 0; i--)
             {
                 var go = items[i];
@@ -399,7 +399,7 @@ public partial class TwoPlayerShop2D
         var go = new GameObject(objName);
         go.layer = p.layer;
         go.transform.SetParent(p.bag.root, false);
-        go.transform.localPosition = new Vector3(pivotX, floorY + thickness, 0f);
+        go.transform.localPosition = new Vector3(pivotX, BagFloorY + thickness, 0f);
         var col = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(Mathf.Abs(length), thickness);
         col.offset = new Vector2(length / 2f, -thickness / 2f);
@@ -409,7 +409,7 @@ public partial class TwoPlayerShop2D
     // 穴が開いたとき(.Weight.cs から): ビニールの破片を、袋の底から飛ばす
     void SpawnTearPieces(Player p)
     {
-        float bottom = floorY + liftHeight;
+        float bottom = BagFloorY + liftHeight;
         for (int i = 0; i < bagTearPieces; i++)
         {
             var piece = MakeBagPart($"TearPiece_{p.name}", null, p.layer, bagTearPieceColor, 600, false);

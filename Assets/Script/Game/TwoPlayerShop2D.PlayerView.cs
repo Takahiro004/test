@@ -41,7 +41,8 @@ public partial class TwoPlayerShop2D
         wallX = view.x / 2f * deskWidthRatio;   // 机(床)の端 = 左右の壁
         bagWidth = Mathf.Min(view.x * bagWidthRatio, wallX * 2f);   // 机からはみ出さない
         bagHeight = view.y * bagHeightRatio;
-        bagX = Mathf.Clamp(view.x * bagXRatio, -wallX + bagWidth / 2f, wallX - bagWidth / 2f);   // はみ出さない
+        bagX = Mathf.Clamp(view.x * bagXRatio, -wallX + bagWidth / 2f, wallX - bagWidth / 2f)   // はみ出さない
+             + bagPositionOffset.x;                                                              // 袋の位置のずらし(細かく動かす用)
         dropHeight = bottom + view.y * dropHeightRatio;
     }
 
