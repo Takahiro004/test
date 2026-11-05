@@ -33,9 +33,10 @@ public partial class TwoPlayerShop2D
         // 背景(商品より奥。当たり判定なし)
         bag.back = MakeBagPart("Back", root.transform, p.layer, new Color(bagColor.r, bagColor.g, bagColor.b, bagColor.a * 0.25f), -20, false);
         // ふちと底(商品がぶつかって積み重なる)
-        bag.left = MakeBagPart("Left", root.transform, p.layer, bagColor, 500, true);
-        bag.right = MakeBagPart("Right", root.transform, p.layer, bagColor, 500, true);
-        bag.bottom = MakeBagPart("Bottom", root.transform, p.layer, bagColor, 500, true);
+        // 見た目(Bag Frame Visible で出す)は、手前の袋の画像(900)より手前・持ち運び中の商品(999)より奥
+        bag.left = MakeBagPart("Left", root.transform, p.layer, bagFrameColor, 950, true);
+        bag.right = MakeBagPart("Right", root.transform, p.layer, bagFrameColor, 950, true);
+        bag.bottom = MakeBagPart("Bottom", root.transform, p.layer, bagFrameColor, 950, true);
 
         if (bagSprite != null)
         {
@@ -124,7 +125,8 @@ public partial class TwoPlayerShop2D
 
     const int BagFrontOrder = 900;   // 手前の袋の絵の描く順番(落とした商品は 1, 2, 3…・持ち運び中は 999)
 
-    // 仮の袋(画像も3Dモデルも無い)の白いふちの見た目の ON/OFF・手前の袋の絵(Update から毎フレーム。当たり判定はそのまま)
+    // 当たり判定の袋(左右のふち・底)の見た目の ON/OFF と色(Bag Frame Visible / Bag Frame Color)・手前の袋の絵
+    // (Update から毎フレーム。当たり判定はそのまま)。袋の画像があっても重ねて出すので、画像と商品が入る範囲を合わせるのに使える
     void ApplyBagFrameVisibility()
     {
         foreach (var p in new[] { p1, p2 })
@@ -132,10 +134,13 @@ public partial class TwoPlayerShop2D
             if (p == null || p.bag == null) continue;
             ApplyBagBack(p.bag);
             ApplyBagFront(p.bag);
-            bool show = bagFrameVisible && bagSprite == null && (p.bag.look == null || p.bag.look.holder == null);
-            p.bag.left.GetComponent<SpriteRenderer>().enabled = show;
-            p.bag.right.GetComponent<SpriteRenderer>().enabled = show;
-            if (!p.bag.torn) p.bag.bottom.GetComponent<SpriteRenderer>().enabled = show;   // 破れた底は出さない
+            bool show = bagFrameVisible;
+            foreach (var wall in new[] { p.bag.left, p.bag.right, p.bag.bottom })
+            {
+                var sr = wall.GetComponent<SpriteRenderer>();
+                sr.enabled = show && !(wall == p.bag.bottom && p.bag.torn);   // 破れた底は出さない
+                sr.color = bagFrameColor;
+            }
         }
     }
 

@@ -431,8 +431,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋の左右のふちの当たり判定を、見た目より外側へ厚くする長さ(商品がふちをすり抜けないように。見た目は変わらない)")]
     public float bagWallOuterThickness = 0.6f;
     public Color bagColor = new Color(1f, 1f, 1f, 0.85f);
-    [Tooltip("袋の画像が無いときの仮の袋で、白いふち(U字の線)を見せる。OFF なら透明(当たり判定はそのまま。薄い背景は出る)")]
+    [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
     public bool bagFrameVisible = false;
+    [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
+    public Color bagFrameColor = new Color(1f, 0.2f, 0.2f, 0.6f);
     [Tooltip("袋の画像(一番奥。色の濃い袋がおすすめ。未設定なら白いU字)。画像は袋の幅・高さに引き伸ばして表示し、商品がぶつかるふちは見えない壁になる")]
     public Sprite bagSprite;
     [Tooltip("手前の袋の画像(一番手前。色の薄い袋)。袋の中の商品より手前に重ねる(奥の画像 → 商品 → この画像の3枚)。空なら出さない")]
