@@ -113,6 +113,7 @@ public partial class TwoPlayerShop2D
         if (timerPlaceholder != null)
             timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         UpdateGameTimer();
+        UpdateHighRankNotice();   // 高額商品の予告を流す(TwoPlayerShop2D.Notice.cs)
         UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
         SyncModelOrder();         // 3Dモデルの商品の描く順番を、絵と同じにする(TwoPlayerShop2D.Products.cs)
 

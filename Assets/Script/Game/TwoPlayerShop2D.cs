@@ -143,6 +143,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool randomRefill = true;
     [Tooltip("棚: ランダム補充で、ランクが高い商品ほど出にくく、試合の終盤に出始める(出やすさ Rank Weights・出始める時期 Rank Start Progress)。OFF なら全部同じ出やすさ")]
     public bool rankWeighting = true;
+    [Tooltip("棚: 高いランクの商品が出始める少し前に、棚の画面のタイマーの下に予告の文字を右から左へ流す(欄は「高額商品の予告」)")]
+    public bool highRankNotice = true;
     [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
     [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
@@ -302,10 +304,26 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float shelfSlideInterval = 8f;
     [Tooltip("棚がスライドする動きの秒数")]
     public float shelfSlideTime = 1f;
-    [Tooltip("ランクごとの出やすさ(ランダム補充のとき)。Element 0 = ランク1 〜 Element 4 = ランク5。大きいほど出やすい(2 なら 1 の2倍)。0 なら出ない")]
+    [Tooltip("ランクごとの、試合の始めの出やすさ(ランダム補充のとき)。Element 0 = ランク1 〜 Element 4 = ランク5。大きいほど出やすい(2 なら 1 の2倍)。0 なら出ない")]
     public float[] rankWeights = { 1f, 0.8f, 0.5f, 0.25f, 0.1f };
+    [Tooltip("ランクごとの、試合の終わりの出やすさ。始め(Rank Weights)から、試合の進み具合に合わせて少しずつこの値になる(終盤ほど高いランクが出やすい)")]
+    public float[] rankWeightsEnd = { 0.6f, 0.6f, 0.8f, 1.2f, 1.5f };
     [Tooltip("ランクごとの出始める時期(ランダム補充のとき)。0 = 試合の始めから・0.5 = 半分すぎてから・1 = 終わり。Element 0 = ランク1 〜 Element 4 = ランク5")]
     public float[] rankStartProgress = { 0f, 0f, 0.25f, 0.5f, 0.75f };
+
+    [Header("高額商品の予告(機能のON/OFF: 棚 の High Rank Notice。棚の画面のタイマーの下に右から左へ流す)")]
+    [Tooltip("このランク以上の商品が出始めるときに予告する(4 ならランク4とランク5で1回ずつ)")]
+    [Range(1, 5)] public int highRankNoticeFrom = 5;
+    [Tooltip("出始める何秒前に予告するか")]
+    public float highRankNoticeLead = 3f;
+    [Tooltip("予告の文字。{rank} はランクの数字に置きかわる")]
+    public string highRankNoticeText = "★ まもなく高額商品が棚に並ぶぞ！ ★";
+    [Tooltip("予告の文字の色")]
+    public Color highRankNoticeColor = new Color(1f, 0.85f, 0.2f);
+    [Tooltip("文字が画面を右から左へ横切る秒数(小さいほど速い)")]
+    public float highRankNoticeTime = 6f;
+    [Tooltip("文字の高さのずらし(プラスで上。タイマーの下あたりが 0)")]
+    public float highRankNoticeY = 0f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
