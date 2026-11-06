@@ -394,6 +394,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 bagHitSize = Vector2.zero;
     [Tooltip("当たり判定の袋(商品が入る範囲)だけの、位置のずらし。X=右・Y=上(ゲームの長さ。袋の画像は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 bagHitOffset = Vector2.zero;
+    [Tooltip("袋持ち上げターンで、当たり判定の袋を見た目の袋に合わせて動かす(持ち手が伸びた分だけふちを上へ伸ばし、破れて戻ったら一緒に上へ)。横のふくらみには合わせない")]
+    public bool bagHitFollowLook = true;
     [Tooltip("当たり判定の袋(左右のふち・底 = 商品が入る範囲)を見せる。袋の画像・3Dモデルがあっても重ねて出すので、画像と範囲を合わせるときに使う。OFF なら透明(当たり判定はそのまま)。再生中に変えてもすぐ反映")]
     public bool bagFrameVisible = false;
     [Tooltip("当たり判定の袋(左右のふち・底)を見せるときの色と透明度")]
