@@ -8,7 +8,8 @@ using UnityEngine;
 //    (x bagLiftCameraZoom)の、さらに deskCoverMargin 倍まで伸ばし、端がいつも画面の外(見切れる)にする
 //    (deskCoverZoom。高さ・奥行きは画面に見えている机の幅のときのまま)
 //  - さらに deskVisualScale(X 横・Y 縦・Z 奥行き)と deskVisualOffset(X 右・Y 上・Z 奥)をかける
-//  - 見た目だけ。当たり判定(商品が乗る床・左右の見えない壁)は今までどおり
+//  - 見た目だけ。当たり判定(商品が乗る床・左右の見えない壁)は今までどおり。
+//    当たり判定だけを動かすのは deskHitSize / deskHitOffset(ApplyFloorY)、見えるようにするのは deskHitVisible / deskHitColor
 //  - Update から毎フレーム並べるので、再生中に変えてもすぐ反映する
 public partial class TwoPlayerShop2D
 {
@@ -36,7 +37,11 @@ public partial class TwoPlayerShop2D
 
             bool useModel = deskModel != null;
             bool useImage = !useModel && deskSprite != null;
-            floor.GetComponent<SpriteRenderer>().enabled = !useModel && !useImage;   // 仮の机は、差し替えたら隠す
+            // 仮の机(= 机の当たり判定の形)。差し替えたら隠す。deskHitVisible なら、見た目の机の上に色を付けて重ねて出す
+            var floorSr = floor.GetComponent<SpriteRenderer>();
+            floorSr.enabled = deskHitVisible || (!useModel && !useImage);
+            floorSr.color = deskHitVisible ? deskHitColor : new Color(0.2f, 0.2f, 0.2f, 0.9f);
+            floorSr.sortingOrder = deskHitVisible ? 951 : -10;
             float deskW = wallX * 2f;   // 画面に見えている机の幅
             // 横の長さ: 机の端がいつも画面の外になるように、カメラを引いたときに映る幅 x deskCoverMargin まで伸ばす
             float coverW = deskCoverZoom
