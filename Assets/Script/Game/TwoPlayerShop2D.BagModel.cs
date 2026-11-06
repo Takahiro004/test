@@ -271,6 +271,23 @@ public partial class TwoPlayerShop2D
         }
         // 合計金額の表示も、伸びた持ち手の上へ
         bag.totalLabel.transform.localPosition = new Vector3(bagX, BagFloorY + bagHeight + extra + look.snapLift + 0.2f + HudTextSize * 4f, 0f);
+        if (bagHitFollowLook) SyncBagWallsToLook(bag, extra, look.snapLift);
+    }
+
+    // 当たり判定の袋(左右のふち・底)を、見た目の袋に合わせて動かす(持ち上げターンで伸びる・ゴムパッチンで戻るとき)。
+    // 左右のふちは持ち手が伸びた分だけ上へ伸ばし、破れて戻った分(snapLift)だけ全体を上へずらす。横のふくらみには合わせない
+    // (ふちは縦の四角なので、下だけ広げることはできないため)。網目は画像の大きさ(Bag Sprite Scale の Y)倍で描いているので、その分もかける
+    void SyncBagWallsToLook(Bag bag, float extra, float snapLift)
+    {
+        float sy = bagSprite != null ? Mathf.Max(0.01f, bagSpriteScale.y) : 1f;
+        float up = extra * sy, lift = snapLift * sy;
+        float t = bagWallThickness;
+        float hx = BagHitX, hy = BagHitFloorY + lift, hw = BagHitWidth, hh = BagHitHeight + up;
+        bag.left.localPosition = new Vector3(hx - hw / 2f + t / 2f, hy + hh / 2f, 0f);
+        bag.left.localScale = new Vector3(t, hh, 1f);
+        bag.right.localPosition = new Vector3(hx + hw / 2f - t / 2f, hy + hh / 2f, 0f);
+        bag.right.localScale = new Vector3(t, hh, 1f);
+        bag.bottom.localPosition = new Vector3(hx, hy + t / 2f, 0f);
     }
 
     // 破れる bagTearOpenTime 秒前(.Lift.cs から): 裂けるアニメーションを始める。1回だけ
