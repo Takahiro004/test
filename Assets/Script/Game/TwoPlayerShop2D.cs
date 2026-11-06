@@ -373,6 +373,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool deskCoverZoom = true;
     [Tooltip("Desk Cover Zoom のとき、さらに横を何倍に伸ばすか(机の端がいつも画面の外に見切れるように。1.2 なら左右に1割ずつはみ出す)")]
     public float deskCoverMargin = 1.2f;
+    [Tooltip("机の当たり判定(商品が落ちて乗る床)を見せる。机の画像・3Dモデルがあっても重ねて出すので、見た目と当たり判定を合わせるときに使う。再生中に変えてもすぐ反映")]
+    public bool deskHitVisible = false;
+    [Tooltip("机の当たり判定を見せるときの色と透明度")]
+    public Color deskHitColor = new Color(1f, 0.2f, 0.2f, 0.6f);
+    [Tooltip("机の当たり判定だけの、幅・厚さの足し引き。X=幅・Y=厚さ(ゲームの長さ。上の面はそのままで、厚さは下へ)。机の見た目は変わらない。再生中に変えてもすぐ反映")]
+    public Vector2 deskHitSize = Vector2.zero;
+    [Tooltip("机の当たり判定だけの、位置のずらし。X=右・Y=上(ゲームの長さ)。机の見た目と袋は動かない。再生中に変えてもすぐ反映")]
+    public Vector2 deskHitOffset = Vector2.zero;
 
     [Header("レジ袋(1P/2Pの画面。大きさ・左右の位置は Portrait Layout の中)")]
     [Tooltip("袋のふちの太さ")]
@@ -631,6 +639,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     float appliedFloorY;   // 床に今反映している高さ
     float appliedWallX;    // 壁に今反映している位置
     float appliedDeskThickness;
+    Vector2 appliedDeskHitSize, appliedDeskHitOffset;   // 机の当たり判定だけの足し引き・ずらし(今反映している値)
     int dropOrder = 0;   // 落とした順に手前へ重ねる
     Gamepad pad1, pad2;  // 参加済みのコントローラー(Aボタンで割り当て)
 
@@ -901,7 +910,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         ApplyMonitorMode();
         ApplyPlayerLayout();
-        if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness) ApplyFloorY();
+        if (floorY != appliedFloorY || DeskOuterX != appliedWallX || deskThickness != appliedDeskThickness ||
+            deskHitSize != appliedDeskHitSize || deskHitOffset != appliedDeskHitOffset) ApplyFloorY();
         UpdateDeskLook();            // 机の画像・3Dモデル(TwoPlayerShop2D.Desk.cs)
 
         ApplyBagTotalVisibility();   // 合計金額の表示の ON/OFF(エントリー画面でも同じ。TwoPlayerShop2D.Bag.cs)
@@ -969,10 +979,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         appliedFloorY = floorY;
         appliedWallX = DeskOuterX;
         appliedDeskThickness = deskThickness;
+        appliedDeskHitSize = deskHitSize;
+        appliedDeskHitOffset = deskHitOffset;
         foreach (var f in floors)
         {
-            f.position = new Vector3(f.position.x, floorY - deskThickness / 2f, f.position.z);
-            f.localScale = new Vector3(DeskOuterX * 2f, Mathf.Max(0.05f, deskThickness), 1f);
+            // 机(当たり判定)。机の当たり判定だけの足し引き・ずらし(Desk Hit Size / Offset)をする。上の面は floorY + ずらし
+            float h = Mathf.Max(0.05f, deskThickness + deskHitSize.y);
+            f.position = new Vector3(deskHitOffset.x, floorY + deskHitOffset.y - h / 2f, f.position.z);
+            f.localScale = new Vector3(Mathf.Max(0.1f, DeskOuterX * 2f + deskHitSize.x), h, 1f);
             // 左右の壁も範囲の端へ
             var left = f.parent != null ? f.parent.Find("WallLeft") : null;
             var right = f.parent != null ? f.parent.Find("WallRight") : null;
