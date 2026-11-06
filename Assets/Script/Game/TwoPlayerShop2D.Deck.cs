@@ -11,6 +11,9 @@ using UnityEngine;
 //  - この試合の献立の食材は、試合のあいだに必ず1回以上棚に出す(TwoPlayerShop2D.Menu.cs):
 //    まだ一度も棚に出ていない食材があれば、引くときに menuIngredientBoost の確率でその食材を引く。
 //    残り時間が少なくなったら(まだの数 x 棚のスライドの間隔 より少ない)、必ずその食材を引く
+//  - ランクごとの出やすさ(rankWeighting): ランクが高い商品ほど出にくく、試合の終盤に出始める。
+//    ランク r の商品は、試合が rankStartProgress[r-1](0 = 始めから・1 = 終わり)まで進むまで引かない。
+//    引ける商品の中から、rankWeights[r-1] の重みで引く(重み 2 は重み 1 の2倍出やすい)
 public partial class TwoPlayerShop2D
 {
     readonly List<int> deck = new List<int>();   // 山札(商品の一覧の番号)
@@ -33,10 +36,38 @@ public partial class TwoPlayerShop2D
         if (deck.Count == 0) return -1;
         int menuCard = DrawPendingMenuCard();
         if (menuCard >= 0) return menuCard;
-        int k = Random.Range(0, deck.Count);
+        int k = rankWeighting ? DrawIndexByRank() : Random.Range(0, deck.Count);
         int card = deck[k];
         deck.RemoveAt(k);
         return card;
+    }
+
+    // 試合がどのくらい進んだか(0: 始め 〜 1: 終わり)。数え始める前(最初に棚を並べるとき)は 0
+    float GameProgress => timeLeft < 0f || gameTime <= 0f ? 0f : Mathf.Clamp01(1f - timeLeft / gameTime);
+
+    // ランクごとの出やすさで、山札の何枚目を引くか決める。今引けるランクのカードが無ければ、ふつうにランダム
+    int DrawIndexByRank()
+    {
+        float progress = GameProgress;
+        float sum = 0f;
+        var weights = new float[deck.Count];
+        for (int i = 0; i < deck.Count; i++)
+        {
+            int r = Mathf.Clamp(productList[deck[i]] != null ? productList[deck[i]].rank : 1, 1, 5) - 1;
+            float start = rankStartProgress != null && r < rankStartProgress.Length ? rankStartProgress[r] : 0f;
+            float w = rankWeights != null && r < rankWeights.Length ? Mathf.Max(0f, rankWeights[r]) : 1f;
+            weights[i] = progress >= start ? w : 0f;
+            sum += weights[i];
+        }
+        if (sum <= 0f) return Random.Range(0, deck.Count);
+        float pick = Random.value * sum;
+        for (int i = 0; i < deck.Count; i++)
+        {
+            pick -= weights[i];
+            if (pick < 0f && weights[i] > 0f) return i;
+        }
+        for (int i = deck.Count - 1; i >= 0; i--) if (weights[i] > 0f) return i;   // 計算の誤差で最後まで来たとき
+        return Random.Range(0, deck.Count);
     }
 
     // 棚に置いたカードを覚える(PlaceProduct から)
