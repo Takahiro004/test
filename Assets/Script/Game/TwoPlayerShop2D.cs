@@ -141,6 +141,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool refillShelf = true;
     [Tooltip("棚: ランダム補充。商品の一覧を山札にして、棚にはランダムに引いて置く。取った商品は山札に戻り、空いたマスには山札からランダムに補充。OFF なら、取った場所に同じ商品を補充")]
     public bool randomRefill = true;
+    [Tooltip("棚: ランダム補充で、ランクが高い商品ほど出にくく、試合の終盤に出始める(出やすさ Rank Weights・出始める時期 Rank Start Progress)。OFF なら全部同じ出やすさ")]
+    public bool rankWeighting = true;
     [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
     [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
@@ -300,6 +302,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float shelfSlideInterval = 8f;
     [Tooltip("棚がスライドする動きの秒数")]
     public float shelfSlideTime = 1f;
+    [Tooltip("ランクごとの出やすさ(ランダム補充のとき)。Element 0 = ランク1 〜 Element 4 = ランク5。大きいほど出やすい(2 なら 1 の2倍)。0 なら出ない")]
+    public float[] rankWeights = { 1f, 0.8f, 0.5f, 0.25f, 0.1f };
+    [Tooltip("ランクごとの出始める時期(ランダム補充のとき)。0 = 試合の始めから・0.5 = 半分すぎてから・1 = 終わり。Element 0 = ランク1 〜 Element 4 = ランク5")]
+    public float[] rankStartProgress = { 0f, 0f, 0.25f, 0.5f, 0.75f };
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
