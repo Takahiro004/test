@@ -147,6 +147,8 @@ public partial class TwoPlayerShop2D
 
         // 蹴った向き: 1Pが蹴ると右へ、2Pが蹴ると左へ
         float toTarget = from == p1 ? 1f : -1f;
+        // 蹴る強さ(kickStrength)を、袋と画面の揺れの全部にかける
+        power *= Mathf.Max(0f, kickStrength);
 
         // レジ袋は「蹴られた」揺れ方: 蹴られた向きへぐっと押されて、揺れながら戻る
         if (kickShakeBag) ShakeBag(target, toTarget, power, true);

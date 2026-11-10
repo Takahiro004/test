@@ -489,6 +489,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float clashGaugeY = -3.6f;
 
     [Header("キック(LBで蹴る)")]
+    [Tooltip("蹴る強さ。袋の揺れ・跳ね・画面の揺れを全部まとめて何倍にするか(1 で今まで・2 で2倍・0.5 で半分)。細かく変えるときは下の Kick Shake Max などを使う。再生中に変えてもすぐ反映")]
+    public float kickStrength = 1f;
     [Tooltip("キックのゲージが 0→最大→0 と往復する速さ(1秒あたりの往復回数)")]
     public float kickGaugeSpeed = 1.2f;
     [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
