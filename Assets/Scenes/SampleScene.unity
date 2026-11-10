@@ -702,7 +702,7 @@ MonoBehaviour:
   switcher: {fileID: 0}
   textFont: {fileID: 0}
   textResolution: 2
-  monitorMode: 0
+  monitorMode: 1
   shopScreenRotation: 0
   portraitLayout:
     playerViewWidth: 10
@@ -749,8 +749,8 @@ MonoBehaviour:
   bagX: 0
   bagWidth: 4
   bagHeight: 7.5
-  screenP1: 1
-  screenShop: 0
+  screenP1: 0
+  screenShop: 1
   screenP2: 2
   p1BackColor: {r: 0.45, g: 0.12, b: 0.12, a: 1}
   shopBackColor: {r: 0.12, g: 0.4, b: 0.15, a: 1}
@@ -774,6 +774,7 @@ MonoBehaviour:
   refillShelf: 1
   randomRefill: 1
   rankWeighting: 1
+  highRankNotice: 1
   shelfSlide: 1
   showPriceTags: 0
   autoFitShopScreen: 1
@@ -853,12 +854,25 @@ MonoBehaviour:
   - 0.5
   - 0.25
   - 0.1
+  rankWeightsEnd:
+  - 0.6
+  - 0.6
+  - 0.8
+  - 1.2
+  - 1.5
   rankStartProgress:
   - 0
   - 0
   - 0.25
   - 0.5
   - 0.75
+  highRankNoticeFrom: 5
+  highRankNoticeLead: 3
+  highRankNoticeText: "\u2605 \u307E\u3082\u306A\u304F\u9AD8\u984D\u5546\u54C1\u304C\u68DA\u306B\u4E26\u3076\u305E\uFF01
+    \u2605"
+  highRankNoticeColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  highRankNoticeTime: 6
+  highRankNoticeY: 0
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
