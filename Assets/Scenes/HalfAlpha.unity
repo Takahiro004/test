@@ -728,22 +728,66 @@ MonoBehaviour:
     productSize: 1.4
     cursorScale: 1.2
     textScale: 2
-  refillShelf: 1
+  playerViewAspect: 0.5625
+  deskExtend: 2
+  p1ScreenRotation: 0
+  p2ScreenRotation: 0
+  playerViewWidth: 10
+  floorFromBottom: 0.04
+  deskWidthRatio: 1
+  deskThickness: 0.5
+  dropHeightRatio: 0.85
+  bagWidthRatio: 0.9
+  bagHeightRatio: 0.65
+  bagXRatio: 0
+  dropHeight: 9
+  textScale: 2
+  cursorScale: 1.2
+  productSize: 1.4
+  floorY: -4
+  wallX: 8.9
+  bagX: 0
+  bagWidth: 4
+  bagHeight: 7.5
+  screenP1: 1
+  screenShop: 0
+  screenP2: 2
+  p1BackColor: {r: 0.45, g: 0.12, b: 0.12, a: 1}
+  shopBackColor: {r: 0.12, g: 0.4, b: 0.15, a: 1}
+  p2BackColor: {r: 0.12, g: 0.2, b: 0.5, a: 1}
+  arrangeCameras: 1
+  layerP1: 8
+  layerShop: 9
+  layerP2: 10
   horizontalOnlyOnOwnScreen: 1
   rotateHeldProduct: 1
-  createFloor: 1
-  createBag: 1
-  menuMission: 0
+  autoFitPlayerScreens: 1
   showOwnScreenFrame: 0
   showShopScreenFrame: 0
+  showEntryScreen: 1
+  fixedPadAssignment: 1
+  useKeyboard: 1
+  showOverlayLabel: 0
+  quitOnEscape: 1
+  fillPlayerScreen: 1
+  showShelf: 1
+  refillShelf: 1
+  randomRefill: 1
+  rankWeighting: 1
+  highRankNotice: 1
+  shelfSlide: 0
+  showPriceTags: 0
+  autoFitShopScreen: 1
+  showTimerPlaceholder: 0
+  createFloor: 1
+  createBag: 1
   showBagTotal: 0
   showPricePopup: 1
   removeOutsideBag: 1
-  breakFragile: 1
   subtractSpilledFromTotal: 1
-  bagTearEnabled: 0
-  bagCreakEnabled: 0
+  breakFragile: 1
   useTempWeights: 1
+  menuMission: 0
   clashEnabled: 1
   clashRematchOnTie: 1
   clashGaugeDiagonal: 1
@@ -753,57 +797,12 @@ MonoBehaviour:
   kickShakeBag: 1
   kickShakeScreen: 1
   kickShakeSelf: 1
-  autoFitPlayerScreens: 1
-  fillPlayerScreen: 1
-  showShelf: 1
-  shelfSlide: 0
-  randomRefill: 1
-  showPriceTags: 0
-  autoFitShopScreen: 1
-  showTimerPlaceholder: 0
   showGameTimer: 1
   showResultOnTimeUp: 1
   showResultBars: 1
   bagLiftOnTimeUp: 0
-  showEntryScreen: 1
-  fixedPadAssignment: 1
-  useKeyboard: 1
-  showOverlayLabel: 0
-  quitOnEscape: 1
-  screenP1: 1
-  screenShop: 0
-  screenP2: 2
-  p1BackColor: {r: 0.45, g: 0.12, b: 0.12, a: 1}
-  shopBackColor: {r: 0.12, g: 0.4, b: 0.15, a: 1}
-  p2BackColor: {r: 0.12, g: 0.2, b: 0.5, a: 1}
-  layerP1: 8
-  layerShop: 9
-  layerP2: 10
-  cursorSpeed: 8
-  p1Color: {r: 1, g: 0.3, b: 0.3, a: 1}
-  p2Color: {r: 0.3, g: 0.5, b: 1, a: 1}
-  playerViewAspect: 0.5625
-  playerViewWidth: 10
-  floorFromBottom: 0.04
-  deskWidthRatio: 1
-  deskThickness: 0.5
-  dropHeightRatio: 0.85
-  bagWidthRatio: 0.9
-  bagHeightRatio: 0.65
-  bagXRatio: 0
-  deskExtend: 2
-  p1ScreenRotation: 0
-  p2ScreenRotation: 0
-  dropHeight: 9
-  p1CursorSprite: {fileID: 0}
-  p2CursorSprite: {fileID: 0}
-  p1CursorModel: {fileID: 5783358649210515481, guid: b9f0c98512c5a6f4786a54a1cb4421dc, type: 3}
-  p2CursorModel: {fileID: 5783358649210515481, guid: b9f0c98512c5a6f4786a54a1cb4421dc, type: 3}
-  cursorModelRotation: {x: 0, y: 0, z: 0}
-  cursorModelSize: 1
-  cursorModelOffset: {x: 0, y: 0}
-  mirrorP2CursorModel: 1
-  cursorScale: 1.2
+  bagTearEnabled: 0
+  bagCreakEnabled: 0
   gameTime: 120
   entryCountdown: 3
   entryTitle: "\u8A70\u3081\u653E\u984C\u30D0\u30C8\u30EB"
@@ -822,17 +821,71 @@ MonoBehaviour:
   resultBarBackTop: {r: 0.86, g: 0.9, b: 0.96, a: 1}
   resultBarBackBottom: {r: 0.97, g: 0.93, b: 0.84, a: 1}
   resultBarTextScale: 1.5
-  textScale: 2
-  bagLiftDelay: 0.8
-  bagLiftRatio: 0.2
-  bagLiftTime: 1.5
-  bagLiftAnnounceTime: 1.5
-  bagLiftHoldTime: 3
+  cursorSpeed: 8
+  p1Color: {r: 1, g: 0.3, b: 0.3, a: 1}
+  p2Color: {r: 0.3, g: 0.5, b: 1, a: 1}
   stickDeadzone: 0.2
-  gravityScale: 2
-  floorY: -4
-  wallX: 8.9
-  freezeRotation: 0
+  p1CursorSprite: {fileID: 0}
+  p2CursorSprite: {fileID: 0}
+  p1CursorModel: {fileID: 5783358649210515481, guid: b9f0c98512c5a6f4786a54a1cb4421dc, type: 3}
+  p2CursorModel: {fileID: 5783358649210515481, guid: b9f0c98512c5a6f4786a54a1cb4421dc, type: 3}
+  cursorModelRotation: {x: 0, y: 0, z: 0}
+  cursorModelSize: 1
+  cursorModelOffset: {x: 0, y: 0}
+  mirrorP2CursorModel: 1
+  ownScreenFrameWidth: 0.3
+  shopScreenFrameWidth: 0.3
+  shopFrameLeftIsP1: 1
+  portraitAspect: 0.5625
+  portraitViewWidth: 8
+  portraitTopSpace: 0.2
+  shopCameraAngle: {x: 10, y: 0, z: 0}
+  shopOrientation: 1
+  portraitColumns: 2
+  portraitRows: 3
+  landscapeColumns: 3
+  landscapeRows: 2
+  refillDelay: 1.5
+  shelfSlideInterval: 8
+  shelfSlideTime: 1
+  rankWeights:
+  - 1
+  - 0.8
+  - 0.5
+  - 0.25
+  - 0.1
+  rankWeightsEnd:
+  - 0.6
+  - 0.6
+  - 0.8
+  - 1.2
+  - 1.5
+  rankStartProgress:
+  - 0
+  - 0
+  - 0.25
+  - 0.5
+  - 0.75
+  highRankNoticeFrom: 5
+  highRankNoticeLead: 3
+  highRankNoticeText: "\u2605 \u307E\u3082\u306A\u304F\u9AD8\u984D\u5546\u54C1\u304C\u68DA\u306B\u4E26\u3076\u305E\uFF01
+    \u2605"
+  highRankNoticeColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  highRankNoticeTime: 6
+  highRankNoticeY: 0
+  shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
+  shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
+  shelfBoardThickness: 0.25
+  shelfSprite: {fileID: 0}
+  shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
+  shelfModelOffset: {x: 0, y: -0.5, z: 0}
+  shelfModelRotation: {x: 0, y: 0, z: 0}
+  shelfModelScale: {x: 1.37, y: 1, z: 1}
+  shelfProductOffset: {x: 0, y: 0}
+  shelfRowOffsets:
+  - {x: 0, y: 0}
+  - {x: 0, y: 0}
+  - {x: 0, y: 0.5}
   productList:
   - name: "\u3046\u3069\u3093"
     rank: 1
@@ -1650,53 +1703,45 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  productSize: 1.4
   productImageSize: 2
-  imageColliderDetail: 0.02
-  imageColliderMaxPoints: 24
-  breakHoldTime: 0.3
-  bagMaxWeight: 50
-  bagTearDelay: 2
-  bagTearScatter: 1.5
-  bagModel: {fileID: 0}
-  bagModelRotation: {x: 0, y: 0, z: 0}
-  bagModelScale: {x: 1, y: 1, z: 1}
-  bagModelOffset: {x: 0, y: 0, z: 0}
-  bagStretchShape: Stretch
-  bagStretchStart: 0.6
-  bagStretchAmount: 0.4
-  bagHandleThin: 0.4
-  bagBottomBulge: 0.25
-  bagBottomRound: 0.12
-  bagTearShake: 0.04
-  bagTearClip: {fileID: 0}
-  bagTearOpenTime: 0.4
-  bagBottomOpenAngle: 120
-  bagBottomOpenTime: 0.5
-  bagBottomFlapHeight: 0.05
-  bagLegWidth: 0.1
-  bagLegDrop: 0.1
-  bagLiftCameraFollow: 1
-  bagLiftCameraZoom: 1.5
-  bagSnapBack: 1
-  bagSnapTime: 1.2
-  bagSnapBounces: 3
-  bagOpenShape: Open
-  bagTearPieces: 10
-  bagTearPieceColor: {r: 1, g: 1, b: 1, a: 0.85}
   modelOriginalSize: 0
   modelUnitScale: 1
-  ownScreenFrameWidth: 0.3
-  shopScreenFrameWidth: 0.3
-  shopFrameLeftIsP1: 1
+  imageColliderDetail: 0.02
+  imageColliderMaxPoints: 24
+  gravityScale: 2
+  freezeRotation: 0
   weightAffectsPhysics: 0
-  bagCreakStart: 0.7
-  bagCreakWords:
-  - "\u30DF\u30B7\u2026"
-  - "\u30DF\u30B7\u30DF\u30B7\u2026"
-  - "\u30AE\u30B7\u2026"
-  - "\u30AE\u30C1\u2026"
-  bagCreakSize: 1
+  breakHoldTime: 0.3
+  deskSprite: {fileID: 0}
+  deskModel: {fileID: 0}
+  deskModelRotation: {x: 0, y: 0, z: 0}
+  deskVisualScale: {x: 1, y: 1, z: 1}
+  deskVisualOffset: {x: 0, y: 0, z: 0}
+  deskCoverZoom: 1
+  deskCoverMargin: 1.2
+  deskHitVisible: 0
+  deskHitColor: {r: 1, g: 0.2, b: 0.2, a: 0.6}
+  deskHitSize: {x: 0, y: 0}
+  deskHitOffset: {x: 0, y: 0}
+  bagWallThickness: 0.2
+  bagWallOuterThickness: 0.6
+  bagColor: {r: 1, g: 1, b: 1, a: 0.85}
+  bagPositionOffset: {x: 0, y: 0}
+  bagHitSize: {x: 0, y: 0}
+  bagHitOffset: {x: 0, y: 0}
+  bagHitFollowLook: 1
+  bagFrameVisible: 0
+  bagFrameColor: {r: 1, g: 0.2, b: 0.2, a: 0.6}
+  pricePopupTime: 1
+  removeAfterStopTime: 0.5
+  productPrices: 6400000096000000c8000000fa0000002c010000f4010000
+  bagSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
+  bagSpriteScale: {x: 1.3, y: 1.5}
+  bagSpriteOffset: {x: 0, y: -1.3}
+  bagFrontSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
+  bagFrontColor: {r: 1, g: 1, b: 1, a: 0.3137255}
+  bagFrontScale: {x: 1.3, y: 1.5}
+  bagFrontOffset: {x: 0, y: -1.3}
   menuList:
   - name: "\u30AB\u30EC\u30FC"
     ingredients:
@@ -1743,24 +1788,6 @@ MonoBehaviour:
   menuIngredientBoost: 0.25
   menuBonusRate: 1.2
   menuCompleteTime: 2.5
-  refillDelay: 1.5
-  bagX: 0
-  bagWidth: 4
-  bagHeight: 7.5
-  bagWallThickness: 0.2
-  bagWallOuterThickness: 0.6
-  bagColor: {r: 1, g: 1, b: 1, a: 0.85}
-  bagFrameVisible: 0
-  bagSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
-  bagFrontSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
-  bagFrontColor: {r: 1, g: 1, b: 1, a: 0.3137255}
-  bagSpriteScale: {x: 1.3, y: 1.5}
-  bagFrontScale: {x: 1.3, y: 1.5}
-  bagSpriteOffset: {x: 0, y: -1.3}
-  bagFrontOffset: {x: 0, y: -1.3}
-  productPrices: 6400000096000000c8000000fa0000002c010000f4010000
-  pricePopupTime: 1
-  removeAfterStopTime: 0.5
   grabWindow: 0.5
   clashMode: 0
   clashMashCount: 10
@@ -1769,6 +1796,7 @@ MonoBehaviour:
   clashResultTime: 1.2
   clashWinLoseTime: 2
   clashGaugeY: -3.6
+  kickStrength: 0.75
   kickGaugeSpeed: 1.2
   kickPerfect: 0.95
   kickCooldown: 3
@@ -1783,36 +1811,47 @@ MonoBehaviour:
   kickScreenShake: 0.6
   kickScreenShakeTime: 0.5
   kickShakeTime: 1
-  shopOrientation: 1
-  portraitAspect: 0.5625
-  portraitViewWidth: 8
-  portraitTopSpace: 0.2
-  portraitColumns: 2
-  portraitRows: 3
-  landscapeColumns: 3
-  landscapeRows: 2
-  shelfSlideInterval: 8
-  shelfSlideTime: 1
-  deskSprite: {fileID: 0}
-  deskModel: {fileID: 0}
-  deskModelRotation: {x: 0, y: 0, z: 0}
-  deskVisualScale: {x: 1, y: 1, z: 1}
-  deskVisualOffset: {x: 0, y: 0, z: 0}
-  shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
-  shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
-  shelfBoardThickness: 0.25
-  shelfSprite: {fileID: 0}
-  shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
-  shelfModelOffset: {x: 0, y: -0.5, z: 0}
-  shelfModelRotation: {x: 0, y: 0, z: 0}
-  shelfModelScale: {x: 1.37, y: 1, z: 1}
-  shelfProductOffset: {x: 0, y: 0}
-  shelfRowOffsets:
-  - {x: 0, y: 0}
-  - {x: 0, y: 0}
-  - {x: 0, y: 0.5}
-  shopCameraAngle: {x: 10, y: 0, z: 0}
-  arrangeCameras: 1
+  bagLiftDelay: 0.8
+  bagLiftRatio: 0.2
+  bagLiftTime: 1.5
+  bagLiftAnnounceTime: 1.5
+  bagLiftHoldTime: 3
+  bagLiftCameraFollow: 1
+  bagLiftCameraZoom: 1.5
+  bagMaxWeight: 50
+  bagTearDelay: 2
+  bagTearScatter: 1.5
+  bagCreakStart: 0.7
+  bagCreakWords:
+  - "\u30DF\u30B7\u2026"
+  - "\u30DF\u30B7\u30DF\u30B7\u2026"
+  - "\u30AE\u30B7\u2026"
+  - "\u30AE\u30C1\u2026"
+  bagCreakSize: 1
+  bagStretchStart: 0.6
+  bagStretchAmount: 0.4
+  bagHandleThin: 0.4
+  bagBottomBulge: 0.25
+  bagBottomRound: 0.12
+  bagTearShake: 0.04
+  bagBottomOpenAngle: 120
+  bagBottomOpenTime: 0.5
+  bagBottomFlapHeight: 0.05
+  bagLegWidth: 0.1
+  bagLegDrop: 0.1
+  bagSnapBack: 1
+  bagSnapTime: 1.2
+  bagSnapBounces: 3
+  bagTearPieces: 10
+  bagTearPieceColor: {r: 1, g: 1, b: 1, a: 0.85}
+  bagModel: {fileID: 0}
+  bagModelRotation: {x: 0, y: 0, z: 0}
+  bagModelScale: {x: 1, y: 1, z: 1}
+  bagModelOffset: {x: 0, y: 0, z: 0}
+  bagStretchShape: Stretch
+  bagOpenShape: Open
+  bagTearClip: {fileID: 0}
+  bagTearOpenTime: 0.4
 --- !u!4 &699965479
 Transform:
   m_ObjectHideFlags: 0

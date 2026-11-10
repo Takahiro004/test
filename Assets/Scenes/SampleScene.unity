@@ -1796,6 +1796,7 @@ MonoBehaviour:
   clashResultTime: 1.2
   clashWinLoseTime: 2
   clashGaugeY: -3.6
+  kickStrength: 0.75
   kickGaugeSpeed: 1.2
   kickPerfect: 0.95
   kickCooldown: 3
