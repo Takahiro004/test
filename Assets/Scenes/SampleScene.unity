@@ -1025,9 +1025,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 4
-    sprite: {fileID: -8810456238035203612, guid: 9cc08e6f1cb8ba94e9ef00ff3f9cfd15, type: 3}
+    sprite: {fileID: 0}
     size: 1.5
-    model: {fileID: 0}
+    model: {fileID: 6092654388639004109, guid: 76161a24ea3cdcf4b990ab19c7f4f3d6, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u9577\u30CD\u30AE"
