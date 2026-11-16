@@ -82,7 +82,8 @@ public partial class TwoPlayerShop2D
         if (cursorGraphs.TryGetValue(cursor, out var old) && old.IsValid()) old.Destroy();
         var animator = model.GetComponentInChildren<Animator>();
         if (animator == null) animator = model.gameObject.AddComponent<Animator>();
-        AnimationPlayableUtilities.PlayClip(animator, clip, out var graph);
+        var playable = AnimationPlayableUtilities.PlayClip(animator, clip, out var graph);
+        playable.SetSpeed(Mathf.Max(0.01f, cursorMotionSpeed));   // モーションの速さ(2 なら2倍速)
         cursorGraphs[cursor] = graph;
     }
 
