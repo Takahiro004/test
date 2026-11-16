@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 // カーソルを3Dモデル(手など)にする(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「カーソル」)
 // p1CursorModel / p2CursorModel にプレハブを入れると、画像のカーソルの代わりに出る。
@@ -7,6 +10,8 @@ using UnityEngine;
 //  - 描く順番は画像のカーソルと同じ CursorOrder(2900。商品・画面の枠(2800)より手前、大きな文字・結果発表(3000〜)より奥)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
+//  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
+//    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある
 public partial class TwoPlayerShop2D
 {
     const int CursorOrder = 2900;   // カーソル(画像・3Dモデル)の描く順番
@@ -55,5 +60,36 @@ public partial class TwoPlayerShop2D
 
         SetLayer(go, layer);
         return go;
+    }
+
+    // カーソルの手のモーションを再生している仕組み(手ごとに1つ。新しいモーションを始めたら前のは片付ける)
+    readonly Dictionary<Transform, PlayableGraph> cursorGraphs = new Dictionary<Transform, PlayableGraph>();
+
+    // 掴んだ(grab = true)/ 離した(false)ときに、そのプレイヤーの手のモーションを再生する
+    void PlayCursorMotion(Player p, bool grab)
+    {
+        var clip = grab ? cursorGrabClip : cursorReleaseClip;
+        if (clip == null || p == null) return;
+        PlayCursorClip(p.cursorShop, clip);
+        PlayCursorClip(p.cursorOwn, clip);
+    }
+
+    void PlayCursorClip(Transform cursor, AnimationClip clip)
+    {
+        if (cursor == null) return;
+        var model = cursor.Find("Mirror/Model");   // 3Dモデルの手(MakeModelCursor)。画像のカーソルなら何もしない
+        if (model == null) return;
+        if (cursorGraphs.TryGetValue(cursor, out var old) && old.IsValid()) old.Destroy();
+        var animator = model.GetComponentInChildren<Animator>();
+        if (animator == null) animator = model.gameObject.AddComponent<Animator>();
+        AnimationPlayableUtilities.PlayClip(animator, clip, out var graph);
+        cursorGraphs[cursor] = graph;
+    }
+
+    // OnDestroy から: モーションの再生の仕組みを片付ける
+    void DestroyCursorGraphs()
+    {
+        foreach (var g in cursorGraphs.Values) if (g.IsValid()) g.Destroy();
+        cursorGraphs.Clear();
     }
 }

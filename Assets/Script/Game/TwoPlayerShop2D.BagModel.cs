@@ -465,5 +465,6 @@ public partial class TwoPlayerShop2D
             var look = p?.bag?.look;
             if (look != null && look.graph.IsValid()) look.graph.Destroy();
         }
+        DestroyCursorGraphs();   // カーソルの手のモーション(TwoPlayerShop2D.CursorModel.cs)
     }
 }
