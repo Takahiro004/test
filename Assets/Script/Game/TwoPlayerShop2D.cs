@@ -271,6 +271,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public AnimationClip cursorGrabClip;
     [Tooltip("手の3Dモデルの「はなす」モーション。商品を離したとき(掴み合いで取られたときも)に再生して、最後のコマで止まる")]
     public AnimationClip cursorReleaseClip;
+    [Tooltip("手のモーションの速さ(1 でそのまま・2 で2倍速・3 で3倍速)。次に掴む・離すときから反映")]
+    public float cursorMotionSpeed = 3f;
 
     [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
