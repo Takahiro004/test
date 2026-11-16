@@ -11,7 +11,8 @@ using UnityEngine.Playables;
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
 //  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
-//    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある
+//    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある。
+//    cursorMotionAnimate が OFF なら、再生せずに「つかむ」クリップの1コマで止めた形にする(掴んだ形 / 離した形。最初は離した形)
 public partial class TwoPlayerShop2D
 {
     const int CursorOrder = 2900;   // カーソル(画像・3Dモデル)の描く順番
@@ -66,15 +67,27 @@ public partial class TwoPlayerShop2D
     readonly Dictionary<Transform, PlayableGraph> cursorGraphs = new Dictionary<Transform, PlayableGraph>();
 
     // 掴んだ(grab = true)/ 離した(false)ときに、そのプレイヤーの手のモーションを再生する
+    // cursorMotionAnimate が OFF のときは、モーションは再生せず、「つかむ」クリップの1コマで止めた形にする
+    // (掴んだら cursorGrabPoseTime のコマ・離したら cursorReleasePoseTime のコマ。0 = 始め 〜 1 = 終わり)
     void PlayCursorMotion(Player p, bool grab)
     {
+        if (p == null) return;
+        if (!cursorMotionAnimate)
+        {
+            if (cursorGrabClip == null) return;
+            float t = grab ? cursorGrabPoseTime : cursorReleasePoseTime;
+            PlayCursorClip(p.cursorShop, cursorGrabClip, t);
+            PlayCursorClip(p.cursorOwn, cursorGrabClip, t);
+            return;
+        }
         var clip = grab ? cursorGrabClip : cursorReleaseClip;
-        if (clip == null || p == null) return;
+        if (clip == null) return;
         PlayCursorClip(p.cursorShop, clip);
         PlayCursorClip(p.cursorOwn, clip);
     }
 
-    void PlayCursorClip(Transform cursor, AnimationClip clip)
+    // pose が 0〜1 なら、その位置のコマで止める(-1 ならモーションを再生する)
+    void PlayCursorClip(Transform cursor, AnimationClip clip, float pose = -1f)
     {
         if (cursor == null) return;
         var model = cursor.Find("Mirror/Model");   // 3Dモデルの手(MakeModelCursor)。画像のカーソルなら何もしない
@@ -83,7 +96,12 @@ public partial class TwoPlayerShop2D
         var animator = model.GetComponentInChildren<Animator>();
         if (animator == null) animator = model.gameObject.AddComponent<Animator>();
         var playable = AnimationPlayableUtilities.PlayClip(animator, clip, out var graph);
-        playable.SetSpeed(Mathf.Max(0.01f, cursorMotionSpeed));   // モーションの速さ(2 なら2倍速)
+        if (pose >= 0f)
+        {
+            playable.SetTime(clip.length * Mathf.Clamp01(pose));   // そのコマで止める
+            playable.SetSpeed(0f);
+        }
+        else playable.SetSpeed(Mathf.Max(0.01f, cursorMotionSpeed));   // モーションの速さ(2 なら2倍速)
         cursorGraphs[cursor] = graph;
     }
 

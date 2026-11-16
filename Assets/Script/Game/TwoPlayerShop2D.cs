@@ -273,6 +273,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public AnimationClip cursorReleaseClip;
     [Tooltip("手のモーションの速さ(1 でそのまま・2 で2倍速・3 で3倍速)。次に掴む・離すときから反映")]
     public float cursorMotionSpeed = 3f;
+    [Tooltip("ON: 掴む・離すでモーションを再生する。OFF: 再生せずに、「つかむ」クリップの1コマで止めた形にする(掴んだら Cursor Grab Pose Time・離したら Cursor Release Pose Time のコマ)")]
+    public bool cursorMotionAnimate = false;
+    [Tooltip("Cursor Motion Animate が OFF のとき、掴んだ形にする「つかむ」クリップの位置(0 = 始め 〜 1 = 終わり)。次に掴むときから反映")]
+    [Range(0f, 1f)] public float cursorGrabPoseTime = 1f;
+    [Tooltip("Cursor Motion Animate が OFF のとき、離した形にする「つかむ」クリップの位置(0 = 始め 〜 1 = 終わり)。ゲームの最初もこの形")]
+    [Range(0f, 1f)] public float cursorReleasePoseTime = 0f;
 
     [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
@@ -842,6 +848,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             p.cursorShop.position = startPos;
             p.cursorOwn = MakeModelCursor($"Cursor_{pname}_Own", ownLayer, model, mirror).transform;
             p.cursorOwn.position = Vector2.zero;
+            if (!cursorMotionAnimate) PlayCursorMotion(p, false);   // 最初は離した形(TwoPlayerShop2D.CursorModel.cs)
             return p;
         }
 
