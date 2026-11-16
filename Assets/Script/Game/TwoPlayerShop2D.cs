@@ -267,6 +267,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 cursorModelOffset;
     [Tooltip("2Pのカーソルの3Dモデルを左右反転する(右手のモデルを2Pでは左手に見せる)")]
     public bool mirrorP2CursorModel = true;
+    [Tooltip("手の3Dモデルの「つかむ」モーション(手のモデルの FBX の ▶ を開いた中のクリップ)。商品を掴んだときに再生して、最後のコマで止まる")]
+    public AnimationClip cursorGrabClip;
+    [Tooltip("手の3Dモデルの「はなす」モーション。商品を離したとき(掴み合いで取られたときも)に再生して、最後のコマで止まる")]
+    public AnimationClip cursorReleaseClip;
 
     [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
@@ -1102,6 +1106,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             var taken = other.lastTaken;
             // 取った人の画面から棚へ戻す
             other.held = null;
+            PlayCursorMotion(other, false);   // 掴み合いで取られたので、手は「はなす」
             other.inShop = true;
             other.lastTaken = null;
             SetLayer(taken, layerShop);
@@ -1154,6 +1159,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         }
 
         p.held = go;
+        PlayCursorMotion(p, true);    // 手のモーション「つかむ」(TwoPlayerShop2D.CursorModel.cs)
         p.ownPos = new Vector2(0f, dropHeight);   // 自分の画面の上のほう(dropHeight)から始める
         p.inShop = false;
         go.transform.position = new Vector3(p.ownPos.x, p.ownPos.y, 0f);
@@ -1198,6 +1204,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         p.held = null;
         p.inShop = true;
+        PlayCursorMotion(p, false);   // 手のモーション「はなす」(TwoPlayerShop2D.CursorModel.cs)
     }
 
     // ---------- 画面上の表示 ----------
