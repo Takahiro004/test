@@ -793,6 +793,15 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         {
             slot.product = DrawCard();             // 山札からランダムに1枚(TwoPlayerShop2D.Deck.cs)
             if (slot.product < 0) yield break;     // 山札が空(次に棚が回ってきたときに引く)
+            // 取ったばかりの商品と同じ物を、同じ場所にすぐ置かない(掴み合いのあとなどに、商品が増えたように見えるため)
+            int takenCard = taken != null && infoOf.TryGetValue(taken, out var takenInfo) ? System.Array.IndexOf(productList, takenInfo) : -1;
+            if (slot.product == takenCard && deck.Count > 0)
+            {
+                int again = DrawCard();
+                ReturnCard(slot.product);
+                slot.product = again;
+                if (slot.product < 0) yield break;
+            }
         }
         PlaceProduct(slot);
     }
@@ -985,6 +994,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         bool press1 = !joined1 && Grab1PPressed();   // 参加したフレームのAボタンは「掴む」として扱わない
         bool press2 = !joined2 && Grab2PPressed();
+        // 掴み合いが終わった直後は、連打の続きの A を「掴む・離す」にしない(勝った人がすぐ商品を落とす・負けた人が別の商品を取るのを防ぐ)
+        if (clash == null && Time.time < clashInputLockUntil) press1 = press2 = false;
         bool kick1 = Kick1PPressed(), kick2 = Kick2PPressed();
 
         if (clash != null)
@@ -1107,6 +1118,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
     void TryPickUp(Player p)
     {
+        // 棚がスライドしている間は取れない(TwoPlayerShop2D.Shelf.cs)
+        if (sliding) { lastEvent = $"{p.name}: 棚がスライド中なので取れない"; return; }
+
         // もう1人が grabWindow 秒以内に取った商品の場所なら、掴み合い
         var other = p == p1 ? p2 : p1;
         if (clashEnabled && grabWindow > 0f && other.lastTaken != null && other.held == other.lastTaken &&
