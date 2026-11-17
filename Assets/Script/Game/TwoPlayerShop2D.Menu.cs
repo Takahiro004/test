@@ -53,6 +53,7 @@ public partial class TwoPlayerShop2D
         public Transform root, band, paper;
         public SpriteRenderer[] icons;
         public TextMesh[] iconNames;   // 画像が無い食材の名前の札
+        public Material[] silhouettes; // アイコンごとのシルエットのマテリアル(画像を覚えさせるので、1つずつ別にする)
         public TextMesh memo;
         public MenuRecipe builtFor;    // どの献立で作ったか
     }
@@ -206,7 +207,7 @@ public partial class TwoPlayerShop2D
             if (hasImage)
             {
                 sr.transform.localScale = new Vector3(fit, fit, 1f);
-                sr.sharedMaterial = got ? spriteMaterial : silhouetteMaterial;
+                sr.sharedMaterial = got ? spriteMaterial : panel.silhouettes[k];
                 sr.color = got ? Color.white : shadow;
             }
             else
@@ -239,6 +240,7 @@ public partial class TwoPlayerShop2D
         int n = currentMenu.ingredients.Length;
         panel.icons = new SpriteRenderer[n];
         panel.iconNames = new TextMesh[n];
+        panel.silhouettes = new Material[n];
         for (int k = 0; k < n; k++)
         {
             string ing = currentMenu.ingredients[k];
@@ -254,7 +256,13 @@ public partial class TwoPlayerShop2D
             var icon = MakeBagPart($"Icon_{ing}", panel.root, p.layer, Color.white, 1610, false);
             var sr = icon.GetComponent<SpriteRenderer>();
             if (spriteMaterial == null) spriteMaterial = sr.sharedMaterial;
-            if (sprite != null) sr.sprite = sprite;
+            if (sprite != null)
+            {
+                sr.sprite = sprite;
+                // シルエットのマテリアルは、アイコンごとに別にして、その画像を持たせる
+                // (1つを共有すると、最後に設定した画像が全部のアイコンに使われてしまった)
+                panel.silhouettes[k] = new Material(silhouetteMaterial) { mainTexture = sprite.texture };
+            }
             else
             {
                 var tm = MakeText($"IconName_{ing}", panel.root, p.layer, ing, Color.white, 1611);
