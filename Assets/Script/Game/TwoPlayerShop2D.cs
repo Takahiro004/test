@@ -364,8 +364,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public ProductInfo[] productList = ProductInfo.Defaults();
     [Tooltip("商品のステータスの表(CSV)。入れると、再生を始めたときに、商品名が同じ商品の値段・ランク・献立の食材・重さ・割れる・割れる重さ・大きさ・モデルの大きさを表の値にする(空のマスはそのまま)。画像・3Dモデルは上の一覧のまま。Excel では「CSV UTF-8(コンマ区切り)」で保存する")]
     public TextAsset productCsv;
-    [Tooltip("表の重さがグラム(見出しに g が付いている)のとき、何グラムを重さ 1 にするか")]
-    public float csvGramsPerWeight = 100f;
+    // 表の重さがグラム(見出しに g が付いている)のとき、何グラムを重さ 1 にするか。
+    // 今の表は見出しが「重さ」(g なし)で使わないので、Inspector には出さない(2026-11-17 プログラマー: 決めるのに邪魔)
+    [HideInInspector] public float csvGramsPerWeight = 100f;
     // 前の設定(商品の一覧が空のときだけ使う。Inspector には出さない)
     [HideInInspector] public ProductShape[] productShapes = {
         ProductShape.Square, ProductShape.Triangle, ProductShape.Rectangle,
