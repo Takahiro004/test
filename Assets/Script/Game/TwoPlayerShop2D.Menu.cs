@@ -309,6 +309,8 @@ public partial class TwoPlayerShop2D
         RenderTexture.active = prev;
         cam.targetTexture = null;
         RenderTexture.ReleaseTemporary(rt);
+        // 消すのはフレームの終わりなので、その前に見えなくしておく(同じフレームで次のモデルを撮ると、重なって写ってしまうため)
+        model.SetActive(false);
         Destroy(camGo);
         Destroy(model);
 
