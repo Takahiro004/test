@@ -9,6 +9,7 @@ using UnityEngine;
 //    shelfSlideInterval 秒ごとに、左から次の棚が shelfSlideTime 秒でスライドしてくる(今の棚は右へ出ていく)。
 //    棚は「1画面ぶんの棚(段 x 列)」を2つ輪のようにつないだもの。右の画面の外へ出た棚は、左の画面の外へ回って、また入ってくる。
 //    回るとき(画面の外)に、商品を入れ替える(ランダム補充なら山札から引き直す。TwoPlayerShop2D.Deck.cs)
+//  - スライドしている間は商品を取れない(TryPickUp)。掴み合い中はスライドを止める
 //  - 商品は、全部が画面に映っていないと取れない(CanGrabOnShelf)。
 //    ただし棚の1マスより大きい商品(大きいかになど)は、はみ出すのが当たり前なので、真ん中が画面に映っていれば取れる
 public partial class TwoPlayerShop2D
@@ -203,6 +204,7 @@ public partial class TwoPlayerShop2D
     void UpdateShelfScroll()
     {
         if (!shelfSlide || InEntry || entryPhase == -1 || IsTimeUp) return;
+        if (clash != null) return;   // 掴み合い中は止める(取り合っている商品が棚に戻っているので、置いていかれないように)
         if (!sliding)
         {
             slideWait += Time.deltaTime;

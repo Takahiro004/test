@@ -31,6 +31,8 @@ public partial class TwoPlayerShop2D
 
     // ---------- 掴み合い ----------
 
+    float clashInputLockUntil;   // この時刻までは A を「掴む・離す」にしない(掴み合いが終わった直後)
+
     void StartClash(GameObject go)
     {
         go.GetComponent<SpriteRenderer>().color = originalColors[go];
@@ -354,5 +356,6 @@ public partial class TwoPlayerShop2D
         if (c.product == null) return;
         TakeProduct(c.winner, c.product);
         c.winner.lastTaken = null;   // 決着した商品で、すぐにまた掴み合いにならないように
+        clashInputLockUntil = Time.time + 0.5f;   // 連打の続きの A を、少しのあいだ「掴む・離す」にしない(TwoPlayerShop2D.cs)
     }
 }
