@@ -8,7 +8,8 @@ using UnityEngine;
 //  - 食材は商品の一覧の「名前」で見る(献立の食材の名前と、一覧の名前を同じにする)
 //  - 完成は1人1回だけ。完成したあとに食材がこぼれても、倍率はそのまま
 //  - 表示(menuPanelLayout が ON。2026-10-30 プログラマーの画面イメージ): 袋の画面の下にプレイヤーの色の帯(menuBandHeight)を敷き、
-//    食材のアイコン(商品の一覧の画像。まだの食材は灰色のシルエット、袋に入ったら色付き。画像が無い商品は名前の札)と、
+//    食材のアイコン(商品の一覧の画像。3Dモデルの商品はモデルを撮影した画像 ModelIconSprite。まだの食材は灰色のシルエット、袋に入ったら色付き。
+//    画像もモデルも無い商品は名前の札)と、
 //    献立のメモ用紙(献立名と食材の一覧。入ったものは ■)を並べる。1P はメモが左・アイコンが右、2P はその逆(menuMemoLeftForP1)
 //  - menuPanelLayout が OFF なら前の文字だけの表示(場所と大きさは Menu Label Position / Menu Label Size)
 //  - 倍になった商品は、こぼれたときも倍になった金額を引く(袋に入ったときの金額を覚えておく)
@@ -241,10 +242,15 @@ public partial class TwoPlayerShop2D
         for (int k = 0; k < n; k++)
         {
             string ing = currentMenu.ingredients[k];
+            // 商品の画像。画像が無く3Dモデルがある商品は、モデルを撮影した画像(ModelIconSprite)
             Sprite sprite = null;
             if (productList != null)
                 foreach (var info in productList)
-                    if (info != null && info.name == ing && info.sprite != null) { sprite = info.sprite; break; }
+                {
+                    if (info == null || info.name != ing) continue;
+                    if (info.sprite != null) { sprite = info.sprite; break; }
+                    if (info.model != null) { sprite = ModelIconSprite(info); if (sprite != null) break; }
+                }
             var icon = MakeBagPart($"Icon_{ing}", panel.root, p.layer, Color.white, 1610, false);
             var sr = icon.GetComponent<SpriteRenderer>();
             if (spriteMaterial == null) spriteMaterial = sr.sharedMaterial;
@@ -257,6 +263,58 @@ public partial class TwoPlayerShop2D
             panel.icons[k] = sr;
         }
         return panel;
+    }
+
+    // 3Dモデルの商品のアイコン: モデルを、ゲームと同じ向き(正面)から撮影して画像にする(モデルと向きごとに1回だけ)。
+    // どのモデルも縦横の長いほうが画像の枠いっぱい(少しゆとり)に収まるので、アイコンの大きさがそろう。背景は透明
+    const int ModelIconLayer = 31;     // 撮影するときだけ使うレイヤー(ほかのカメラには映らない)
+    const int ModelIconSize = 256;     // 撮影する画像の大きさ(ピクセル)
+    readonly Dictionary<string, Sprite> modelIcons = new Dictionary<string, Sprite>();
+
+    Sprite ModelIconSprite(ProductInfo info)
+    {
+        string key = $"{info.model.GetInstanceID()}_{info.modelRotation}";
+        if (modelIcons.TryGetValue(key, out var cached) && cached != null) return cached;
+
+        // 誰にも見えない場所にモデルを置く(ゲームの商品と同じ向き)
+        var model = Instantiate(info.model, new Vector3(0f, -1000f, 0f), Quaternion.Euler(info.modelRotation) * info.model.transform.localRotation);
+        SetLayer(model, ModelIconLayer);
+        var renderers = model.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) { Destroy(model); return null; }
+        Bounds b = renderers[0].bounds;
+        foreach (var r in renderers) b.Encapsulate(r.bounds);
+
+        // 正面(ゲームのカメラと同じ -Z の側)から、縦横の長いほうがちょうど収まるように撮る
+        var camGo = new GameObject("ModelIconCamera");
+        var cam = camGo.AddComponent<Camera>();
+        cam.enabled = false;
+        cam.orthographic = true;
+        cam.orthographicSize = Mathf.Max(b.extents.x, b.extents.y, 0.01f) * 1.08f;
+        cam.cullingMask = 1 << ModelIconLayer;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0f, 0f, 0f, 0f);   // 背景は透明
+        cam.nearClipPlane = 0.01f;
+        cam.farClipPlane = b.size.z + 20f;
+        cam.transform.position = new Vector3(b.center.x, b.center.y, b.min.z - 10f);
+        cam.transform.rotation = Quaternion.identity;
+
+        var rt = RenderTexture.GetTemporary(ModelIconSize, ModelIconSize, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt;
+        cam.Render();
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        var tex = new Texture2D(ModelIconSize, ModelIconSize, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, ModelIconSize, ModelIconSize), 0, 0);
+        tex.Apply();
+        RenderTexture.active = prev;
+        cam.targetTexture = null;
+        RenderTexture.ReleaseTemporary(rt);
+        Destroy(camGo);
+        Destroy(model);
+
+        var sprite = Sprite.Create(tex, new Rect(0, 0, ModelIconSize, ModelIconSize), new Vector2(0.5f, 0.5f), ModelIconSize);
+        modelIcons[key] = sprite;
+        return sprite;
     }
 
     // 「○○完成！ これから1.2倍」を、その人の画面の真ん中に出す
