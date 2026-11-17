@@ -851,9 +851,9 @@ MonoBehaviour:
   portraitRows: 3
   landscapeColumns: 3
   landscapeRows: 2
-  refillDelay: 1.5
-  shelfSlideInterval: 8
-  shelfSlideTime: 1
+  refillDelay: 3
+  shelfSlideInterval: 7
+  shelfSlideTime: 2
   rankWeights:
   - 1
   - 0.8
@@ -1824,7 +1824,7 @@ MonoBehaviour:
   bagLiftHoldTime: 3
   bagLiftCameraFollow: 1
   bagLiftCameraZoom: 1.5
-  bagMaxWeight: 50
+  bagMaxWeight: 60
   bagTearDelay: 2
   bagTearScatter: 1.5
   bagCreakStart: 0.7
