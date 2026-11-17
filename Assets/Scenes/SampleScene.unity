@@ -1824,7 +1824,7 @@ MonoBehaviour:
   bagLiftHoldTime: 3
   bagLiftCameraFollow: 1
   bagLiftCameraZoom: 1.5
-  bagMaxWeight: 60
+  bagMaxWeight: 58
   bagTearDelay: 2
   bagTearScatter: 1.5
   bagCreakStart: 0.7
