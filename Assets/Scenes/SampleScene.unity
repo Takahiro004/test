@@ -702,6 +702,7 @@ MonoBehaviour:
   switcher: {fileID: 0}
   textFont: {fileID: 0}
   textResolution: 2
+  textShadow: 0
   monitorMode: 1
   shopScreenRotation: 0
   portraitLayout:
@@ -761,6 +762,7 @@ MonoBehaviour:
   layerP2: 10
   horizontalOnlyOnOwnScreen: 1
   rotateHeldProduct: 1
+  showRotateHint: 1
   autoFitPlayerScreens: 1
   showOwnScreenFrame: 1
   showShopScreenFrame: 1
@@ -775,6 +777,7 @@ MonoBehaviour:
   randomRefill: 1
   rankWeighting: 1
   highRankNotice: 1
+  highRankAura: 1
   shelfSlide: 1
   showPriceTags: 0
   autoFitShopScreen: 1
@@ -850,6 +853,17 @@ MonoBehaviour:
   cursorMotionAnimate: 0
   cursorGrabPoseTime: 1
   cursorReleasePoseTime: 0
+  rotateHintColor: {r: 0.09, g: 0.38, b: 0.52, a: 0.9}
+  rotateHintSize: 1.15
+  rotateHintMaxSize: 3.5
+  rotateHintThickness: 0.65
+  rotateHintSpin: 45
+  rotateHintOffset: {x: 0, y: 0}
+  rotateHintSprite: {fileID: 0}
+  rotateHintText: "RB\u3067\u56DE\u8EE2"
+  rotateHintTextColor: {r: 0.09, g: 0.38, b: 0.52, a: 1}
+  rotateHintTextSize: 1
+  rotateHintTextY: 0
   ownScreenFrameWidth: 0.3
   shopScreenFrameWidth: 0.3
   shopFrameLeftIsP1: 1
@@ -890,6 +904,23 @@ MonoBehaviour:
   highRankNoticeColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   highRankNoticeTime: 6
   highRankNoticeY: 0
+  auraFromRank: 5
+  auraColor: {r: 1, g: 0.6, b: 0, a: 0.85}
+  auraSize: 2.2
+  auraPulseSpeed: 1.2
+  auraPulse: 0.15
+  auraSpin: 40
+  auraFlame: 1
+  auraGlow: 0
+  auraFlameCoreColor: {r: 1, g: 0.95, b: 0.55, a: 1}
+  auraFlameTipColor: {r: 1, g: 0.15, b: 0, a: 0}
+  auraFlameBlobSize: 0.55
+  auraFlameRise: 0.55
+  auraFlameDensity: 22
+  auraFlameSpeed: 1
+  auraOnShelf: 1
+  auraWhileHeld: 1
+  auraInBag: 0
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
