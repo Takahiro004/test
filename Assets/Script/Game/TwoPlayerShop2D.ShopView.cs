@@ -117,6 +117,7 @@ public partial class TwoPlayerShop2D
         UpdateHandLight();        // 手のモデル専用のライト(TwoPlayerShop2D.CursorModel.cs)
         UpdateHandBrightness();   // 手のモデルの明るさ(TwoPlayerShop2D.CursorModel.cs)
         UpdateRotateHints();      // 商品を落とすターンの回転の目印(TwoPlayerShop2D.RotateHint.cs)
+        UpdateAuras();            // 高額商品のオーラ(TwoPlayerShop2D.Aura.cs)
         UpdateCursorLabel(p1);    // 手のそばの「1P」「2P」(TwoPlayerShop2D.CursorModel.cs)
         UpdateCursorLabel(p2);
         UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
