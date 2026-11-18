@@ -20,7 +20,7 @@ public partial class TwoPlayerShop2D
         public float radius;      // その商品の半径(縦横の長いほうの半分)
         public float angle;       // 回している角度
         public TextMesh label;    // 説明の文字
-        public string labelText;  // どの文字・大きさで作ったか(変わったら作り直す。影も同じ文字なので)
+        public string labelText;  // どの文字・大きさで作ったか(変わったら作り直す)
         public float labelSize;
     }
     readonly Dictionary<Player, RotateHintLook> rotateHints = new Dictionary<Player, RotateHintLook>();
@@ -95,8 +95,7 @@ public partial class TwoPlayerShop2D
         if (h.label == null)
         {
             h.label = MakeText($"RotateHintText_{p.name}", null, p.held.layer, text, rotateHintTextColor, 1001);
-            SetTextSize(h.label, size);
-            AddTextShadow(h.label);
+            SetTextSize(h.label, size);   // 影は付けない(二重に見えて読みにくいため)
             h.labelText = text;
             h.labelSize = size;
         }
