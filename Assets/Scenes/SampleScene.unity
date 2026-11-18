@@ -833,6 +833,17 @@ MonoBehaviour:
   cursorModelSize: 2
   cursorModelOffset: {x: 0, y: 0}
   mirrorP2CursorModel: 1
+  cursorShowPlayerLabel: 0
+  cursorLabelOffset: {x: 0.5, y: -0.6}
+  cursorLabelSize: 1
+  cursorModelTintAmount: 0
+  cursorOutlineWidth: 0.08
+  handLightEnabled: 1
+  handLightOnlyHand: 0
+  handLightRotation: {x: -120, y: -15, z: 0}
+  handLightIntensity: 1
+  handLightColor: {r: 1, g: 1, b: 1, a: 1}
+  handModelBrightness: 1
   cursorGrabClip: {fileID: -1497455241315365585, guid: 945fffa9af122ee4f9c4ffa41df9e03b, type: 3}
   cursorReleaseClip: {fileID: 6965623973358988486, guid: 945fffa9af122ee4f9c4ffa41df9e03b, type: 3}
   cursorMotionSpeed: 3
@@ -1824,7 +1835,7 @@ MonoBehaviour:
   bagLiftHoldTime: 3
   bagLiftCameraFollow: 1
   bagLiftCameraZoom: 1.5
-  bagMaxWeight: 58
+  bagMaxWeight: 63
   bagTearDelay: 2
   bagTearScatter: 1.5
   bagCreakStart: 0.7
