@@ -275,6 +275,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float cursorLabelSize = 1f;
     [Tooltip("手の3Dモデルに、プレイヤーの色をどのくらい付けるか(0 = 付けない 〜 1 = 色そのもの)。再生前に決める")]
     [Range(0f, 1f)] public float cursorModelTint = 0.35f;
+    [Tooltip("手の3Dモデルの縁取りの太さ(手の大きさの割合。0.08 なら8%はみ出す。0 なら縁取りなし)。色は枠と同じプレイヤーの色。再生前に決める")]
+    [Range(0f, 0.3f)] public float cursorOutlineWidth = 0.08f;
     [Tooltip("手の3Dモデルの「つかむ」モーション(手のモデルの FBX の ▶ を開いた中のクリップ)。商品を掴んだときに再生して、最後のコマで止まる")]
     public AnimationClip cursorGrabClip;
     [Tooltip("手の3Dモデルの「はなす」モーション。商品を離したとき(掴み合いで取られたときも)に再生して、最後のコマで止まる")]
@@ -866,6 +868,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             p.cursorShop.position = startPos;
             p.cursorOwn = MakeModelCursor($"Cursor_{pname}_Own", ownLayer, model, mirror).transform;
             p.cursorOwn.position = Vector2.zero;
+            AddCursorOutline(p.cursorShop, model, color);   // 手の縁を、枠と同じプレイヤーの色で縁取る(TwoPlayerShop2D.CursorModel.cs)
+            AddCursorOutline(p.cursorOwn, model, color);
             if (!cursorMotionAnimate) PlayCursorMotion(p, false);   // 最初は離した形(TwoPlayerShop2D.CursorModel.cs)
             TintCursorModel(p.cursorShop, color);   // どちらの手か分かるように、プレイヤーの色をうっすら付ける
             TintCursorModel(p.cursorOwn, color);
