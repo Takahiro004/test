@@ -839,7 +839,7 @@ MonoBehaviour:
   cursorModelTintAmount: 0
   cursorOutlineWidth: 0.08
   handLightEnabled: 1
-  handLightOnlyHand: 0
+  handLightOnlyHand: 1
   handLightRotation: {x: -120, y: -15, z: 0}
   handLightIntensity: 1
   handLightColor: {r: 1, g: 1, b: 1, a: 1}
@@ -896,11 +896,11 @@ MonoBehaviour:
   shelfSprite: {fileID: 0}
   shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
   shelfModelOffset: {x: 0, y: -0.15, z: 0}
-  shelfModelRotation: {x: 0, y: 0, z: 0}
+  shelfModelRotation: {x: -5, y: 0, z: 0}
   shelfModelScale: {x: 1.37, y: 1, z: 1}
   shelfProductOffset: {x: 0, y: 0}
   shelfRowOffsets:
-  - {x: 0, y: 0}
+  - {x: 0, y: -0.2}
   - {x: 0, y: 0}
   - {x: 0, y: 0.5}
   productList:
