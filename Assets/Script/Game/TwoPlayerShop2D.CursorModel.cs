@@ -10,6 +10,8 @@ using UnityEngine.Playables;
 //  - 描く順番は画像のカーソルと同じ CursorOrder(2900。商品・画面の枠(2800)より手前、大きな文字・結果発表(3000〜)より奥)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
+//  - どちらの手か分かるように: 手のモデルにプレイヤーの色をうっすら付け(cursorModelTint)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
+//    棚の画面の手のそばに「1P」「2P」を出す(cursorPlayerLabel)
 //  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
 //    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある。
 //    cursorMotionAnimate が OFF なら、再生せずに「つかむ」クリップの1コマで止めた形にする(掴んだ形 / 離した形。最初は離した形)
@@ -63,6 +65,39 @@ public partial class TwoPlayerShop2D
         return go;
     }
 
+    // 手の縁取り: 手のモデルをもう1つ、少し大きくして後ろに重ね、プレイヤーの色1色で塗る(はみ出したふちだけが色付きで見える)。
+    // 色は枠と同じプレイヤーの色。太さ cursorOutlineWidth(0 なら付けない)。塗るのは文字と同じ描き方(形だけを1色で塗る)
+    void AddCursorOutline(Transform cursor, GameObject prefab, Color color)
+    {
+        if (cursor == null || prefab == null || cursorOutlineWidth <= 0f) return;
+        var holder = cursor.Find("Mirror");
+        var model = holder != null ? holder.Find("Model") : null;
+        if (model == null) return;
+        var modelRenderers = model.GetComponentsInChildren<Renderer>();
+        if (modelRenderers.Length == 0) return;
+        Bounds b = modelRenderers[0].bounds;
+        foreach (var r in modelRenderers) b.Encapsulate(r.bounds);
+        Vector3 center = holder.InverseTransformPoint(b.center);   // 手の真ん中(入れ物の中で)
+
+        var outline = Instantiate(prefab, holder);
+        outline.name = "Outline";
+        float s = 1f + cursorOutlineWidth;
+        outline.transform.localRotation = model.localRotation;
+        outline.transform.localScale = model.localScale * s;
+        outline.transform.localPosition = center + (model.localPosition - center) * s + new Vector3(0f, 0f, 0.02f);   // 手の真ん中を中心に大きく・少し奥
+
+        if (labelFont == null) labelFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var mat = new Material(labelFont.material.shader) { name = "CursorOutline", color = new Color(color.r, color.g, color.b, 1f) };
+        foreach (var r in outline.GetComponentsInChildren<Renderer>())
+        {
+            var mats = new Material[r.sharedMaterials.Length];
+            for (int i = 0; i < mats.Length; i++) mats[i] = mat;
+            r.sharedMaterials = mats;
+            r.sortingOrder = CursorOrder - 1;   // 手より先に描く(手が上に重なる)
+        }
+        SetLayer(outline, cursor.gameObject.layer);
+    }
+
     // カーソルの手のモーションを再生している仕組み(手ごとに1つ。新しいモーションを始めたら前のは片付ける)
     readonly Dictionary<Transform, PlayableGraph> cursorGraphs = new Dictionary<Transform, PlayableGraph>();
 
@@ -90,9 +125,17 @@ public partial class TwoPlayerShop2D
     void PlayCursorClip(Transform cursor, AnimationClip clip, float pose = -1f)
     {
         if (cursor == null) return;
-        var model = cursor.Find("Mirror/Model");   // 3Dモデルの手(MakeModelCursor)。画像のカーソルなら何もしない
-        if (model == null) return;
-        if (cursorGraphs.TryGetValue(cursor, out var old) && old.IsValid()) old.Destroy();
+        // 3Dモデルの手(MakeModelCursor)と、その縁取り(AddCursorOutline)の両方を同じ形にする。画像のカーソルなら何もしない
+        foreach (var path in new[] { "Mirror/Model", "Mirror/Outline" })
+        {
+            var t = cursor.Find(path);
+            if (t != null) PlayModelClip(t, clip, pose);
+        }
+    }
+
+    void PlayModelClip(Transform model, AnimationClip clip, float pose)
+    {
+        if (cursorGraphs.TryGetValue(model, out var old) && old.IsValid()) old.Destroy();
         var animator = model.GetComponentInChildren<Animator>();
         if (animator == null) animator = model.gameObject.AddComponent<Animator>();
         var playable = AnimationPlayableUtilities.PlayClip(animator, clip, out var graph);
@@ -102,7 +145,7 @@ public partial class TwoPlayerShop2D
             playable.SetSpeed(0f);
         }
         else playable.SetSpeed(Mathf.Max(0.01f, cursorMotionSpeed));   // モーションの速さ(2 なら2倍速)
-        cursorGraphs[cursor] = graph;
+        cursorGraphs[model] = graph;
     }
 
     // OnDestroy から: モーションの再生の仕組みを片付ける
@@ -110,5 +153,42 @@ public partial class TwoPlayerShop2D
     {
         foreach (var g in cursorGraphs.Values) if (g.IsValid()) g.Destroy();
         cursorGraphs.Clear();
+    }
+
+    // 手のモデルに、プレイヤーの色をうっすら付ける(マテリアルの色 _BaseColor / _Color に混ぜる。マテリアルはこの手だけのもの)
+    void TintCursorModel(Transform cursor, Color color)
+    {
+        if (cursor == null || cursorModelTint <= 0f) return;
+        foreach (var r in cursor.GetComponentsInChildren<Renderer>())
+            foreach (var m in r.materials)
+            {
+                foreach (var prop in new[] { "_BaseColor", "_Color" })
+                    if (m.HasProperty(prop))
+                    {
+                        Color c = m.GetColor(prop);
+                        m.SetColor(prop, new Color(Mathf.Lerp(c.r, color.r, cursorModelTint), Mathf.Lerp(c.g, color.g, cursorModelTint),
+                                                   Mathf.Lerp(c.b, color.b, cursorModelTint), c.a));
+                    }
+            }
+    }
+
+    // 棚の画面のカーソルのそばに「1P」「2P」(プレイヤーの色・影付き)。カーソルの子なので一緒に動く(左右反転はしない)
+    readonly Dictionary<Player, TextMesh> cursorLabels = new Dictionary<Player, TextMesh>();
+
+    void AddCursorLabel(Player p, Color color)
+    {
+        if (!cursorPlayerLabel || p.cursorShop == null) return;
+        var label = MakeText($"CursorLabel_{p.name}", p.cursorShop, layerShop, p.name, new Color(color.r, color.g, color.b, 1f), CursorOrder + 1);
+        AddTextShadow(label);
+        cursorLabels[p] = label;
+        UpdateCursorLabel(p);
+    }
+
+    // 「1P」「2P」の位置と大きさ(LateUpdate から毎フレーム。再生中に変えてもすぐ反映)
+    void UpdateCursorLabel(Player p)
+    {
+        if (p == null || !cursorLabels.TryGetValue(p, out var label) || label == null) return;
+        label.transform.localPosition = new Vector3(cursorLabelOffset.x * cursorScale, cursorLabelOffset.y * cursorScale, 0f);
+        SetTextSize(label, HudTextSize * 0.6f * Mathf.Max(0.1f, cursorLabelSize));
     }
 }
