@@ -600,11 +600,23 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float kickCooldown = 3f;
     [Tooltip("足が棚の画面を飛んでいく秒数")]
     public float kickFlightTime = 0.7f;
-    [Tooltip("足の画像(未設定なら自動生成の靴)。つま先が右を向いた画像を想定")]
+    [Tooltip("足の見え方の確認: ON にすると、棚の画面の左に 1P 用・右に 2P 用の足を止めて出す(飛ぶときと同じ向き)。下の足の欄を再生中に変えるとすぐ反映。決まったら OFF に戻す")]
+    public bool kickFootPreview = false;
+    [Tooltip("足の3Dモデル(プレハブか FBX)。入れると画像の代わりに出る。未設定なら Kick Foot Sprite → 自動生成の靴")]
+    public GameObject kickFootModel;
+    [Tooltip("足の3Dモデルの向き(度。X/Y/Z)。Kick Foot Preview を見ながら「つま先が右・足の裏が下」になるように回す")]
+    public Vector3 kickFootModelRotation = Vector3.zero;
+    [Tooltip("足の3Dモデルの位置のずれ(足の大きさを1として。X 右・Y 上。飛ぶ向きに回す前の向きで)")]
+    public Vector2 kickFootModelOffset = Vector2.zero;
+    [Tooltip("足の3Dモデルが飛ぶ間に再生するモーション(FBX の ▶ を開いた中のクリップ。空なら動かさない)")]
+    public AnimationClip kickFootClip;
+    [Tooltip("足のモーションの速さ(1 でそのまま・2 で2倍速)")]
+    public float kickFootClipSpeed = 1f;
+    [Tooltip("足の画像(3Dモデルも画像も未設定なら自動生成の靴)。つま先が右を向いた画像を想定")]
     public Sprite kickFootSprite;
-    [Tooltip("足の大きさ(縦横の長いほうがこの長さになる)")]
+    [Tooltip("足の大きさ(縦横の長いほうがこの長さになる。3Dモデル・画像どちらにも効く)")]
     public float kickFootSize = 2.5f;
-    [Tooltip("足の画像の向きの調整(度)。つま先が飛ぶ方向を向かないときに変える")]
+    [Tooltip("足の全体の向きの調整(度)。つま先が飛ぶ方向を向かないときに変える(3Dモデル・画像どちらにも効く)")]
     public float kickFootRotation = 0f;
     [Tooltip("威力が最大のときの、相手のレジ袋の左右の揺れ幅")]
     public float kickShakeMax = 3f;
