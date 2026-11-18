@@ -285,6 +285,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float handLightIntensity = 1f;
     [Tooltip("手のライトの色")]
     public Color handLightColor = Color.white;
+    [Tooltip("手のモデルの明るさ(1 でそのまま・1.5 で1.5倍)。ライトを使わず、手のマテリアルの色を直接明るくする(ライトが手に届かないとき用)。再生中に変えてもすぐ反映")]
+    public float handModelBrightness = 1f;
     [Tooltip("手の3Dモデルの「つかむ」モーション(手のモデルの FBX の ▶ を開いた中のクリップ)。商品を掴んだときに再生して、最後のコマで止まる")]
     public AnimationClip cursorGrabClip;
     [Tooltip("手の3Dモデルの「はなす」モーション。商品を離したとき(掴み合いで取られたときも)に再生して、最後のコマで止まる")]
