@@ -112,8 +112,10 @@ public partial class TwoPlayerShop2D
                 float ang = Mathf.Atan2(v, u);
                 float edge = 0.78f;
                 for (int i = 0; i < waves.Length; i++) edge += amps[i] * Mathf.Sin(waves[i] * ang + phases[i]);
-                float k = Mathf.Clamp01(1f - r / edge);      // 真ん中 1 → ふち 0
-                float a = k * k * (3f - 2f * k);             // なめらかに薄くする
+                // 真ん中から半径の半分くらいまでは濃いまま(ここは商品に隠れる)、そこからふちへ薄くする。
+                // (真ん中から薄くし始めると、商品の外に出ている所がほとんど透明になって見えないため)
+                float k = Mathf.Clamp01((edge - r) / (edge * 0.45f));   // 半径の 55% まで 1 → ふち 0
+                float a = k * k * (3f - 2f * k);                        // なめらかに薄くする
                 px[y * size + x] = new Color(1f, 1f, 1f, a);
             }
         tex.SetPixels(px);

@@ -393,9 +393,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("このランク以上の商品にオーラを出す(1〜5)。再生中に変えてもすぐ反映")]
     [Range(1, 5)] public int auraFromRank = 5;
     [Tooltip("オーラの色(透明度 A で濃さ)。再生中に変えてもすぐ反映")]
-    public Color auraColor = new Color(1f, 0.82f, 0.2f, 0.7f);
+    public Color auraColor = new Color(1f, 0.6f, 0f, 0.85f);   // 白い棚の上でも見えるように、濃いめのオレンジ
     [Tooltip("オーラの大きさ(商品の大きさの何倍か)。再生中に変えてもすぐ反映")]
-    public float auraSize = 1.7f;
+    public float auraSize = 2.2f;
     [Tooltip("オーラが脈打つ速さ(1秒に何回)。再生中に変えてもすぐ反映")]
     public float auraPulseSpeed = 1.2f;
     [Tooltip("オーラが脈打つ強さ(0 = 脈打たない 〜 1 = 大きく)。再生中に変えてもすぐ反映")]
