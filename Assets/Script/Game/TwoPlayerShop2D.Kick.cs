@@ -1,10 +1,17 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 // キック(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs)
 // 棚を操作中(商品を持っていないとき)に LB → 自分のレジ袋の画面の真ん中にゲージ → A で威力を決める
 // → 棚の画面の下から相手側の上へ足が飛ぶ → 相手のレジ袋が威力に合わせて揺れる
 // ゲージ中にもう一度 LB を押すとやめる
+// 足の見た目: kickFootModel(3Dモデル)→ kickFootSprite(画像)→ 自動生成の靴 の順に、入っているものを使う(MakeFootVisual)。
+//  - 3Dモデルは「つま先が右(+X)・足の裏が下」になるように kickFootModelRotation で回す。大きさは縦横の長いほうが kickFootSize。
+//    位置のずれ kickFootModelOffset(足の大きさを1として)。飛ぶ間 kickFootClip を再生できる(速さ kickFootClipSpeed)
+//  - 飛ぶ向きに合わせて全体を回す。左へ飛ぶとき(2P)は上下を反転して、足の裏が下のままになるようにする
+//  - kickFootPreview を ON にすると、棚の画面の真ん中あたりに 1P 用・2P 用の足を止めて出す(再生中に向き・大きさを変えるとすぐ反映)
 public partial class TwoPlayerShop2D
 {
     class KickGauge
@@ -126,23 +133,14 @@ public partial class TwoPlayerShop2D
         Vector2 end = new Vector2(-side * (view.x / 2f + 1.5f), view.y / 2f + 1.5f);
         Vector2 dir = (end - start).normalized;
 
-        var foot = new GameObject($"Foot_{from.name}");
-        foot.layer = layerShop;
-        var sr = foot.AddComponent<SpriteRenderer>();
-        sr.sprite = kickFootSprite != null ? kickFootSprite : GetFootSprite();
-        sr.color = kickFootSprite != null ? Color.white : from.color;
-        sr.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
-        sr.flipY = dir.x < 0f;    // 左へ飛ぶときに靴が逆さにならないように
-        Vector2 size = sr.sprite.bounds.size;
-        float scale = kickFootSize / Mathf.Max(size.x, size.y, 0.01f);
-        foot.transform.localScale = new Vector3(scale, scale, 1f);
-        foot.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + kickFootRotation);
+        var foot = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var footGraph);
 
         for (float time = 0f; time < kickFlightTime; time += Time.deltaTime)
         {
             foot.transform.position = Vector2.Lerp(start, end, time / Mathf.Max(0.01f, kickFlightTime));
             yield return null;
         }
+        if (footGraph.IsValid()) footGraph.Destroy();
         Destroy(foot);
 
         // 蹴った向き: 1Pが蹴ると右へ、2Pが蹴ると左へ
@@ -249,6 +247,101 @@ public partial class TwoPlayerShop2D
             yield return null;
         }
         Destroy(label.gameObject);
+    }
+
+    // 足の見た目を作る(3Dモデル → 画像 → 自動生成の靴)。dir = 飛ぶ向き。play なら kickFootClip を再生する(graph を返す。止めたら Destroy する)
+    GameObject MakeFootVisual(string objName, Color playerColor, Vector2 dir, bool play, out PlayableGraph graph)
+    {
+        graph = default;
+        bool leftward = dir.x < 0f;
+        var foot = new GameObject(objName);
+        foot.layer = layerShop;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + kickFootRotation;
+
+        if (kickFootModel != null)
+        {
+            // 入れ物: foot(飛ぶ向きに回す)→ Flip(左へ飛ぶときは上下反転)→ Model
+            var flip = new GameObject("Flip").transform;
+            flip.SetParent(foot.transform, false);
+            var model = Instantiate(kickFootModel, flip);
+            model.name = "Model";
+            Quaternion prefabRotation = kickFootModel.transform.localRotation;
+            Vector3 prefabScale = kickFootModel.transform.localScale;
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.Euler(kickFootModelRotation) * prefabRotation;
+            model.transform.localScale = prefabScale;
+            foreach (var col in model.GetComponentsInChildren<Collider>()) col.enabled = false;   // 当たり判定は使わない
+            var renderers = model.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) Debug.LogWarning($"[Shop2D] 足の3Dモデル {kickFootModel.name} に見た目(Renderer)がありません");
+            else
+            {
+                // まだ回していない(foot が原点・回転なし)うちに大きさを測って、縦横の長いほうを kickFootSize にする
+                Bounds b = renderers[0].bounds;
+                foreach (var r in renderers) b.Encapsulate(r.bounds);
+                float size = Mathf.Max(0.01f, kickFootSize);
+                float k = size / Mathf.Max(b.size.x, b.size.y, 0.01f);
+                model.transform.localScale = prefabScale * k;
+                // 真ん中を foot の位置に合わせて、kickFootModelOffset だけずらす
+                Vector3 c = b.center * k;
+                model.transform.localPosition = new Vector3(kickFootModelOffset.x * size - c.x, kickFootModelOffset.y * size - c.y, -c.z);
+                UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
+                foreach (var r in renderers) r.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
+            }
+            SetLayer(model, layerShop);
+            if (leftward) flip.localScale = new Vector3(1f, -1f, 1f);   // 左へ飛ぶときに足が逆さにならないように
+            if (play && kickFootClip != null)
+            {
+                var animator = model.GetComponentInChildren<Animator>();
+                if (animator == null) animator = model.AddComponent<Animator>();
+                var playable = AnimationPlayableUtilities.PlayClip(animator, kickFootClip, out graph);
+                playable.SetSpeed(Mathf.Max(0.01f, kickFootClipSpeed));
+            }
+        }
+        else
+        {
+            var sr = foot.AddComponent<SpriteRenderer>();
+            sr.sprite = kickFootSprite != null ? kickFootSprite : GetFootSprite();
+            sr.color = kickFootSprite != null ? Color.white : playerColor;
+            sr.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
+            sr.flipY = leftward;      // 左へ飛ぶときに靴が逆さにならないように
+            Vector2 size = sr.sprite.bounds.size;
+            float scale = kickFootSize / Mathf.Max(size.x, size.y, 0.01f);
+            foot.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+        foot.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        return foot;
+    }
+
+    // ---------- 足の見え方の確認(kickFootPreview) ----------
+    // 棚の画面の左に 1P 用(右上へ飛ぶ向き)・右に 2P 用(左上へ飛ぶ向き)の足を止めて出す。設定を変えたら作り直す
+    GameObject footPreview1, footPreview2;
+    PlayableGraph footPreviewGraph1, footPreviewGraph2;
+    (GameObject model, Sprite sprite, Vector3 rot, Vector2 offset, float size, float rotation, AnimationClip clip, float clipSpeed) footPreviewBuilt;
+
+    void UpdateKickFootPreview()
+    {
+        var want = (kickFootModel, kickFootSprite, kickFootModelRotation, kickFootModelOffset, kickFootSize, kickFootRotation, kickFootClip, kickFootClipSpeed);
+        bool changed = !want.Equals(footPreviewBuilt);
+        if (!kickFootPreview || changed)
+        {
+            if (footPreviewGraph1.IsValid()) footPreviewGraph1.Destroy();
+            if (footPreviewGraph2.IsValid()) footPreviewGraph2.Destroy();
+            if (footPreview1 != null) Destroy(footPreview1);
+            if (footPreview2 != null) Destroy(footPreview2);
+            footPreview1 = footPreview2 = null;
+        }
+        if (!kickFootPreview || p1 == null || p2 == null) return;
+        Vector2 view = ShopViewSize();
+        if (footPreview1 == null)
+        {
+            footPreviewBuilt = want;
+            // 飛ぶ向きは FlyFoot と同じ(1P は左下から右上へ・2P は右下から左上へ)
+            Vector2 s1 = new Vector2(-view.x * 0.25f, -view.y / 2f - 1.5f), e1 = new Vector2(view.x / 2f + 1.5f, view.y / 2f + 1.5f);
+            footPreview1 = MakeFootVisual("FootPreview_1P", p1.color, (e1 - s1).normalized, true, out footPreviewGraph1);
+            footPreview2 = MakeFootVisual("FootPreview_2P", p2.color, (new Vector2(-e1.x, e1.y) - new Vector2(-s1.x, s1.y)).normalized, true, out footPreviewGraph2);
+        }
+        footPreview1.transform.position = new Vector3(-view.x * 0.22f, 0f, 0f);
+        footPreview2.transform.position = new Vector3(view.x * 0.22f, 0f, 0f);
     }
 
     // 自動生成の靴(つま先が右)。足の画像ができたら kickFootSprite に入れる
