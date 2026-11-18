@@ -233,4 +233,67 @@ public partial class TwoPlayerShop2D
         flameSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         return flameSprite;
     }
+
+    void SetAuraPart(SpriteRenderer r, Vector3 c, float diameter, float angle, float alpha, int order, int layer)
+    {
+        r.transform.position = c;
+        r.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        r.transform.localScale = Vector3.one * Mathf.Max(0.01f, diameter);   // 絵の幅は 1
+        r.color = new Color(auraColor.r, auraColor.g, auraColor.b, Mathf.Clamp01(alpha));
+        r.sortingOrder = order;
+        if (r.gameObject.layer != layer) r.gameObject.layer = layer;
+    }
+
+    // この商品にオーラを出すか(ランクと、今どこにあるか)
+    bool WantsAura(GameObject go)
+    {
+        if (!highRankAura || !infoOf.TryGetValue(go, out var info) || info.rank < auraFromRank) return false;
+        if (slotOf.ContainsKey(go)) return auraOnShelf;                                  // 棚の上
+        if ((p1 != null && p1.held == go) || (p2 != null && p2.held == go)) return auraWhileHeld;   // 持ち運び中
+        return auraInBag;                                                                // 自分の画面に落とした・袋の中
+    }
+
+    AuraLook MakeAura(GameObject go)
+    {
+        var l = new AuraLook { radius = HeldRadius(go), phase = Random.value * 10f };
+        l.a = new GameObject($"Aura_{go.name}").AddComponent<SpriteRenderer>();
+        l.b = new GameObject($"Aura2_{go.name}").AddComponent<SpriteRenderer>();
+        l.a.sprite = GetAuraSprite(0);
+        l.b.sprite = GetAuraSprite(1);
+        return l;
+    }
+
+    // ふちが波打った、外へいくほど薄くなる白い光(幅 1)。kind で波の形を変える
+    static Sprite GetAuraSprite(int kind)
+    {
+        if (kind == 0 && auraSpriteA != null) return auraSpriteA;
+        if (kind == 1 && auraSpriteB != null) return auraSpriteB;
+        const int size = 128;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        var px = new Color[size * size];
+        // 波: 角度に対する半径の揺れ(ぐるっと一周でつながる sin の足し合わせ)
+        int[] waves = kind == 0 ? new[] { 3, 5, 8 } : new[] { 4, 7, 11 };
+        float[] amps = { 0.07f, 0.05f, 0.03f };
+        float[] phases = kind == 0 ? new[] { 0.3f, 1.7f, 4.1f } : new[] { 2.2f, 0.9f, 5.3f };
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = (x + 0.5f) / size * 2f - 1f, v = (y + 0.5f) / size * 2f - 1f;
+                float r = Mathf.Sqrt(u * u + v * v);
+                float ang = Mathf.Atan2(v, u);
+                float edge = 0.78f;
+                for (int i = 0; i < waves.Length; i++) edge += amps[i] * Mathf.Sin(waves[i] * ang + phases[i]);
+                // 真ん中から半径の半分くらいまでは濃いまま(ここは商品に隠れる)、そこからふちへ薄くする。
+                // (真ん中から薄くし始めると、商品の外に出ている所がほとんど透明になって見えないため)
+                float k = Mathf.Clamp01((edge - r) / (edge * 0.45f));   // 半径の 55% まで 1 → ふち 0
+                float a = k * k * (3f - 2f * k);                        // なめらかに薄くする
+                px[y * size + x] = new Color(1f, 1f, 1f, a);
+            }
+        tex.SetPixels(px);
+        tex.Apply();
+        tex.wrapMode = TextureWrapMode.Clamp;
+        var s = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        if (kind == 0) auraSpriteA = s; else auraSpriteB = s;
+        return s;
+    }
 }
