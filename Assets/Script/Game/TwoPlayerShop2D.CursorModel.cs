@@ -15,6 +15,7 @@ using UnityEngine.Rendering.Universal;
 //    棚の画面の手のそばに「1P」「2P」を出す(cursorShowPlayerLabel)
 //  - 手のモデル専用のライト(handLight): 手だけを照らすライトを1つ足す。ライトレイヤー(URP の Rendering Layers。UniversalRP.asset で ON)を使い、
 //    手のモデルの renderingLayerMask に HandLightLayerBit を足して、そのライトはそのビットの物だけを照らす(商品・棚は照らさない)
+//  - 手のモデルの明るさ(handModelBrightness): ライトを使わず、手のマテリアルの色を直接何倍かにする(ライトが手に届かないとき用)
 //  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
 //    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある。
 //    cursorMotionAnimate が OFF なら、再生せずに「つかむ」クリップの1コマで止めた形にする(掴んだ形 / 離した形。最初は離した形)
@@ -65,6 +66,7 @@ public partial class TwoPlayerShop2D
                 r.sortingOrder = CursorOrder;
                 r.renderingLayerMask |= 1u << HandLightLayerBit;   // 手のモデル専用のライトに照らされるようにする
             }
+            foreach (var r in renderers) handMaterials.AddRange(r.materials);   // 手の明るさ(handModelBrightness)を変えるマテリアル(この手だけのもの)
         }
         if (mirror) holder.localScale = new Vector3(-1f, 1f, 1f);
 
@@ -226,5 +228,25 @@ public partial class TwoPlayerShop2D
         handLight.intensity = Mathf.Max(0f, handLightIntensity);
         handLight.color = handLightColor;
         handLight.transform.rotation = Quaternion.Euler(handLightRotation);
+    }
+
+    // ---------- 手のモデルの明るさ ----------
+    // ライトを使わず、手のマテリアルの色(_BaseColor / _Color)を handModelBrightness 倍にする(ライトに関係なく必ず効く)。
+    // 元の色(プレイヤーの色を混ぜたあと)は、最初に見たときに覚えておく
+    readonly List<Material> handMaterials = new List<Material>();
+    readonly Dictionary<Material, Color> handBaseColors = new Dictionary<Material, Color>();
+
+    // LateUpdate から毎フレーム(再生中に変えてもすぐ反映)
+    void UpdateHandBrightness()
+    {
+        float k = Mathf.Max(0f, handModelBrightness);
+        foreach (var m in handMaterials)
+        {
+            if (m == null) continue;
+            string prop = m.HasProperty("_BaseColor") ? "_BaseColor" : m.HasProperty("_Color") ? "_Color" : null;
+            if (prop == null) continue;
+            if (!handBaseColors.TryGetValue(m, out var c)) { c = m.GetColor(prop); handBaseColors[m] = c; }
+            m.SetColor(prop, new Color(c.r * k, c.g * k, c.b * k, c.a));
+        }
     }
 }
