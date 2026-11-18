@@ -279,6 +279,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 0.3f)] public float cursorOutlineWidth = 0.08f;
     [Tooltip("手のモデル専用のライトを使う(手だけを照らす。商品・棚は照らさない)")]
     public bool handLightEnabled = true;
+    [Tooltip("ON: 手のライトは手のモデルだけを照らす(ライトレイヤー)。OFF: 商品・棚も含めて全部を照らす(手に光が届かないときに、原因を確かめる用)。再生中に変えてもすぐ反映")]
+    public bool handLightOnlyHand = true;
     [Tooltip("手のライトの向き(度)。0,0,0 で正面(カメラの側)から。X プラスで上から・Y プラスで左から。再生中に変えてもすぐ反映")]
     public Vector3 handLightRotation = new Vector3(20f, -15f, 0f);
     [Tooltip("手のライトの明るさ。再生中に変えてもすぐ反映")]
