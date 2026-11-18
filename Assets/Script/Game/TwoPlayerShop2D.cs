@@ -116,6 +116,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool horizontalOnlyOnOwnScreen = true;
     [Tooltip("自分の画面: 商品を持っている間、RB で90度ずつ回せる(キーボード予備: 1P E / 2P 右Ctrl)")]
     public bool rotateHeldProduct = true;
+    [Tooltip("自分の画面: 商品を持っている間、商品のまわりに回転の目印(時計回りの矢印の輪)を出す(RB で回せることが分かるように)。見た目は「回転の目印」")]
+    public bool showRotateHint = true;
     [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
     public bool autoFitPlayerScreens = true;
     [Tooltip("1P/2Pの画面: 商品を持って自分の画面(レジ袋の画面)を操作しているあいだ、その画面のふちにプレイヤーの色の枠を出す")]
@@ -301,6 +303,18 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float cursorGrabPoseTime = 1f;
     [Tooltip("Cursor Motion Animate が OFF のとき、離した形にする「つかむ」クリップの位置(0 = 始め 〜 1 = 終わり)。ゲームの最初もこの形")]
     [Range(0f, 1f)] public float cursorReleasePoseTime = 0f;
+
+    [Header("回転の目印(機能のON/OFF: 操作・画面 の Show Rotate Hint。商品を落とすターンに商品のまわりに出す)")]
+    [Tooltip("目印の色(透明度 A で薄くもできる)。再生中に変えてもすぐ反映")]
+    public Color rotateHintColor = new Color(0.09f, 0.38f, 0.52f, 0.9f);
+    [Tooltip("目印の大きさ(1 で輪の内側が商品の外側くらい)。再生中に変えてもすぐ反映")]
+    public float rotateHintSize = 1.15f;
+    [Tooltip("目印を時計回りに回す速さ(度/秒。0 なら止める)。再生中に変えてもすぐ反映")]
+    public float rotateHintSpin = 45f;
+    [Tooltip("目印の位置のずれ(商品の真ん中から。X 右・Y 上)。再生中に変えてもすぐ反映")]
+    public Vector2 rotateHintOffset = Vector2.zero;
+    [Tooltip("目印の絵(空ならスクリプトで描いた矢印2本の輪)。白い絵を入れると Rotate Hint Color の色になる")]
+    public Sprite rotateHintSprite;
 
     [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]
