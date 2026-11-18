@@ -319,6 +319,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 rotateHintOffset = Vector2.zero;
     [Tooltip("目印の絵(空ならスクリプトで描いた矢印2本の輪)。白い絵を入れると Rotate Hint Color の色になる")]
     public Sprite rotateHintSprite;
+    [Tooltip("商品の下に出す説明の文字(空なら出さない)。再生中に変えてもすぐ反映")]
+    public string rotateHintText = "RBで回転";
+    [Tooltip("説明の文字の色。再生中に変えてもすぐ反映")]
+    public Color rotateHintTextColor = new Color(0.09f, 0.38f, 0.52f, 1f);
+    [Tooltip("説明の文字の大きさ(1 でふつう)。再生中に変えてもすぐ反映")]
+    public float rotateHintTextSize = 1f;
+    [Tooltip("説明の文字の上下のずれ(プラスで上へ。ゲームの長さ)。再生中に変えてもすぐ反映")]
+    public float rotateHintTextY = 0f;
 
     [Header("操作中の画面の枠(機能のON/OFF の Show Own / Shop Screen Frame)")]
     [Tooltip("枠の太さ(ゲームの長さ。縦の画面の横幅はだいたい 10)")]

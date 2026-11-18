@@ -7,7 +7,9 @@ using UnityEngine;
 //  - 大きさは商品の大きさに合わせる(輪の内側が商品の外側くらい。rotateHintSize 倍)。ただし直径 rotateHintMaxSize まで(大きな商品は重なってよい)。
 //    位置は rotateHintOffset でずらす。矢印の太さは rotateHintThickness(変えたら絵を描き直す)
 //  - rotateHintSpin 度/秒で時計回りにゆっくり回す(0 なら止める)
-//  - 商品より奥(sortingOrder 998。持ち運び中の商品は 999)に描く
+//  - 商品より手前(sortingOrder 1000。持ち運び中の商品は 999)に描く
+//  - 商品(と輪)の下に説明の文字 rotateHintText(「RBで回転」など)を出す。色 rotateHintTextColor・大きさ rotateHintTextSize・
+//    上下のずれ rotateHintTextY。文字を空にすると出さない
 //  - LateUpdate から毎フレーム。再生中に変えてもすぐ反映
 public partial class TwoPlayerShop2D
 {
@@ -17,6 +19,9 @@ public partial class TwoPlayerShop2D
         public GameObject held;   // どの商品に合わせた大きさか
         public float radius;      // その商品の半径(縦横の長いほうの半分)
         public float angle;       // 回している角度
+        public TextMesh label;    // 説明の文字
+        public string labelText;  // どの文字・大きさで作ったか(変わったら作り直す。影も同じ文字なので)
+        public float labelSize;
     }
     readonly Dictionary<Player, RotateHintLook> rotateHints = new Dictionary<Player, RotateHintLook>();
     static Sprite rotateHintDefaultSprite;
@@ -37,6 +42,7 @@ public partial class TwoPlayerShop2D
         if (!show)
         {
             if (h != null && h.sr != null) h.sr.enabled = false;
+            if (h != null && h.label != null) h.label.gameObject.SetActive(false);
             return;
         }
         if (h == null || h.sr == null)
@@ -57,7 +63,7 @@ public partial class TwoPlayerShop2D
         h.sr.enabled = true;
         h.sr.sprite = sprite;
         h.sr.color = rotateHintColor;
-        h.sr.sortingOrder = 998;   // 持ち運び中の商品(999)の奥
+        h.sr.sortingOrder = 1000;   // 持ち運び中の商品(999)の手前
         if (h.sr.gameObject.layer != p.held.layer) SetLayer(h.sr.gameObject, p.held.layer);
 
         // 輪の内側が、商品の外側に来る大きさ x rotateHintSize。直径は rotateHintMaxSize まで(大きな商品は重なってよい)
@@ -71,6 +77,35 @@ public partial class TwoPlayerShop2D
         h.sr.transform.rotation = Quaternion.Euler(0f, 0f, h.angle);
         Vector3 c = p.held.transform.position;
         h.sr.transform.position = new Vector3(c.x + rotateHintOffset.x, c.y + rotateHintOffset.y, 0f);
+
+        UpdateRotateHintLabel(p, h, c, diameter / 2f * (RotateHintRadius + RotateHintHalfWidth(rotateHintThickness) * 2.2f));
+    }
+
+    // 説明の文字(商品と輪の、下の端より少し下。回さない)
+    void UpdateRotateHintLabel(Player p, RotateHintLook h, Vector3 c, float ringRadius)
+    {
+        string text = rotateHintText ?? "";
+        float size = HudTextSize * 0.6f * Mathf.Max(0.1f, rotateHintTextSize);
+        if (h.label != null && (h.labelText != text || !Mathf.Approximately(h.labelSize, size)))
+        {
+            Destroy(h.label.gameObject);
+            h.label = null;
+        }
+        if (text.Length == 0) return;
+        if (h.label == null)
+        {
+            h.label = MakeText($"RotateHintText_{p.name}", null, p.held.layer, text, rotateHintTextColor, 1001);
+            SetTextSize(h.label, size);
+            AddTextShadow(h.label);
+            h.labelText = text;
+            h.labelSize = size;
+        }
+        h.label.gameObject.SetActive(true);
+        if (h.label.gameObject.layer != p.held.layer) SetLayer(h.label.gameObject, p.held.layer);
+        h.label.color = rotateHintTextColor;
+        float textH = h.label.GetComponent<MeshRenderer>().bounds.size.y;
+        float bottom = Mathf.Max(h.radius, ringRadius);   // 商品と輪の、下に出ているほう
+        h.label.transform.position = new Vector3(c.x, c.y - bottom - textH / 2f - 0.1f + rotateHintTextY, 0f);
     }
 
     // 商品の半径(見た目の範囲の、縦横の長いほうの半分。真ん中は商品の位置)
