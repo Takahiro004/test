@@ -309,6 +309,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color rotateHintColor = new Color(0.09f, 0.38f, 0.52f, 0.9f);
     [Tooltip("目印の大きさ(1 で輪の内側が商品の外側くらい)。再生中に変えてもすぐ反映")]
     public float rotateHintSize = 1.15f;
+    [Tooltip("目印の大きさの上限(直径。ゲームの長さ。縦の画面の横幅はだいたい 10)。大きな商品はこれ以上大きくせず、商品と重なってよい。0 なら上限なし。再生中に変えてもすぐ反映")]
+    public float rotateHintMaxSize = 3.5f;
+    [Tooltip("矢印の太さ(1 で太め・0.6 くらいで細め)。再生中に変えてもすぐ反映")]
+    [Range(0.2f, 2f)] public float rotateHintThickness = 0.65f;
     [Tooltip("目印を時計回りに回す速さ(度/秒。0 なら止める)。再生中に変えてもすぐ反映")]
     public float rotateHintSpin = 45f;
     [Tooltip("目印の位置のずれ(商品の真ん中から。X 右・Y 上)。再生中に変えてもすぐ反映")]
