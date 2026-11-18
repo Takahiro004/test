@@ -277,6 +277,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float cursorModelTintAmount = 0f;   // 2026-11-18 プログラマー: 手のモデルには色を付けない(縁取りだけ)。前の名前 cursorModelTint の値がシーンに残っていたので名前を変えた
     [Tooltip("手の3Dモデルの縁取りの太さ(手の大きさの割合。0.08 なら8%はみ出す。0 なら縁取りなし)。色は枠と同じプレイヤーの色。再生前に決める")]
     [Range(0f, 0.3f)] public float cursorOutlineWidth = 0.08f;
+    [Tooltip("手のモデル専用のライトを使う(手だけを照らす。商品・棚は照らさない)")]
+    public bool handLightEnabled = true;
+    [Tooltip("手のライトの向き(度)。0,0,0 で正面(カメラの側)から。X プラスで上から・Y プラスで左から。再生中に変えてもすぐ反映")]
+    public Vector3 handLightRotation = new Vector3(20f, -15f, 0f);
+    [Tooltip("手のライトの明るさ。再生中に変えてもすぐ反映")]
+    public float handLightIntensity = 1f;
+    [Tooltip("手のライトの色")]
+    public Color handLightColor = Color.white;
     [Tooltip("手の3Dモデルの「つかむ」モーション(手のモデルの FBX の ▶ を開いた中のクリップ)。商品を掴んだときに再生して、最後のコマで止まる")]
     public AnimationClip cursorGrabClip;
     [Tooltip("手の3Dモデルの「はなす」モーション。商品を離したとき(掴み合いで取られたときも)に再生して、最後のコマで止まる")]

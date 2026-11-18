@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using UnityEngine.Rendering.Universal;
 
 // カーソルを3Dモデル(手など)にする(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「カーソル」)
 // p1CursorModel / p2CursorModel にプレハブを入れると、画像のカーソルの代わりに出る。
@@ -12,6 +13,8 @@ using UnityEngine.Playables;
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
 //  - どちらの手か分かるように: 手のモデルにプレイヤーの色をうっすら付け(cursorModelTintAmount)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
 //    棚の画面の手のそばに「1P」「2P」を出す(cursorShowPlayerLabel)
+//  - 手のモデル専用のライト(handLight): 手だけを照らすライトを1つ足す。ライトレイヤー(URP の Rendering Layers。UniversalRP.asset で ON)を使い、
+//    手のモデルの renderingLayerMask に HandLightLayerBit を足して、そのライトはそのビットの物だけを照らす(商品・棚は照らさない)
 //  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
 //    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある。
 //    cursorMotionAnimate が OFF なら、再生せずに「つかむ」クリップの1コマで止めた形にする(掴んだ形 / 離した形。最初は離した形)
@@ -57,7 +60,11 @@ public partial class TwoPlayerShop2D
             model.transform.localPosition = new Vector3(offset.x - center.x, offset.y - center.y, -backZ - 0.01f);
 
             UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
-            foreach (var r in renderers) r.sortingOrder = CursorOrder;
+            foreach (var r in renderers)
+            {
+                r.sortingOrder = CursorOrder;
+                r.renderingLayerMask |= 1u << HandLightLayerBit;   // 手のモデル専用のライトに照らされるようにする
+            }
         }
         if (mirror) holder.localScale = new Vector3(-1f, 1f, 1f);
 
@@ -190,5 +197,31 @@ public partial class TwoPlayerShop2D
         if (p == null || !cursorLabels.TryGetValue(p, out var label) || label == null) return;
         label.transform.localPosition = new Vector3(cursorLabelOffset.x * cursorScale, cursorLabelOffset.y * cursorScale, 0f);
         SetTextSize(label, HudTextSize * 0.6f * Mathf.Max(0.1f, cursorLabelSize));
+    }
+
+    // ---------- 手のモデル専用のライト ----------
+    const int HandLightLayerBit = 1;   // ライトレイヤーの番号(Light Layer 1)。手のモデルだけがこのビットを持つ
+    Light handLight;
+
+    // LateUpdate から毎フレーム(再生中に向き・明るさ・色を変えてもすぐ反映)
+    void UpdateHandLight()
+    {
+        if (!handLightEnabled)
+        {
+            if (handLight != null) handLight.enabled = false;
+            return;
+        }
+        if (handLight == null)
+        {
+            var go = new GameObject("HandLight");
+            handLight = go.AddComponent<Light>();
+            handLight.type = LightType.Directional;
+            handLight.shadows = LightShadows.None;
+            handLight.GetUniversalAdditionalLightData().renderingLayers = 1u << HandLightLayerBit;   // 手のモデルだけを照らす
+        }
+        handLight.enabled = true;
+        handLight.intensity = Mathf.Max(0f, handLightIntensity);
+        handLight.color = handLightColor;
+        handLight.transform.rotation = Quaternion.Euler(handLightRotation);
     }
 }
