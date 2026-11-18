@@ -395,7 +395,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("オーラの色(透明度 A で濃さ)。再生中に変えてもすぐ反映")]
     public Color auraColor = new Color(1f, 0.6f, 0f, 0.85f);   // 白い棚の上でも見えるように、濃いめのオレンジ
     [Tooltip("オーラの大きさ(商品の大きさの何倍か)。再生中に変えてもすぐ反映")]
-    public float auraSize = 2.2f;
+    public float auraSize = 1.6f;
     [Tooltip("オーラが脈打つ速さ(1秒に何回)。再生中に変えてもすぐ反映")]
     public float auraPulseSpeed = 1.2f;
     [Tooltip("オーラが脈打つ強さ(0 = 脈打たない 〜 1 = 大きく)。再生中に変えてもすぐ反映")]
@@ -404,14 +404,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float auraSpin = 40f;
     [Tooltip("炎のように、商品のふちから炎のかけらが上へゆらゆら昇る。OFF ならモヤモヤの光だけ。再生中に変えてもすぐ反映")]
     public bool auraFlame = true;
-    [Tooltip("炎の先の色(根元は Aura Color。A を 0 にすると先で消える)。再生中に変えてもすぐ反映")]
+    [Tooltip("炎の生まれた所(ふち)の明るい芯の色。途中で Aura Color になる。再生中に変えてもすぐ反映")]
+    public Color auraFlameCoreColor = new Color(1f, 0.95f, 0.55f, 1f);
+    [Tooltip("炎の先の色(途中は Aura Color。A を 0 にすると先で消える)。再生中に変えてもすぐ反映")]
     public Color auraFlameTipColor = new Color(1f, 0.15f, 0f, 0f);
     [Tooltip("炎のかけらの数(1つの商品に)。再生中に変えてもすぐ反映")]
-    public int auraFlameCount = 14;
+    public int auraFlameCount = 28;
     [Tooltip("炎の昇る高さ(商品の半径の何倍か)。再生中に変えてもすぐ反映")]
-    public float auraFlameHeight = 1.3f;
+    public float auraFlameHeight = 0.55f;
     [Tooltip("炎のかけらの大きさ(商品の半径の何倍か)。再生中に変えてもすぐ反映")]
-    public float auraFlameSize = 0.8f;
+    public float auraFlameSize = 0.32f;
     [Tooltip("炎の速さ(1 でふつう・2 で2倍速)。再生中に変えてもすぐ反映")]
     public float auraFlameSpeed = 1f;
     [Tooltip("棚の上の商品に出す")]
