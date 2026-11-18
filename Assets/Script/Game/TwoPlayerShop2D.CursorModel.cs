@@ -10,8 +10,8 @@ using UnityEngine.Playables;
 //  - 描く順番は画像のカーソルと同じ CursorOrder(2900。商品・画面の枠(2800)より手前、大きな文字・結果発表(3000〜)より奥)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
-//  - どちらの手か分かるように: 手のモデルにプレイヤーの色をうっすら付け(cursorModelTint)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
-//    棚の画面の手のそばに「1P」「2P」を出す(cursorPlayerLabel)
+//  - どちらの手か分かるように: 手のモデルにプレイヤーの色をうっすら付け(cursorModelTintAmount)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
+//    棚の画面の手のそばに「1P」「2P」を出す(cursorShowPlayerLabel)
 //  - モーション: 商品を掴んだら cursorGrabClip(つかむ)、離したら cursorReleaseClip(はなす)を、そのプレイヤーの手(棚・自分の画面の両方)で再生する。
 //    最後のコマで止まる(クリップの Loop Time は OFF のまま)。クリップは手のモデル(FBX)の ▶ を開いた中にある。
 //    cursorMotionAnimate が OFF なら、再生せずに「つかむ」クリップの1コマで止めた形にする(掴んだ形 / 離した形。最初は離した形)
@@ -158,7 +158,7 @@ public partial class TwoPlayerShop2D
     // 手のモデルに、プレイヤーの色をうっすら付ける(マテリアルの色 _BaseColor / _Color に混ぜる。マテリアルはこの手だけのもの)
     void TintCursorModel(Transform cursor, Color color)
     {
-        if (cursor == null || cursorModelTint <= 0f) return;
+        if (cursor == null || cursorModelTintAmount <= 0f) return;
         foreach (var r in cursor.GetComponentsInChildren<Renderer>())
             foreach (var m in r.materials)
             {
@@ -166,8 +166,8 @@ public partial class TwoPlayerShop2D
                     if (m.HasProperty(prop))
                     {
                         Color c = m.GetColor(prop);
-                        m.SetColor(prop, new Color(Mathf.Lerp(c.r, color.r, cursorModelTint), Mathf.Lerp(c.g, color.g, cursorModelTint),
-                                                   Mathf.Lerp(c.b, color.b, cursorModelTint), c.a));
+                        m.SetColor(prop, new Color(Mathf.Lerp(c.r, color.r, cursorModelTintAmount), Mathf.Lerp(c.g, color.g, cursorModelTintAmount),
+                                                   Mathf.Lerp(c.b, color.b, cursorModelTintAmount), c.a));
                     }
             }
     }
@@ -177,7 +177,7 @@ public partial class TwoPlayerShop2D
 
     void AddCursorLabel(Player p, Color color)
     {
-        if (!cursorPlayerLabel || p.cursorShop == null) return;
+        if (!cursorShowPlayerLabel || p.cursorShop == null) return;
         var label = MakeText($"CursorLabel_{p.name}", p.cursorShop, layerShop, p.name, new Color(color.r, color.g, color.b, 1f), CursorOrder + 1);
         AddTextShadow(label);
         cursorLabels[p] = label;

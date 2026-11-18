@@ -268,13 +268,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("2Pのカーソルの3Dモデルを左右反転する(右手のモデルを2Pでは左手に見せる)")]
     public bool mirrorP2CursorModel = true;
     [Tooltip("棚の画面の手のそばに「1P」「2P」をプレイヤーの色で出す(どちらの手か分かるように)。再生前に決める")]
-    public bool cursorPlayerLabel = false;   // 2026-11-18 プログラマー: 縁取りだけでいい(1P/2P の文字はいらない)
+    public bool cursorShowPlayerLabel = false;   // 2026-11-18 プログラマー: 縁取りだけでいい(1P/2P の文字はいらない)。前の名前 cursorPlayerLabel の値がシーンに残っていたので名前を変えた
     [Tooltip("「1P」「2P」の位置(手の真ん中から。カーソルの大きさを1として。X=右・Y=上)。再生中に変えてもすぐ反映")]
     public Vector2 cursorLabelOffset = new Vector2(0.5f, -0.6f);
     [Tooltip("「1P」「2P」の文字の大きさ(1でふつう)。再生中に変えてもすぐ反映")]
     public float cursorLabelSize = 1f;
     [Tooltip("手の3Dモデルに、プレイヤーの色をどのくらい付けるか(0 = 付けない 〜 1 = 色そのもの)。再生前に決める")]
-    [Range(0f, 1f)] public float cursorModelTint = 0f;   // 2026-11-18 プログラマー: 手のモデルには色を付けない(縁取りだけ)
+    [Range(0f, 1f)] public float cursorModelTintAmount = 0f;   // 2026-11-18 プログラマー: 手のモデルには色を付けない(縁取りだけ)。前の名前 cursorModelTint の値がシーンに残っていたので名前を変えた
     [Tooltip("手の3Dモデルの縁取りの太さ(手の大きさの割合。0.08 なら8%はみ出す。0 なら縁取りなし)。色は枠と同じプレイヤーの色。再生前に決める")]
     [Range(0f, 0.3f)] public float cursorOutlineWidth = 0.08f;
     [Tooltip("手の3Dモデルの「つかむ」モーション(手のモデルの FBX の ▶ を開いた中のクリップ)。商品を掴んだときに再生して、最後のコマで止まる")]
