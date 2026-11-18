@@ -217,8 +217,11 @@ public partial class TwoPlayerShop2D
             handLight = go.AddComponent<Light>();
             handLight.type = LightType.Directional;
             handLight.shadows = LightShadows.None;
-            handLight.GetUniversalAdditionalLightData().renderingLayers = 1u << HandLightLayerBit;   // 手のモデルだけを照らす
         }
+        // 手のモデルだけを照らす。照らす相手(ライトレイヤー)は、Unity / URP の版によって読む場所が違うので、両方に入れる。毎フレーム入れ直す
+        handLight.renderingLayerMask = 1 << HandLightLayerBit;
+        handLight.GetUniversalAdditionalLightData().renderingLayers = 1u << HandLightLayerBit;
+        handLight.cullingMask = ~0;   // どのレイヤーの物にも当たる(手かどうかはライトレイヤーで決める)
         handLight.enabled = true;
         handLight.intensity = Mathf.Max(0f, handLightIntensity);
         handLight.color = handLightColor;
