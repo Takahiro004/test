@@ -380,9 +380,11 @@ public partial class TwoPlayerShop2D
         }
     }
 
-    // 文字の右下に、うすい影を付けて読みやすくする(文字と一緒に動く・大きさが変わる)
-    static void AddTextShadow(TextMesh tm)
+    // 文字の右下に、うすい影を付けて読みやすくする(文字と一緒に動く・大きさが変わる)。作った影を返す
+    // Text Shadow(textShadowsOn)が OFF なら付けない(二重に見えて読みにくいため。初めは OFF)。null を返す
+    static TextMesh AddTextShadow(TextMesh tm)
     {
+        if (!textShadowsOn) return null;
         var mr = tm.GetComponent<MeshRenderer>();
         var go = new GameObject("Shadow");
         go.layer = tm.gameObject.layer;
@@ -400,6 +402,7 @@ public partial class TwoPlayerShop2D
         var smr = go.GetComponent<MeshRenderer>();
         smr.material = mr.sharedMaterial;
         smr.sortingOrder = mr.sortingOrder - 1;
+        return sh;
     }
 
     // 文字を変えたら、影の文字も同じにする

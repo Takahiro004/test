@@ -55,6 +55,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Font textFont;
     [Tooltip("文字の解像度(1〜4)。大きいほどくっきりする(見た目の大きさは変わらない)。2 で前の2倍")]
     [Range(1, 4)] public int textResolution = 2;
+    [Tooltip("文字の右下に影(ずらした文字)を重ねる。二重に見えて読みにくいので初めは OFF。再生する前に決める")]
+    public bool textShadow = false;   // 2026-11-18 プログラマー: 文字を二重に重ねない
 
     [Header("モニターの置き方と画面の配置(机・袋の位置と大きさは Portrait Layout の中)")]
     [Tooltip("縦型モニター: 本番 / 横型(縦と同じ見た目): 横のモニターの真ん中に本番と同じ縦長の画面を出す / 横型(横いっぱい): 横のモニターに合わせて並べ直す。再生中に変えてもすぐ反映(商品・カーソルの大きさは新しく出たものから)")]

@@ -174,8 +174,7 @@ public partial class TwoPlayerShop2D
         // 影も作り直す(文字が変わると影の文字も変える必要がある)
         var old = tm.transform.Find("Shadow");
         if (old != null) Destroy(old.gameObject);
-        AddTextShadow(tm);
-        var shadow = tm.transform.GetChild(tm.transform.childCount - 1).GetComponent<TextMesh>();
+        var shadow = AddTextShadow(tm);   // Text Shadow が OFF なら null
         if (shadow != null) shadow.color = new Color(0f, 0f, 0f, 0.8f);   // 机や棚の上でも読めるように黒い影
     }
 

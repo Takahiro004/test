@@ -95,7 +95,7 @@ public partial class TwoPlayerShop2D
         if (h.label == null)
         {
             h.label = MakeText($"RotateHintText_{p.name}", null, p.held.layer, text, rotateHintTextColor, 1001);
-            SetTextSize(h.label, size);   // 影は付けない(二重に見えて読みにくいため)
+            SetTextSize(h.label, size);
             h.labelText = text;
             h.labelSize = size;
         }

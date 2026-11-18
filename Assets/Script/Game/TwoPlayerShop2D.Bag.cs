@@ -387,12 +387,14 @@ public partial class TwoPlayerShop2D
     // 文字は「元の絵」を引き伸ばして表示するので、元の絵を textResolution 倍の大きさで作って、ぼやけにくくしている。
     // 文字の大きさは characterSize に直接入れず、SetTextSize で入れる(元の絵の大きさが変わっても、見た目の大きさが同じになる)
     static int labelFontSize = 64;
+    static bool textShadowsOn;   // 文字に影を付けるか(Inspector の Text Shadow。AddTextShadow は TwoPlayerShop2D.Result.cs)
 
     // 再生を始めたときに呼ぶ(フォントと解像度を決める)
     void ApplyTextFont()
     {
         labelFont = textFont != null ? textFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         labelFontSize = 64 * Mathf.Clamp(textResolution, 1, 4);
+        textShadowsOn = textShadow;
     }
 
     // 文字の大きさを入れる(size は前と同じ意味。元の絵の大きさ 64 のときの characterSize)
