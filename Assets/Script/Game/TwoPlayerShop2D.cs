@@ -149,6 +149,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool rankWeighting = true;
     [Tooltip("棚: 高いランクの商品が出始める少し前に、棚の画面のタイマーの下に予告の文字を右から左へ流す(欄は「高額商品の予告」)")]
     public bool highRankNotice = true;
+    [Tooltip("ランクの高い商品(Aura From Rank 以上)のまわりに、ゆらゆら動くモヤモヤの光(オーラ)を出す(欄は「高額商品のオーラ」)")]
+    public bool highRankAura = true;
     [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
     [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額)を出す。献立の食材は黄色。再生中に変えてもすぐ反映")]
@@ -386,6 +388,26 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float highRankNoticeTime = 6f;
     [Tooltip("文字の高さのずらし(プラスで上。タイマーの下あたりが 0)")]
     public float highRankNoticeY = 0f;
+
+    [Header("高額商品のオーラ(機能のON/OFF: 棚 の High Rank Aura。ランクの高い商品のまわりのモヤモヤの光)")]
+    [Tooltip("このランク以上の商品にオーラを出す(1〜5)。再生中に変えてもすぐ反映")]
+    [Range(1, 5)] public int auraFromRank = 5;
+    [Tooltip("オーラの色(透明度 A で濃さ)。再生中に変えてもすぐ反映")]
+    public Color auraColor = new Color(1f, 0.82f, 0.2f, 0.7f);
+    [Tooltip("オーラの大きさ(商品の大きさの何倍か)。再生中に変えてもすぐ反映")]
+    public float auraSize = 1.7f;
+    [Tooltip("オーラが脈打つ速さ(1秒に何回)。再生中に変えてもすぐ反映")]
+    public float auraPulseSpeed = 1.2f;
+    [Tooltip("オーラが脈打つ強さ(0 = 脈打たない 〜 1 = 大きく)。再生中に変えてもすぐ反映")]
+    [Range(0f, 1f)] public float auraPulse = 0.15f;
+    [Tooltip("オーラのゆらゆら回る速さ(度/秒)。再生中に変えてもすぐ反映")]
+    public float auraSpin = 40f;
+    [Tooltip("棚の上の商品に出す")]
+    public bool auraOnShelf = true;
+    [Tooltip("掴んで持ち運んでいる商品に出す")]
+    public bool auraWhileHeld = true;
+    [Tooltip("自分の画面に落とした商品・袋の中の商品に出す")]
+    public bool auraInBag = false;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
