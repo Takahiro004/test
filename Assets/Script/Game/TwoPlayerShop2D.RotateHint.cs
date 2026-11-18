@@ -4,7 +4,8 @@ using UnityEngine;
 // 回転の目印(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「回転の目印」と「機能のON/OFF: 操作・画面」→ Show Rotate Hint)
 // 商品を掴んで自分の画面で落とすターン(持ち運び中)に、商品のまわりに時計回りの矢印2本の輪を出す(RB で回せることが分かるように)。
 //  - 絵は rotateHintSprite。空ならスクリプトで描く(白い矢印 + 少し暗い縁。色 rotateHintColor をかけるので、どんな色にもなる)
-//  - 大きさは商品の大きさに合わせる(輪の内側が商品の外側くらい。rotateHintSize 倍)。位置は rotateHintOffset でずらす
+//  - 大きさは商品の大きさに合わせる(輪の内側が商品の外側くらい。rotateHintSize 倍)。ただし直径 rotateHintMaxSize まで(大きな商品は重なってよい)。
+//    位置は rotateHintOffset でずらす。矢印の太さは rotateHintThickness(変えたら絵を描き直す)
 //  - rotateHintSpin 度/秒で時計回りにゆっくり回す(0 なら止める)
 //  - 商品より奥(sortingOrder 998。持ち運び中の商品は 999)に描く
 //  - LateUpdate から毎フレーム。再生中に変えてもすぐ反映
@@ -19,6 +20,8 @@ public partial class TwoPlayerShop2D
     }
     readonly Dictionary<Player, RotateHintLook> rotateHints = new Dictionary<Player, RotateHintLook>();
     static Sprite rotateHintDefaultSprite;
+    static float rotateHintBuiltThickness;
+    const float RotateHintRadius = 0.74f;   // 描いた輪の真ん中の半径(絵の幅を 2 として)
 
     void UpdateRotateHints()
     {
@@ -50,16 +53,18 @@ public partial class TwoPlayerShop2D
             h.angle = 0f;
         }
 
-        var sprite = rotateHintSprite != null ? rotateHintSprite : GetRotateHintSprite();
+        var sprite = rotateHintSprite != null ? rotateHintSprite : GetRotateHintSprite(rotateHintThickness);
         h.sr.enabled = true;
         h.sr.sprite = sprite;
         h.sr.color = rotateHintColor;
         h.sr.sortingOrder = 998;   // 持ち運び中の商品(999)の奥
         if (h.sr.gameObject.layer != p.held.layer) SetLayer(h.sr.gameObject, p.held.layer);
 
-        // 輪の内側(絵の幅の 64%)が、商品の外側に来る大きさ x rotateHintSize
+        // 輪の内側が、商品の外側に来る大きさ x rotateHintSize。直径は rotateHintMaxSize まで(大きな商品は重なってよい)
         float spriteW = Mathf.Max(0.01f, Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y));
-        float diameter = h.radius * 2f / 0.64f * Mathf.Max(0.05f, rotateHintSize);
+        float inner = rotateHintSprite != null ? 0.64f : RotateHintRadius - RotateHintHalfWidth(rotateHintThickness);
+        float diameter = h.radius * 2f / Mathf.Max(0.1f, inner) * Mathf.Max(0.05f, rotateHintSize);
+        if (rotateHintMaxSize > 0f) diameter = Mathf.Min(diameter, rotateHintMaxSize);
         h.sr.transform.localScale = Vector3.one * (diameter / spriteW);
 
         h.angle -= rotateHintSpin * Time.deltaTime;   // 時計回り(RB で回る向きと同じ)
@@ -84,10 +89,17 @@ public partial class TwoPlayerShop2D
         return r;
     }
 
-    // 時計回りの矢印2本の輪(白 + 少し暗い縁。幅 1)
-    static Sprite GetRotateHintSprite()
+    // 輪の太さの半分(絵の幅を 2 として)。thickness 1 で 0.10
+    static float RotateHintHalfWidth(float thickness) => 0.10f * Mathf.Clamp(thickness, 0.2f, 2f);
+
+    // 時計回りの矢印2本の輪(白 + 少し暗い縁。幅 1)。太さが変わったら描き直す
+    static Sprite GetRotateHintSprite(float thickness)
     {
-        if (rotateHintDefaultSprite != null) return rotateHintDefaultSprite;
+        thickness = Mathf.Clamp(thickness, 0.2f, 2f);
+        if (rotateHintDefaultSprite != null && Mathf.Approximately(rotateHintBuiltThickness, thickness)) return rotateHintDefaultSprite;
+        if (rotateHintDefaultSprite != null) { Destroy(rotateHintDefaultSprite.texture); Destroy(rotateHintDefaultSprite); }
+        rotateHintBuiltThickness = thickness;
+        float hw = RotateHintHalfWidth(thickness), headHw = hw * 2.2f;
         const int size = 256;
         const int ss = 3;   // ふちをなめらかにするため、1ピクセルを 3x3 に分けて数える
         var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
@@ -101,8 +113,8 @@ public partial class TwoPlayerShop2D
                     {
                         float u = ((x + (sx + 0.5f) / ss) / size) * 2f - 1f;
                         float v = ((y + (sy + 0.5f) / ss) / size) * 2f - 1f;
-                        if (InRotateArrow(u, v, 0.03f)) fill++;
-                        else if (InRotateArrow(u, v, 0f)) edge++;
+                        if (InRotateArrow(u, v, hw * 0.3f, hw, headHw)) fill++;   // 縁の太さは輪の太さの3割
+                        else if (InRotateArrow(u, v, 0f, hw, headHw)) edge++;
                     }
                 int n = ss * ss;
                 float a = (fill + edge) / (float)n;
@@ -117,11 +129,10 @@ public partial class TwoPlayerShop2D
     }
 
     // 点 (u, v)(真ん中 0・端 ±1)が矢印の中か。inset だけ内側に縮めた形で調べる(縁を作るため)
-    static bool InRotateArrow(float u, float v, float inset)
+    // hw = 輪の太さの半分・headHw = 矢じりの根元の幅の半分
+    static bool InRotateArrow(float u, float v, float inset, float hw, float headHw)
     {
-        const float rc = 0.74f;     // 輪の真ん中の半径
-        const float hw = 0.10f;     // 輪の太さの半分
-        const float headHw = 0.22f; // 矢じりの根元の幅の半分
+        const float rc = RotateHintRadius;   // 輪の真ん中の半径
         const float body = 115f;    // 輪の部分の角度
         const float head = 30f;     // 矢じりの部分の角度
         float r = Mathf.Sqrt(u * u + v * v);
