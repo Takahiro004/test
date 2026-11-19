@@ -26,6 +26,7 @@ public partial class TwoPlayerShop2D
         public float perimeter = -1f; // ふちの長さ(ゲームの長さ。炎のつぶの数を決める)
         public Vector2[] edge;        // ふちの点(商品の中の位置。ぐるっと一周)
         public float[] edgeCum;       // 最初の点から各点までの、ふちに沿った長さ(ふちの上で同じ割合に生まれさせる)
+        public Vector2[] silPts, silNormals;   // 3Dモデルの商品: 見た目の輪郭の点と外向き(商品の中の位置・向き。BuildSilhouetteEdge)
     }
     // 炎のかけら1つ
     class FlamePart
@@ -90,9 +91,14 @@ public partial class TwoPlayerShop2D
     // 炎: つぶを商品のふちに並べて上へ昇らせ、消えたら別の場所から生まれ直す
     void UpdateFlames(GameObject go, AuraLook l, Vector3 c, int order, int layer)
     {
-        if (auraFlame && l.edge == null) BuildEdge(go, l);
+        if (auraFlame && l.edge == null && l.silPts == null)
+        {
+            // 3Dモデルの商品は見た目の輪郭から(当たり判定は手足を包んだ大きな形なので、カニなどでは体から離れた輪になる)。
+            // 画像・図形の商品と、輪郭が取れなかったときは当たり判定のふちから
+            if (!(infoOf.TryGetValue(go, out var info) && info.model != null && BuildSilhouetteEdge(go, l, info))) BuildEdge(go, l);
+        }
         // つぶの数 = ふちの長さ x 1 あたりの数(大きな商品ほど多い。つぶの大きさは同じ)
-        int want = auraFlame ? Mathf.Clamp(Mathf.RoundToInt(l.perimeter * Mathf.Max(0f, auraFlameDensity)), 0, 150) : 0;
+        int want = auraFlame ? Mathf.Clamp(Mathf.RoundToInt(l.perimeter * Mathf.Max(0f, auraFlameDensity)), 0, 250) : 0;
         while (l.flames.Count > want)
         {
             var last = l.flames[l.flames.Count - 1];
@@ -177,6 +183,54 @@ public partial class TwoPlayerShop2D
         l.perimeter = l.edgeCum[n];
     }
 
+    // 3Dモデルの商品の輪郭: 献立のアイコンと同じく、モデルを正面から撮った絵(ModelIconSprite。TwoPlayerShop2D.Menu.cs)を使い、
+    // 絵の色が付いた所と透明な所の境目を輪郭の点にする(2ピクセルおき)。外向きは、まわりの透明な所の向き。
+    // 絵は「見た目の範囲の、縦横の長いほう x 1.08」の正方形を写しているので、今の見た目の範囲から位置を割り出す
+    bool BuildSilhouetteEdge(GameObject go, AuraLook l, ProductInfo info)
+    {
+        var sprite = ModelIconSprite(info);
+        if (sprite == null) return false;
+        var tex = sprite.texture;
+        Color32[] px;
+        try { px = tex.GetPixels32(); } catch { return false; }
+        int w = tex.width, h = tex.height;
+
+        Bounds b = default;
+        bool has = false;
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        {
+            if (!r.enabled || r.GetComponent<TextMesh>() != null || r is SpriteRenderer) continue;
+            if (!has) { b = r.bounds; has = true; } else b.Encapsulate(r.bounds);
+        }
+        if (!has) return false;
+        float half = Mathf.Max(b.extents.x, b.extents.y) * 1.08f;   // 絵の正方形の半分の長さ(ゲームの長さ)
+
+        const int step = 2;
+        bool Solid(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && px[y * w + x].a > 80;
+        var pts = new List<Vector2>();
+        var normals = new List<Vector2>();
+        var tr = go.transform;
+        for (int y = 0; y < h; y += step)
+            for (int x = 0; x < w; x += step)
+            {
+                if (!Solid(x, y)) continue;
+                Vector2 n = Vector2.zero;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                        if ((dx != 0 || dy != 0) && !Solid(x + dx * step, y + dy * step)) n += new Vector2(dx, dy);
+                if (n == Vector2.zero) continue;   // まわりが全部色付き = 輪郭ではない
+                Vector2 world = new Vector2(b.center.x + ((x + 0.5f) / w * 2f - 1f) * half,
+                                            b.center.y + ((y + 0.5f) / h * 2f - 1f) * half);
+                pts.Add(tr.InverseTransformPoint(world));
+                normals.Add(((Vector2)tr.InverseTransformDirection(n.normalized)).normalized);
+            }
+        if (pts.Count < 8) return false;
+        l.silPts = pts.ToArray();
+        l.silNormals = normals.ToArray();
+        l.perimeter = pts.Count * (2f * half / w * step);   // 輪郭の点の数 x 点の間かく ≒ 輪郭の長さ
+        return true;
+    }
+
     static bool Inside(Collider2D[] cols, Vector2 p)
     {
         foreach (var col in cols) if (col != null && col.enabled && col.OverlapPoint(p)) return true;
@@ -191,6 +245,18 @@ public partial class TwoPlayerShop2D
         f.wobble = Random.Range(0f, Mathf.PI * 2f);
         f.size = Random.Range(0.7f, 1.15f);
         var tr = go.transform;
+        if (l.silPts != null)
+        {
+            // 3Dモデルの輪郭の点から選ぶ(点は輪郭に沿ってほぼ同じ間かくで並んでいる)
+            for (int tryCount = 0; tryCount < 8; tryCount++)
+            {
+                int idx = Random.Range(0, l.silPts.Length);
+                f.start = l.silPts[idx];
+                f.normal = l.silNormals[idx];
+                if (tr.TransformDirection(f.normal).y > -0.3f || Random.value < 0.25f) return;
+            }
+            return;
+        }
         int n = l.edge.Length;
         for (int tryCount = 0; tryCount < 8; tryCount++)
         {
