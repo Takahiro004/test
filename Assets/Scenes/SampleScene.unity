@@ -905,7 +905,13 @@ MonoBehaviour:
   highRankNoticeTime: 6
   highRankNoticeY: 0
   auraFromRank: 5
-  auraColor: {r: 1, g: 0.6, b: 0, a: 0.85}
+  auraStyle: 0
+  auraSilhouetteLayers: 3
+  auraSilhouetteSpread: 0.35
+  auraSilhouetteRise: 0.35
+  auraSilhouetteSpeed: 0.8
+  auraSilhouetteWidth: 0.15
+  auraColor: {r: 1, g: 0.8812718, b: 0, a: 0.85}
   auraSize: 2.2
   auraPulseSpeed: 1.2
   auraPulse: 0.15
@@ -1849,6 +1855,12 @@ MonoBehaviour:
   kickPerfect: 0.95
   kickCooldown: 3
   kickFlightTime: 0.7
+  kickFootPreview: 0
+  kickFootModel: {fileID: 1591743774014288900, guid: c150611ccb028ce41a317e5d806ed124, type: 3}
+  kickFootModelRotation: {x: 0, y: 0, z: 0}
+  kickFootModelOffset: {x: 0, y: 0}
+  kickFootClip: {fileID: 0}
+  kickFootClipSpeed: 1
   kickFootSprite: {fileID: 0}
   kickFootSize: 2.5
   kickFootRotation: 0

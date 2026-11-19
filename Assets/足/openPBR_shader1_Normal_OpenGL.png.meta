@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c8e00ad64b3c0614492369a5ded5e321
+guid: d0e6b53b1bd94cc47932aae21f446d44
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7733457574794575504
-    second: openPBR_shader1_Normal_0
+      213: 3389872000969115361
+    second: openPBR_shader1_Normal_OpenGL_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: openPBR_shader1_Normal_0
+      name: openPBR_shader1_Normal_OpenGL_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 09e3f2fc0b2c25b60800000000000000
-      internalID: 7733457574794575504
+      spriteID: 1e68ec3ef9e3b0f20800000000000000
+      internalID: 3389872000969115361
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      openPBR_shader1_Normal_0: 7733457574794575504
+      openPBR_shader1_Normal_OpenGL_0: 3389872000969115361
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
