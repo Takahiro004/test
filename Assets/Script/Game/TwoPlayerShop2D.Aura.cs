@@ -238,9 +238,9 @@ public partial class TwoPlayerShop2D
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
                 a[(y + pad) * W + x + pad] = srcPx[y * w + x].a > 60 ? 1f : 0f;
-        int grow = Mathf.Max(1, Mathf.RoundToInt(size * 0.05f * Mathf.Clamp(thickness, 0.1f, 4f)));
+        int grow = Mathf.Max(1, Mathf.RoundToInt(size * 0.05f * Mathf.Clamp(thickness, 0.1f, 4f)));   // thickness 1 で絵の大きさの 5%
         a = MaxFilter(a, W, H, grow);                        // 太らせる
-        int blur = Mathf.Max(1, Mathf.RoundToInt(size * 0.06f));
+        int blur = Mathf.Max(1, Mathf.RoundToInt(size * 0.03f * Mathf.Clamp(thickness, 0.5f, 4f)));   // ぼかしも太さに合わせる(細いときは、ぼかしで太って見えないように控えめ)
         a = BoxBlur(BoxBlur(a, W, H, blur), W, H, blur);     // ぼかす(2回でなめらかに)
         var px = new Color32[W * H];
         for (int i = 0; i < px.Length; i++) px[i] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(a[i] * 1.2f) * 255f));
