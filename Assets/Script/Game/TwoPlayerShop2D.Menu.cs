@@ -54,7 +54,8 @@ public partial class TwoPlayerShop2D
         public SpriteRenderer[] icons;
         public TextMesh[] iconNames;   // 画像が無い食材の名前の札
         public Material[] silhouettes; // アイコンごとのシルエットのマテリアル(画像を覚えさせるので、1つずつ別にする)
-        public TextMesh memo;
+        public TextMesh title;         // 献立名(1行目。長ければ用紙の幅に収まるまで小さくする)
+        public TextMesh memo;          // 食材の一覧(2行目から)
         public MenuRecipe builtFor;    // どの献立で作ったか
     }
     readonly MenuPanel[] menuPanels = new MenuPanel[2];
@@ -171,21 +172,44 @@ public partial class TwoPlayerShop2D
         panel.paper.localRotation = Quaternion.Euler(0f, 0f, memoLeft ? 4f : -4f);
         panel.paper.localScale = new Vector3(paperW / Mathf.Max(0.01f, paperSize.x), paperH / Mathf.Max(0.01f, paperSize.y), 1f);
 
-        // メモの文字(献立名と食材。入ったものは ■)。用紙と一緒に傾ける
+        // メモの文字(上に献立名、その下に食材。入ったものは ■)。用紙と一緒に傾ける。
+        // 献立名が用紙の幅からはみ出すときは、文字は小さくせずに2行(以上)に折り返す。そのぶん全部の行が少しだけ詰まる。
+        // (折り返しても収まらないときだけ、最後の手段として小さくする FitTextWidth)
         var names = NamesInBag(p);
-        var sb = new System.Text.StringBuilder(currentMenu.name);
-        if (p.completedMenu != null) sb.Append($" <color=#D08A00>完成！{menuBonusRate:0.##}倍</color>");
+        float textW = paperW * 0.84f;   // 文字を書ける幅(用紙の左右に 8% ずつ余白)
+        int ingLines = currentMenu.ingredients.Length;
+        int extra = p.completedMenu != null ? 1 : 0;   // 「完成！」の行
+        int titleLines = 1;
+        float lineSize = 0f;
+        List<string> titleParts = null;
+        for (int pass = 0; pass < 2; pass++)   // 行の数で文字の大きさが変わり、大きさで折り返しが変わるので、2回合わせる
+        {
+            lineSize = paperH / (titleLines + extra + ingLines + 1.5f) / 6.4f;   // 1行の高さ ≒ 大きさ x 6.4
+            SetTextSize(panel.title, lineSize);
+            titleParts = WrapText(panel.title, currentMenu.name, textW);
+            titleLines = titleParts.Count;
+        }
+        lineSize = paperH / (titleLines + extra + ingLines + 1.5f) / 6.4f;
+        string title = string.Join("\n", titleParts);
+        if (extra > 0) title += $"\n<color=#D08A00>完成！{menuBonusRate:0.##}倍</color>";
+        panel.title.text = title;
+        var sb = new System.Text.StringBuilder();
         foreach (var ing in currentMenu.ingredients)
         {
             bool got = p.completedMenu != null || names.Contains(ing);
-            sb.Append(got ? $"\n<color=#1E9E3A>■ {ing}</color>" : $"\n□ {ing}");
+            if (sb.Length > 0) sb.Append('\n');
+            sb.Append(got ? $"<color=#1E9E3A>■ {ing}</color>" : $"□ {ing}");
         }
         panel.memo.text = sb.ToString();
-        int lines = currentMenu.ingredients.Length + 1;
-        SetTextSize(panel.memo, paperH / (lines + 1.5f) / 6.4f);   // 1行の高さ ≒ 大きさ x 6.4
-        panel.memo.transform.localRotation = panel.paper.localRotation;
-        panel.memo.transform.localPosition = panel.paper.localPosition
+        FitTextWidth(panel.title, lineSize, textW);
+        FitTextWidth(panel.memo, lineSize, textW);
+        Vector3 textTop = panel.paper.localPosition
             + panel.paper.localRotation * new Vector3(-paperW / 2f + paperW * 0.08f, paperH / 2f - paperH * 0.06f, 0f);
+        panel.title.transform.localRotation = panel.paper.localRotation;
+        panel.title.transform.localPosition = textTop;
+        panel.memo.transform.localRotation = panel.paper.localRotation;
+        // 献立名(と「完成！」)の行のぶん下から
+        panel.memo.transform.localPosition = textTop + panel.paper.localRotation * new Vector3(0f, -lineSize * 6.4f * (titleLines + extra), 0f);
 
         // 食材のアイコン(メモの反対側に並べる)
         float iconAreaMin = memoLeft ? -view.x / 2f + memoAreaW : -view.x / 2f;
@@ -217,10 +241,75 @@ public partial class TwoPlayerShop2D
                 sr.color = got ? Color.white : new Color(1f, 1f, 1f, 0.3f);
                 var tm = panel.iconNames[k];
                 tm.transform.localPosition = sr.transform.localPosition;
-                SetTextSize(tm, iconSize * 0.2f / 6.4f * 1.6f);
+                FitTextWidth(tm, iconSize * 0.2f / 6.4f * 1.6f, iconSize * 0.9f);   // 長い名前は札の幅に収まるまで小さく
                 tm.color = got ? new Color(0.15f, 0.15f, 0.15f) : new Color(1f, 1f, 1f, 0.6f);
             }
         }
+    }
+
+    // 文字の横幅(ゲームの長さ)。フォントの文字の幅を足して計算する(1行の高さ ≒ 文字の大きさ(ピクセル)なので、1ピクセル = characterSize x 0.1)
+    static float TextWidth(TextMesh tm, string text)
+    {
+        var font = tm.font;
+        if (font == null || string.IsNullOrEmpty(text)) return 0f;
+        font.RequestCharactersInTexture(text, tm.fontSize, tm.fontStyle);
+        float px = 0f;
+        foreach (char ch in text)
+            if (font.GetCharacterInfo(ch, out var info, tm.fontSize, tm.fontStyle)) px += info.advance;
+        return px * tm.characterSize * 0.1f;
+    }
+
+    // text を、横幅 maxWidth に収まるように何行かに分ける(今の文字の大きさで)。2行のときは、2行の長さがなるべくそろう所で分ける
+    static List<string> WrapText(TextMesh tm, string text, float maxWidth)
+    {
+        var lines = new List<string>();
+        if (string.IsNullOrEmpty(text)) { lines.Add(""); return lines; }
+        if (TextWidth(tm, text) <= maxWidth) { lines.Add(text); return lines; }
+        // 前から詰めて、はみ出す手前で次の行へ
+        int start = 0;
+        for (int end = 1; end <= text.Length; end++)
+        {
+            if (end - start > 1 && TextWidth(tm, text.Substring(start, end - start)) > maxWidth)
+            {
+                lines.Add(text.Substring(start, end - 1 - start));
+                start = end - 1;
+            }
+        }
+        lines.Add(text.Substring(start));
+        // 2行なら、長いほうの行が一番短くなる所で分け直す(「海鮮丼のなんとか」+「丼」のように1文字だけ残らないように)
+        if (lines.Count == 2)
+        {
+            int best = lines[0].Length;
+            float bestW = float.MaxValue;
+            for (int cut = 1; cut < text.Length; cut++)
+            {
+                float a = TextWidth(tm, text.Substring(0, cut)), b = TextWidth(tm, text.Substring(cut));
+                if (a > maxWidth || b > maxWidth) continue;
+                if (Mathf.Max(a, b) < bestW) { bestW = Mathf.Max(a, b); best = cut; }
+            }
+            lines[0] = text.Substring(0, best);
+            lines[1] = text.Substring(best);
+        }
+        return lines;
+    }
+
+    // 文字を size の大きさにする。ただし横幅が maxWidth を超えるなら、収まる大きさまで小さくする。
+    // (今の横幅 ÷ 今の大きさ で「大きさ 1 あたりの横幅」を出して計算する。文字を変えたフレームは横幅がまだ前のままのことがあるが、次のフレームで合う)
+    static void FitTextWidth(TextMesh tm, float size, float maxWidth)
+    {
+        float want = size * 64f / Mathf.Max(1, tm.fontSize);   // SetTextSize と同じ計算
+        float now = tm.characterSize;
+        // 見た目の範囲(bounds)は傾けた文字を囲む箱なので、傾きの分を取り除いて、文字そのものの横幅にする
+        Vector3 box = tm.GetComponent<MeshRenderer>().bounds.size;
+        float ang = tm.transform.eulerAngles.z * Mathf.Deg2Rad;
+        float cos = Mathf.Abs(Mathf.Cos(ang)), sin = Mathf.Abs(Mathf.Sin(ang));
+        float width = cos * cos - sin * sin > 0.1f ? (box.x * cos - box.y * sin) / (cos * cos - sin * sin) : box.x;
+        if (now > 0.0001f && width > 0.0001f)
+        {
+            float perSize = width / now;
+            want = Mathf.Min(want, maxWidth / perSize);
+        }
+        tm.characterSize = want;
     }
 
     MenuPanel BuildMenuPanel(Player p)
@@ -230,6 +319,10 @@ public partial class TwoPlayerShop2D
         panel.root.gameObject.layer = p.layer;
         panel.band = MakeBagPart("Band", panel.root, p.layer, p.color, 1600, false);
         panel.paper = MakeBagPart("Paper", panel.root, p.layer, Color.white, 1620, false);
+        panel.title = MakeText("MemoTitle", panel.root, p.layer, "", new Color(0.15f, 0.15f, 0.15f), 1625);
+        panel.title.anchor = TextAnchor.UpperLeft;
+        panel.title.alignment = TextAlignment.Left;
+        panel.title.richText = true;
         panel.memo = MakeText("Memo", panel.root, p.layer, "", new Color(0.15f, 0.15f, 0.15f), 1625);
         panel.memo.anchor = TextAnchor.UpperLeft;
         panel.memo.alignment = TextAlignment.Left;
