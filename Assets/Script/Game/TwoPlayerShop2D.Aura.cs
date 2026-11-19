@@ -13,8 +13,15 @@ using UnityEngine;
 //    商品が回っても、ふちに付いていく。色は 生まれた所 auraFlameCoreColor → 途中 auraColor → 先 auraFlameTipColor。
 //    つぶの大きさ auraFlameBlobSize・昇る高さ auraFlameRise・速さ auraFlameSpeed
 //  - モヤモヤの光(auraGlow)は丸いので、商品の形に合わない。初めは OFF(炎だけ)
+//  - 形(auraStyle): Silhouette(初め) = 商品の形をふちどる、ぼかした光(halo)を商品の奥に出し、同じ形の光が何枚も、
+//    ふくらみながら上へゆらゆら昇って消えるのをくり返す(マンガのキャラの体から立ちのぼるオーラのイメージ)。
+//    光の形は商品の絵(3Dモデルは正面から撮った絵 ModelIconSprite)を、太らせて(auraSilhouetteThickness)ぼかして作る(MakeAuraHaloSprite)。
+//    枚数 auraSilhouetteLayers・ふくらむ大きさ auraSilhouetteSpread・昇る高さ auraSilhouetteRise・速さ auraSilhouetteSpeed
+//    Flame = 下の炎(と丸い光)
 //  - 商品の子にはしない(商品の大きさ・当たり判定の計算に入らないように)。LateUpdate から毎フレーム、商品に付いていく
 //  - 再生中に変えてもすぐ反映
+public enum AuraStyle { Silhouette, Flame }   // オーラの形(商品の形の光が立ちのぼる / 炎のつぶ)
+
 public partial class TwoPlayerShop2D
 {
     class AuraLook
@@ -27,6 +34,14 @@ public partial class TwoPlayerShop2D
         public Vector2[] edge;        // ふちの点(商品の中の位置。ぐるっと一周)
         public float[] edgeCum;       // 最初の点から各点までの、ふちに沿った長さ(ふちの上で同じ割合に生まれさせる)
         public Vector2[] silPts, silNormals;   // 3Dモデルの商品: 見た目の輪郭の点と外向き(商品の中の位置・向き。BuildSilhouetteEdge)
+        // 形のオーラ(Silhouette)
+        public bool haloBuilt;
+        public Sprite halo;           // 商品の形の、ぼかした光の絵
+        public bool haloIsModel;      // 3Dモデルの商品(撮った絵の真ん中を haloCenter に置き、幅を haloWidth にする)
+        public Vector2 haloCenter;    // 商品の中の位置
+        public float haloWidth;
+        public SpriteRenderer haloBase;                 // いつも出ている光
+        public readonly List<SpriteRenderer> haloWaves = new List<SpriteRenderer>();   // 昇っていく光
     }
     // 炎のかけら1つ
     class FlamePart
@@ -54,6 +69,8 @@ public partial class TwoPlayerShop2D
             if (l.a != null) Destroy(l.a.gameObject);
             if (l.b != null) Destroy(l.b.gameObject);
             foreach (var f in l.flames) if (f.sr != null) Destroy(f.sr.gameObject);
+            if (l.haloBase != null) Destroy(l.haloBase.gameObject);
+            foreach (var w in l.haloWaves) if (w != null) Destroy(w.gameObject);
             auras.Remove(go);
         }
         if (!highRankAura) return;
@@ -69,9 +86,12 @@ public partial class TwoPlayerShop2D
             var l = kv.Value;
             var sr = go.GetComponent<SpriteRenderer>();
             bool visible = go.activeInHierarchy;
-            l.a.gameObject.SetActive(visible && auraGlow);
-            l.b.gameObject.SetActive(visible && auraGlow);
-            foreach (var f in l.flames) f.sr.gameObject.SetActive(visible);
+            bool flameStyle = auraStyle == AuraStyle.Flame;
+            l.a.gameObject.SetActive(visible && flameStyle && auraGlow);
+            l.b.gameObject.SetActive(visible && flameStyle && auraGlow);
+            foreach (var f in l.flames) f.sr.gameObject.SetActive(visible && flameStyle);
+            if (l.haloBase != null) l.haloBase.gameObject.SetActive(visible && !flameStyle);
+            foreach (var w in l.haloWaves) if (w != null) w.gameObject.SetActive(visible && !flameStyle);
             if (!visible) continue;
 
             Vector3 c = go.transform.position;
@@ -84,8 +104,202 @@ public partial class TwoPlayerShop2D
             // (光は炎の土台なので、Aura Color の濃さの 6 割)
             SetAuraPart(l.a, c, diameter * (1f + k * pulse), t * auraSpin, auraColor.a * 0.6f * (1f - k + k * (0.5f + 0.5f * pulse)), order, layer);
             SetAuraPart(l.b, c, diameter * (0.9f - k * pulse), -t * auraSpin * 1.3f + 40f, auraColor.a * 0.5f * (1f - k + k * (0.5f - 0.5f * pulse)), order, layer);
-            UpdateFlames(go, l, c, order, layer);
+            if (flameStyle) UpdateFlames(go, l, c, order, layer);
+            else UpdateHaloAura(go, l, t, order, layer);
         }
+    }
+
+    // ---------- 形のオーラ(Silhouette) ----------
+    void UpdateHaloAura(GameObject go, AuraLook l, float t, int order, int layer)
+    {
+        if (!l.haloBuilt)
+        {
+            l.haloBuilt = true;
+            BuildHalo(go, l);
+        }
+        if (l.halo == null) return;
+
+        // 枚数を合わせる
+        int want = Mathf.Clamp(auraSilhouetteLayers, 0, 8);
+        if (l.haloBase == null) l.haloBase = MakeHaloPart(l);
+        while (l.haloWaves.Count > want) { Destroy(l.haloWaves[l.haloWaves.Count - 1].gameObject); l.haloWaves.RemoveAt(l.haloWaves.Count - 1); }
+        while (l.haloWaves.Count < want) l.haloWaves.Add(MakeHaloPart(l));
+
+        var tr = go.transform;
+        Vector3 center = l.haloIsModel ? tr.TransformPoint(l.haloCenter) : tr.position;
+        Vector3 baseScale = l.haloIsModel ? Vector3.one * l.haloWidth : new Vector3(tr.lossyScale.x, tr.lossyScale.y, 1f);
+        float height = l.radius * 2f;   // 商品の大きさ(昇る高さ・揺れの幅の目安)
+        Color col = auraColor;
+
+        // いつも出ている光(少しちらつく)
+        float flick = 0.85f + 0.15f * Mathf.Sin(t * 11f + l.phase * 3f);
+        SetHaloPart(l.haloBase, center, tr.rotation, baseScale * (1f + 0.03f * Mathf.Sin(t * 7f + l.phase)),
+                    new Color(col.r, col.g, col.b, col.a * 0.8f * flick), order, layer);
+
+        // ふくらみながら上へ昇って消える光(何枚かを、時間をずらしてくり返す)
+        float speed = Mathf.Max(0.05f, auraSilhouetteSpeed);
+        for (int i = 0; i < l.haloWaves.Count; i++)
+        {
+            float ph = Mathf.Repeat(t * speed + (float)i / Mathf.Max(1, l.haloWaves.Count) + l.phase, 1f);   // 0 生まれた → 1 消える
+            float grow = 1f + Mathf.Max(0f, auraSilhouetteSpread) * ph;
+            Vector3 sc = new Vector3(baseScale.x * grow, baseScale.y * grow * (1f + 0.25f * ph), 1f);   // 上へ伸びる
+            float sway = Mathf.Sin(t * 3f + i * 2.1f) * 0.04f * height * ph;
+            Vector3 pos = center + Vector3.up * (Mathf.Max(0f, auraSilhouetteRise) * height * ph) + Vector3.right * sway;
+            Quaternion rot = tr.rotation * Quaternion.Euler(0f, 0f, Mathf.Sin(t * 4f + i * 1.7f) * 4f * ph);   // ゆらゆら傾く
+            float a = col.a * 0.6f * Mathf.Pow(1f - ph, 1.5f) * Mathf.Clamp01(ph / 0.12f);
+            SetHaloPart(l.haloWaves[i], pos, rot, sc, new Color(col.r, col.g, col.b, a), order, layer);
+        }
+    }
+
+    SpriteRenderer MakeHaloPart(AuraLook l)
+    {
+        var r = new GameObject("AuraHalo").AddComponent<SpriteRenderer>();
+        r.sprite = l.halo;
+        return r;
+    }
+
+    static void SetHaloPart(SpriteRenderer r, Vector3 pos, Quaternion rot, Vector3 scale, Color color, int order, int layer)
+    {
+        r.transform.SetPositionAndRotation(pos, rot);
+        r.transform.localScale = scale;
+        r.color = color;
+        r.sortingOrder = order;
+        if (r.gameObject.layer != layer) r.gameObject.layer = layer;
+    }
+
+    // 光の形を作る: 3Dモデルの商品は撮った絵、画像の商品はその画像から
+    readonly Dictionary<Sprite, Sprite> haloCache = new Dictionary<Sprite, Sprite>();
+    float haloBuiltThickness = -1f;
+
+    void BuildHalo(GameObject go, AuraLook l)
+    {
+        if (!Mathf.Approximately(haloBuiltThickness, auraSilhouetteThickness)) { haloCache.Clear(); haloBuiltThickness = auraSilhouetteThickness; }
+        Sprite src = null;
+        if (infoOf.TryGetValue(go, out var info) && info.model != null)
+        {
+            src = ModelIconSprite(info);
+            if (src != null)
+            {
+                Bounds b = default;
+                bool has = false;
+                foreach (var r in go.GetComponentsInChildren<Renderer>())
+                {
+                    if (!r.enabled || r.GetComponent<TextMesh>() != null || r is SpriteRenderer) continue;
+                    if (!has) { b = r.bounds; has = true; } else b.Encapsulate(r.bounds);
+                }
+                if (!has) src = null;
+                else
+                {
+                    l.haloIsModel = true;
+                    l.haloCenter = go.transform.InverseTransformPoint(new Vector3(b.center.x, b.center.y, go.transform.position.z));
+                    l.haloWidth = Mathf.Max(b.extents.x, b.extents.y) * 1.08f * 2f;   // 撮った絵の幅(ModelIconSprite と同じ)
+                }
+            }
+        }
+        else
+        {
+            var sr = go.GetComponent<SpriteRenderer>();
+            if (sr != null) src = sr.sprite;
+        }
+        if (src == null) return;
+        if (!haloCache.TryGetValue(src, out var halo) || halo == null)
+        {
+            halo = MakeAuraHaloSprite(src, auraSilhouetteThickness);
+            haloCache[src] = halo;
+        }
+        l.halo = halo;
+    }
+
+    // 絵の形を太らせて、ぼかした白い光の絵を作る(まわりに余白を足す。1ピクセルの大きさ・ピボットは元の絵と同じ見え方になるようにする)。
+    // 元の絵は読めない設定(Read/Write OFF)のことがあるので、いったん RenderTexture に写してから読む
+    static Sprite MakeAuraHaloSprite(Sprite src, float thickness)
+    {
+        const int maxSize = 128;
+        var tex = src.texture;
+        Rect rect = src.textureRect;
+        float scale = Mathf.Min(1f, maxSize / Mathf.Max(rect.width, rect.height));
+        int w = Mathf.Max(4, Mathf.RoundToInt(rect.width * scale)), h = Mathf.Max(4, Mathf.RoundToInt(rect.height * scale));
+        var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+        Graphics.Blit(tex, rt, new Vector2(rect.width / tex.width, rect.height / tex.height), new Vector2(rect.x / tex.width, rect.y / tex.height));
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        read.Apply();
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+        var srcPx = read.GetPixels32();
+        Object.Destroy(read);
+
+        int size = Mathf.Max(w, h);
+        int pad = Mathf.RoundToInt(size * 0.3f);
+        int W = w + pad * 2, H = h + pad * 2;
+        var a = new float[W * H];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                a[(y + pad) * W + x + pad] = srcPx[y * w + x].a > 60 ? 1f : 0f;
+        int grow = Mathf.Max(1, Mathf.RoundToInt(size * 0.05f * Mathf.Clamp(thickness, 0.1f, 4f)));
+        a = MaxFilter(a, W, H, grow);                        // 太らせる
+        int blur = Mathf.Max(1, Mathf.RoundToInt(size * 0.06f));
+        a = BoxBlur(BoxBlur(a, W, H, blur), W, H, blur);     // ぼかす(2回でなめらかに)
+        var px = new Color32[W * H];
+        for (int i = 0; i < px.Length; i++) px[i] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(a[i] * 1.2f) * 255f));
+        var outTex = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        outTex.SetPixels32(px);
+        outTex.Apply();
+        Vector2 pivot = new Vector2((src.pivot.x * scale + pad) / W, (src.pivot.y * scale + pad) / H);
+        return Sprite.Create(outTex, new Rect(0, 0, W, H), pivot, src.pixelsPerUnit * scale);
+    }
+
+    // 縦横 r ピクセルの範囲の一番大きい値(形を太らせる)
+    static float[] MaxFilter(float[] a, int w, int h, int r)
+    {
+        var tmp = new float[a.Length];
+        var o = new float[a.Length];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float m = 0f;
+                for (int k = Mathf.Max(0, x - r); k <= Mathf.Min(w - 1, x + r); k++) m = Mathf.Max(m, a[y * w + k]);
+                tmp[y * w + x] = m;
+            }
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float m = 0f;
+                for (int k = Mathf.Max(0, y - r); k <= Mathf.Min(h - 1, y + r); k++) m = Mathf.Max(m, tmp[k * w + x]);
+                o[y * w + x] = m;
+            }
+        return o;
+    }
+
+    // 縦横 r ピクセルの範囲の平均(ぼかす)
+    static float[] BoxBlur(float[] a, int w, int h, int r)
+    {
+        var tmp = new float[a.Length];
+        var o = new float[a.Length];
+        float n = r * 2 + 1;
+        for (int y = 0; y < h; y++)
+        {
+            float sum = 0f;
+            for (int k = -r; k <= r; k++) sum += a[y * w + Mathf.Clamp(k, 0, w - 1)];
+            for (int x = 0; x < w; x++)
+            {
+                tmp[y * w + x] = sum / n;
+                sum += a[y * w + Mathf.Min(w - 1, x + r + 1)] - a[y * w + Mathf.Max(0, x - r)];
+            }
+        }
+        for (int x = 0; x < w; x++)
+        {
+            float sum = 0f;
+            for (int k = -r; k <= r; k++) sum += tmp[Mathf.Clamp(k, 0, h - 1) * w + x];
+            for (int y = 0; y < h; y++)
+            {
+                o[y * w + x] = sum / n;
+                sum += tmp[Mathf.Min(h - 1, y + r + 1) * w + x] - tmp[Mathf.Max(0, y - r) * w + x];
+            }
+        }
+        return o;
     }
 
     // 炎: つぶを商品のふちに並べて上へ昇らせ、消えたら別の場所から生まれ直す
