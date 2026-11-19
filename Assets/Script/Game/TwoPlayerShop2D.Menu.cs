@@ -172,11 +172,26 @@ public partial class TwoPlayerShop2D
         panel.paper.localRotation = Quaternion.Euler(0f, 0f, memoLeft ? 4f : -4f);
         panel.paper.localScale = new Vector3(paperW / Mathf.Max(0.01f, paperSize.x), paperH / Mathf.Max(0.01f, paperSize.y), 1f);
 
-        // メモの文字(1行目に献立名、2行目から食材。入ったものは ■)。用紙と一緒に傾ける。
-        // 用紙の幅からはみ出すときは、はみ出さない大きさまで小さくする(献立名と食材の一覧は別々に。献立名が長くても食材は小さくならない)
+        // メモの文字(上に献立名、その下に食材。入ったものは ■)。用紙と一緒に傾ける。
+        // 献立名が用紙の幅からはみ出すときは、文字は小さくせずに2行(以上)に折り返す。そのぶん全部の行が少しだけ詰まる。
+        // (折り返しても収まらないときだけ、最後の手段として小さくする FitTextWidth)
         var names = NamesInBag(p);
-        string title = currentMenu.name;
-        if (p.completedMenu != null) title += $" <color=#D08A00>完成！{menuBonusRate:0.##}倍</color>";
+        float textW = paperW * 0.84f;   // 文字を書ける幅(用紙の左右に 8% ずつ余白)
+        int ingLines = currentMenu.ingredients.Length;
+        int extra = p.completedMenu != null ? 1 : 0;   // 「完成！」の行
+        int titleLines = 1;
+        float lineSize = 0f;
+        List<string> titleParts = null;
+        for (int pass = 0; pass < 2; pass++)   // 行の数で文字の大きさが変わり、大きさで折り返しが変わるので、2回合わせる
+        {
+            lineSize = paperH / (titleLines + extra + ingLines + 1.5f) / 6.4f;   // 1行の高さ ≒ 大きさ x 6.4
+            SetTextSize(panel.title, lineSize);
+            titleParts = WrapText(panel.title, currentMenu.name, textW);
+            titleLines = titleParts.Count;
+        }
+        lineSize = paperH / (titleLines + extra + ingLines + 1.5f) / 6.4f;
+        string title = string.Join("\n", titleParts);
+        if (extra > 0) title += $"\n<color=#D08A00>完成！{menuBonusRate:0.##}倍</color>";
         panel.title.text = title;
         var sb = new System.Text.StringBuilder();
         foreach (var ing in currentMenu.ingredients)
@@ -186,9 +201,6 @@ public partial class TwoPlayerShop2D
             sb.Append(got ? $"<color=#1E9E3A>■ {ing}</color>" : $"□ {ing}");
         }
         panel.memo.text = sb.ToString();
-        int lines = currentMenu.ingredients.Length + 1;
-        float lineSize = paperH / (lines + 1.5f) / 6.4f;   // 1行の高さ ≒ 大きさ x 6.4
-        float textW = paperW * 0.84f;                     // 文字を書ける幅(用紙の左右に 8% ずつ余白)
         FitTextWidth(panel.title, lineSize, textW);
         FitTextWidth(panel.memo, lineSize, textW);
         Vector3 textTop = panel.paper.localPosition
@@ -196,7 +208,8 @@ public partial class TwoPlayerShop2D
         panel.title.transform.localRotation = panel.paper.localRotation;
         panel.title.transform.localPosition = textTop;
         panel.memo.transform.localRotation = panel.paper.localRotation;
-        panel.memo.transform.localPosition = textTop + panel.paper.localRotation * new Vector3(0f, -lineSize * 6.4f, 0f);   // 献立名の1行ぶん下から
+        // 献立名(と「完成！」)の行のぶん下から
+        panel.memo.transform.localPosition = textTop + panel.paper.localRotation * new Vector3(0f, -lineSize * 6.4f * (titleLines + extra), 0f);
 
         // 食材のアイコン(メモの反対側に並べる)
         float iconAreaMin = memoLeft ? -view.x / 2f + memoAreaW : -view.x / 2f;
@@ -232,6 +245,52 @@ public partial class TwoPlayerShop2D
                 tm.color = got ? new Color(0.15f, 0.15f, 0.15f) : new Color(1f, 1f, 1f, 0.6f);
             }
         }
+    }
+
+    // 文字の横幅(ゲームの長さ)。フォントの文字の幅を足して計算する(1行の高さ ≒ 文字の大きさ(ピクセル)なので、1ピクセル = characterSize x 0.1)
+    static float TextWidth(TextMesh tm, string text)
+    {
+        var font = tm.font;
+        if (font == null || string.IsNullOrEmpty(text)) return 0f;
+        font.RequestCharactersInTexture(text, tm.fontSize, tm.fontStyle);
+        float px = 0f;
+        foreach (char ch in text)
+            if (font.GetCharacterInfo(ch, out var info, tm.fontSize, tm.fontStyle)) px += info.advance;
+        return px * tm.characterSize * 0.1f;
+    }
+
+    // text を、横幅 maxWidth に収まるように何行かに分ける(今の文字の大きさで)。2行のときは、2行の長さがなるべくそろう所で分ける
+    static List<string> WrapText(TextMesh tm, string text, float maxWidth)
+    {
+        var lines = new List<string>();
+        if (string.IsNullOrEmpty(text)) { lines.Add(""); return lines; }
+        if (TextWidth(tm, text) <= maxWidth) { lines.Add(text); return lines; }
+        // 前から詰めて、はみ出す手前で次の行へ
+        int start = 0;
+        for (int end = 1; end <= text.Length; end++)
+        {
+            if (end - start > 1 && TextWidth(tm, text.Substring(start, end - start)) > maxWidth)
+            {
+                lines.Add(text.Substring(start, end - 1 - start));
+                start = end - 1;
+            }
+        }
+        lines.Add(text.Substring(start));
+        // 2行なら、長いほうの行が一番短くなる所で分け直す(「海鮮丼のなんとか」+「丼」のように1文字だけ残らないように)
+        if (lines.Count == 2)
+        {
+            int best = lines[0].Length;
+            float bestW = float.MaxValue;
+            for (int cut = 1; cut < text.Length; cut++)
+            {
+                float a = TextWidth(tm, text.Substring(0, cut)), b = TextWidth(tm, text.Substring(cut));
+                if (a > maxWidth || b > maxWidth) continue;
+                if (Mathf.Max(a, b) < bestW) { bestW = Mathf.Max(a, b); best = cut; }
+            }
+            lines[0] = text.Substring(0, best);
+            lines[1] = text.Substring(best);
+        }
+        return lines;
     }
 
     // 文字を size の大きさにする。ただし横幅が maxWidth を超えるなら、収まる大きさまで小さくする。
