@@ -402,8 +402,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float auraSilhouetteRise = 0.35f;
     [Tooltip("Silhouette: 光が立ちのぼる速さ(1秒に何回)")]
     public float auraSilhouetteSpeed = 0.8f;
-    [Tooltip("Silhouette: 光のふちの太さ(0.5 で細め・1 で太め。次にオーラが出る商品から反映)")]
-    public float auraSilhouetteThickness = 0.5f;
+    [Tooltip("Silhouette: 光のふちの太さ(ゲームの長さ。商品はだいたい 1.4。大きな商品でも同じ太さ。次にオーラが出る商品から反映)")]
+    public float auraSilhouetteWidth = 0.15f;
     [Tooltip("オーラの色(透明度 A で濃さ)。再生中に変えてもすぐ反映")]
     public Color auraColor = new Color(1f, 0.55f, 0f, 0.9f);   // 白い棚の上でも見えるように、濃いめのオレンジ(炎の途中の色・光の色)
     [Tooltip("オーラの大きさ(商品の大きさの何倍か)。再生中に変えてもすぐ反映")]

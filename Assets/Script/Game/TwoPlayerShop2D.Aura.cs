@@ -15,7 +15,7 @@ using UnityEngine;
 //  - モヤモヤの光(auraGlow)は丸いので、商品の形に合わない。初めは OFF(炎だけ)
 //  - 形(auraStyle): Silhouette(初め) = 商品の形をふちどる、ぼかした光(halo)を商品の奥に出し、同じ形の光が何枚も、
 //    ふくらみながら上へゆらゆら昇って消えるのをくり返す(マンガのキャラの体から立ちのぼるオーラのイメージ)。
-//    光の形は商品の絵(3Dモデルは正面から撮った絵 ModelIconSprite)を、太らせて(auraSilhouetteThickness)ぼかして作る(MakeAuraHaloSprite)。
+//    光の形は商品の絵(3Dモデルは正面から撮った絵 ModelIconSprite)を、太らせて(auraSilhouetteWidth。ゲームの長さなので、大きな商品でも同じ細さ)ぼかして作る(MakeAuraHaloSprite)。
 //    枚数 auraSilhouetteLayers・ふくらむ大きさ auraSilhouetteSpread・昇る高さ auraSilhouetteRise・速さ auraSilhouetteSpeed
 //    Flame = 下の炎(と丸い光)
 //  - 商品の子にはしない(商品の大きさ・当たり判定の計算に入らないように)。LateUpdate から毎フレーム、商品に付いていく
@@ -168,13 +168,13 @@ public partial class TwoPlayerShop2D
     }
 
     // 光の形を作る: 3Dモデルの商品は撮った絵、画像の商品はその画像から
-    readonly Dictionary<Sprite, Sprite> haloCache = new Dictionary<Sprite, Sprite>();
-    float haloBuiltThickness = -1f;
+    readonly Dictionary<(Sprite, int), Sprite> haloCache = new Dictionary<(Sprite, int), Sprite>();
+    const int HaloMaxSize = 128;   // 光の絵を作るときの、元の絵の縦横の長いほう(ピクセル)
 
     void BuildHalo(GameObject go, AuraLook l)
     {
-        if (!Mathf.Approximately(haloBuiltThickness, auraSilhouetteThickness)) { haloCache.Clear(); haloBuiltThickness = auraSilhouetteThickness; }
         Sprite src = null;
+        float worldWidth = 1f;   // 元の絵の横幅が、ゲームでどの長さに見えるか
         if (infoOf.TryGetValue(go, out var info) && info.model != null)
         {
             src = ModelIconSprite(info);
@@ -193,6 +193,7 @@ public partial class TwoPlayerShop2D
                     l.haloIsModel = true;
                     l.haloCenter = go.transform.InverseTransformPoint(new Vector3(b.center.x, b.center.y, go.transform.position.z));
                     l.haloWidth = Mathf.Max(b.extents.x, b.extents.y) * 1.08f * 2f;   // 撮った絵の幅(ModelIconSprite と同じ)
+                    worldWidth = l.haloWidth;
                 }
             }
         }
@@ -200,47 +201,75 @@ public partial class TwoPlayerShop2D
         {
             var sr = go.GetComponent<SpriteRenderer>();
             if (sr != null) src = sr.sprite;
+            if (src != null) worldWidth = src.textureRect.width / src.pixelsPerUnit * Mathf.Abs(go.transform.lossyScale.x);
         }
         if (src == null) return;
-        if (!haloCache.TryGetValue(src, out var halo) || halo == null)
+        // 光の太さ(ゲームの長さ)を、作る絵のピクセルに直す。大きな商品は 1 ピクセルが大きいので、ピクセルの数は少なくなる
+        float scale = Mathf.Min(1f, HaloMaxSize / Mathf.Max(src.textureRect.width, src.textureRect.height));
+        float pxPerWorld = src.textureRect.width * scale / Mathf.Max(0.01f, worldWidth);
+        int widthPx = Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(0f, auraSilhouetteWidth) * pxPerWorld), 1, 40);
+        if (!haloCache.TryGetValue((src, widthPx), out var halo) || halo == null)
         {
-            halo = MakeAuraHaloSprite(src, auraSilhouetteThickness);
-            haloCache[src] = halo;
+            halo = MakeAuraHaloSprite(src, widthPx);
+            haloCache[(src, widthPx)] = halo;
         }
         l.halo = halo;
     }
 
     // 絵の形を太らせて、ぼかした白い光の絵を作る(まわりに余白を足す。1ピクセルの大きさ・ピボットは元の絵と同じ見え方になるようにする)。
-    // 元の絵は読めない設定(Read/Write OFF)のことがあるので、いったん RenderTexture に写してから読む
-    static Sprite MakeAuraHaloSprite(Sprite src, float thickness)
+    // widthPx = 光の太さ(作る絵のピクセル)。太らせるのに 6 割・ぼかすのに 4 割を使う。
+    // 読める絵(3Dモデルを撮った絵など)はそのまま読む。読めない設定(Read/Write OFF)の絵は、いったん RenderTexture に写してから読む
+    static Sprite MakeAuraHaloSprite(Sprite src, int widthPx)
     {
-        const int maxSize = 128;
         var tex = src.texture;
         Rect rect = src.textureRect;
-        float scale = Mathf.Min(1f, maxSize / Mathf.Max(rect.width, rect.height));
+        float scale = Mathf.Min(1f, HaloMaxSize / Mathf.Max(rect.width, rect.height));
         int w = Mathf.Max(4, Mathf.RoundToInt(rect.width * scale)), h = Mathf.Max(4, Mathf.RoundToInt(rect.height * scale));
-        var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
-        Graphics.Blit(tex, rt, new Vector2(rect.width / tex.width, rect.height / tex.height), new Vector2(rect.x / tex.width, rect.y / tex.height));
-        var prev = RenderTexture.active;
-        RenderTexture.active = rt;
-        var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
-        read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-        read.Apply();
-        RenderTexture.active = prev;
-        RenderTexture.ReleaseTemporary(rt);
-        var srcPx = read.GetPixels32();
-        Object.Destroy(read);
+        var srcPx = new Color32[w * h];
+        if (tex.isReadable)
+        {
+            // 間引いて読む(一番近いピクセル)
+            var all = tex.GetPixels32();
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int sx = Mathf.Clamp((int)(rect.x + (x + 0.5f) / scale), 0, tex.width - 1);
+                    int sy = Mathf.Clamp((int)(rect.y + (y + 0.5f) / scale), 0, tex.height - 1);
+                    srcPx[y * w + x] = all[sy * tex.width + sx];
+                }
+        }
+        else
+        {
+            var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+            Graphics.Blit(tex, rt, new Vector2(rect.width / tex.width, rect.height / tex.height), new Vector2(rect.x / tex.width, rect.y / tex.height));
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            read.Apply();
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(rt);
+            srcPx = read.GetPixels32();
+            Object.Destroy(read);
+        }
+        // 透明な所がほとんど無い(= 透明が読めていない)ときは、形が四角い光になってしまうので作らない
+        int opaque = 0;
+        foreach (var c in srcPx) if (c.a > 60) opaque++;
+        if (opaque > srcPx.Length * 0.97f)
+        {
+            Debug.LogWarning($"[Shop2D] {src.name} の透明な所が読めないので、形のオーラを作れません");
+            return null;
+        }
 
-        int size = Mathf.Max(w, h);
-        int pad = Mathf.RoundToInt(size * 0.3f);
+        int grow = Mathf.Max(1, Mathf.RoundToInt(widthPx * 0.6f));
+        int blur = Mathf.Max(1, Mathf.RoundToInt(widthPx * 0.4f));
+        int pad = grow + blur * 2 + 2;   // 太らせ・ぼかしても、はみ出さない余白
         int W = w + pad * 2, H = h + pad * 2;
         var a = new float[W * H];
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
                 a[(y + pad) * W + x + pad] = srcPx[y * w + x].a > 60 ? 1f : 0f;
-        int grow = Mathf.Max(1, Mathf.RoundToInt(size * 0.05f * Mathf.Clamp(thickness, 0.1f, 4f)));   // thickness 1 で絵の大きさの 5%
         a = MaxFilter(a, W, H, grow);                        // 太らせる
-        int blur = Mathf.Max(1, Mathf.RoundToInt(size * 0.03f * Mathf.Clamp(thickness, 0.5f, 4f)));   // ぼかしも太さに合わせる(細いときは、ぼかしで太って見えないように控えめ)
         a = BoxBlur(BoxBlur(a, W, H, blur), W, H, blur);     // ぼかす(2回でなめらかに)
         var px = new Color32[W * H];
         for (int i = 0; i < px.Length; i++) px[i] = new Color32(255, 255, 255, (byte)(Mathf.Clamp01(a[i] * 1.2f) * 255f));
