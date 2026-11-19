@@ -396,14 +396,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public AuraStyle auraStyle = AuraStyle.Silhouette;
     [Tooltip("Silhouette: 立ちのぼる光の枚数")]
     public int auraSilhouetteLayers = 3;
-    [Tooltip("Silhouette: 光が消えるまでにふくらむ大きさ(0.35 なら 1.35 倍まで)")]
-    public float auraSilhouetteSpread = 0.35f;
+    [Tooltip("Silhouette: 光が消えるまでにふくらむ大きさ(0.2 なら 1.2 倍まで)")]
+    public float auraSilhouetteSpread = 0.2f;
     [Tooltip("Silhouette: 光が昇る高さ(商品の大きさの何倍か)")]
     public float auraSilhouetteRise = 0.35f;
     [Tooltip("Silhouette: 光が立ちのぼる速さ(1秒に何回)")]
     public float auraSilhouetteSpeed = 0.8f;
-    [Tooltip("Silhouette: 光のふちの太さ(1 でふつう。次にオーラが出る商品から反映)")]
-    public float auraSilhouetteThickness = 1f;
+    [Tooltip("Silhouette: 光のふちの太さ(0.5 で細め・1 で太め。次にオーラが出る商品から反映)")]
+    public float auraSilhouetteThickness = 0.5f;
     [Tooltip("オーラの色(透明度 A で濃さ)。再生中に変えてもすぐ反映")]
     public Color auraColor = new Color(1f, 0.55f, 0f, 0.9f);   // 白い棚の上でも見えるように、濃いめのオレンジ(炎の途中の色・光の色)
     [Tooltip("オーラの大きさ(商品の大きさの何倍か)。再生中に変えてもすぐ反映")]
