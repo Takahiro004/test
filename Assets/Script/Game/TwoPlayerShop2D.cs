@@ -646,8 +646,20 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 kickFootModelOffset = Vector2.zero;
     [Tooltip("足の3Dモデルが飛ぶ間に再生するモーション(FBX の ▶ を開いた中のクリップ。空なら動かさない)")]
     public AnimationClip kickFootClip;
-    [Tooltip("足のモーションの速さ(1 でそのまま・2 で2倍速)")]
+    [Tooltip("足のモーションの速さ(1 でそのまま・2 で2倍速)。Kick Foot Clip Fit が ON のときは使わない")]
     public float kickFootClipSpeed = 1f;
+    [Tooltip("足を伸ばす動き: ON なら、画面の下の自分の側から相手の側へ足を伸ばして(モーションしながら)、届いたら引っ込める。OFF なら画面を横切って飛ぶ")]
+    public bool kickFootExtend = true;
+    [Tooltip("足を伸ばす動き: 足を伸ばし切るまでの秒数")]
+    public float kickExtendTime = 0.35f;
+    [Tooltip("足を伸ばす動き: どこまで伸ばすか(0 = 自分の側の画面の下 〜 1 = 相手の側の画面の上の外)")]
+    [Range(0f, 1f)] public float kickFootReach = 0.6f;
+    [Tooltip("足を伸ばす動き: 伸ばし切ってから止まっている秒数")]
+    public float kickExtendHold = 0.2f;
+    [Tooltip("足を伸ばす動き: 引っ込める秒数")]
+    public float kickRetractTime = 0.3f;
+    [Tooltip("足を伸ばす動き: モーション(Kick Foot Clip)を、伸ばし切ったときにちょうど終わる速さで再生する")]
+    public bool kickFootClipFit = true;
     [Tooltip("足の画像(3Dモデルも画像も未設定なら自動生成の靴)。つま先が右を向いた画像を想定")]
     public Sprite kickFootSprite;
     [Tooltip("足の大きさ(縦横の長いほうがこの長さになる。3Dモデル・画像どちらにも効く)")]
