@@ -839,8 +839,8 @@ MonoBehaviour:
   cursorShowPlayerLabel: 0
   cursorLabelOffset: {x: 0.5, y: -0.6}
   cursorLabelSize: 1
-  cursorModelTintAmount: 0
-  cursorOutlineWidth: 0.08
+  cursorModelTintAmount: 0.3
+  cursorOutlineWidth: 0
   handLightEnabled: 1
   handLightOnlyHand: 1
   handLightRotation: {x: -120, y: -15, z: 0}
