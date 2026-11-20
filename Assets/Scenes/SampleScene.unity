@@ -1896,14 +1896,20 @@ MonoBehaviour:
   kickIconOutlineColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.9}
   kickIconOutlineWidth: 0.05
   kickFlightTime: 0.7
-  kickFootPreview: 0
-  kickFootModel: {fileID: 1591743774014288900, guid: c150611ccb028ce41a317e5d806ed124, type: 3}
-  kickFootModelRotation: {x: 0, y: 0, z: 0}
-  kickFootModelOffset: {x: 0, y: 0}
+  kickFootPreview: 1
+  kickFootModel: {fileID: 493832603122633615, guid: 0d5b77ce05b20024fa24d34a86dd7ed3, type: 3}
+  kickFootModelRotation: {x: 7, y: 3, z: -120}
+  kickFootModelOffset: {x: -0.3, y: 0}
   kickFootClip: {fileID: 0}
   kickFootClipSpeed: 1
+  kickFootExtend: 1
+  kickExtendTime: 0.35
+  kickFootReach: 0.6
+  kickExtendHold: 0.2
+  kickRetractTime: 0.3
+  kickFootClipFit: 0
   kickFootSprite: {fileID: 0}
-  kickFootSize: 2.5
+  kickFootSize: 9
   kickFootRotation: 0
   kickShakeMax: 1
   kickShakeUp: 0.3
