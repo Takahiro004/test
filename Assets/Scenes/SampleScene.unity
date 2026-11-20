@@ -1790,14 +1790,16 @@ MonoBehaviour:
   pricePopupTime: 1
   removeAfterStopTime: 0.5
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
-  bagSprite: {fileID: 21300000, guid: 06ffe841ecffd16479fe1a22c5c7f3b3, type: 3}
-  bagSpriteScale: {x: 1.2, y: 1.5}
-  bagSpriteOffset: {x: 0, y: -1.5}
+  bagSprite: {fileID: 21300000, guid: 70d59ff391f641d2ad55d76fa70ebfcc, type: 3}
+  bagSpriteScale: {x: 1.05, y: 1.25}
+  bagSpriteOffset: {x: 0, y: -0.6}
   bagFrontSprite: {fileID: 21300000, guid: 914e0e2acf5480d468b1d9bd5b9d3548, type: 3}
+  bagOutlineSprite: {fileID: 21300000, guid: 06ffe841ecffd16479fe1a22c5c7f3b3, type: 3}
   bagFrontColor: {r: 1, g: 1, b: 1, a: 1}
   bagFrontMultiply: 1
-  bagFrontScale: {x: 1.2, y: 1.5}
-  bagFrontOffset: {x: 0, y: -1.5}
+  bagFrontMultiplyStrength: 3
+  bagFrontScale: {x: 1.05, y: 1.25}
+  bagFrontOffset: {x: 0, y: -0.6}
   menuList:
   - name: "\u30AB\u30EC\u30FC"
     ingredients:
