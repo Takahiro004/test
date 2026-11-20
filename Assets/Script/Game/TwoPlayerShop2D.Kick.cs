@@ -20,7 +20,7 @@ using UnityEngine.Playables;
 //    半透明の足(kickIconEmptyColor)の上に、たまった分だけ下から、色の段階(kickIconGradient。下 = 寒色 → 上 = 暖色)の足を重ねる。
 //    満タンになったらゲージを消して、その場所に「LB: キック OK」を出す。蹴ったら(0 に戻ったら)ゲージをまた出す
 //  - 大きさ kickIconSize・位置のずれ kickIconOffset
-//  - kickFootFromFront(初め ON)なら、手前から奥へ蹴る: 蹴られた人の画面の下(手前。kickFrontRestPosition)から、袋の高さ kickFrontHitHeight まで
+//  - kickFootFromFront(初め ON)なら、手前から奥へ蹴る: 蹴られた人の画面の下(手前。kickFrontRestPosition)から、足の真ん中が袋の高さ kickFrontHitHeight に来るまで
 //    足を上へ伸ばし、奥へ行くほど kickFrontDepthScale 倍まで小さくする(遠くへ行く見え方)。足の向きは Kick Foot Model Rotation と kickFootFrontRotation
 //  - kickOnBagScreen(初め ON)なら、伸ばすキックは棚の画面には出さず、蹴られた人の画面(袋の画面)の、蹴った人の側から出して、相手の袋のふちを蹴る
 //  - 伸ばす動き(kickFootExtend)は、Kick Foot Preview と同じ置き場所(kickFootRestPosition)から、相手の側へ横に kickFootReachDistance だけ伸ばして戻す
@@ -334,17 +334,10 @@ public partial class TwoPlayerShop2D
             var fLeg = MakeFootVisual($"Foot_{from.name}", from.color, Vector2.up, true, out var fGraph, fSpeed, fl, true);
             fLeg.transform.position = fStart;
             float far = Mathf.Clamp(kickFrontDepthScale, 0.1f, 2f);
-            // どこまで上げるか: 足の先(いちばん上)が、袋の高さの kickFrontHitHeight の所に届くまで
-            float rise = Mathf.Max(0f, kickFootReachDistance);
-            var frs = fLeg.GetComponentsInChildren<Renderer>();
-            if (frs.Length > 0)
-            {
-                Bounds b = frs[0].bounds;
-                foreach (var r in frs) b.Encapsulate(r.bounds);
-                float hitY = BagFloorY + bagHeight * Mathf.Clamp01(kickFrontHitHeight) + CameraFollowY;
-                rise = Mathf.Max(0f, hitY - b.max.y * far - fStart.y * (1f - far));   // 小さくなる分も考える(足のピボットのまわりで縮む)
-            }
-            Vector3 fReach = fStart + Vector3.up * rise;
+            // どこまで上げるか: 足の真ん中(Kick Foot Model Offset で合わせた点)が、袋の高さの kickFrontHitHeight の所に来るまで。
+            // (前は足の先の高さで決めていたが、足が大きいと最初から届いていることになり、画面の下から上がってこなかった)
+            float hitY = (kickOnBagScreen ? BagFloorY + bagHeight * Mathf.Clamp01(kickFrontHitHeight) : 0f) + (kickOnBagScreen ? CameraFollowY : 0f);
+            Vector3 fReach = new Vector3(fStart.x, Mathf.Max(fStart.y, hitY), fStart.z);
             for (float time = 0f; time < fTime; time += Time.deltaTime)
             {
                 float k = 1f - (1f - time / fTime) * (1f - time / fTime);   // 最初は速く、届くところでゆっくり
@@ -578,7 +571,7 @@ public partial class TwoPlayerShop2D
                 Vector3 c = b.center * k;
                 model.transform.localPosition = new Vector3(kickFootModelOffset.x * size - c.x, kickFootModelOffset.y * size - c.y, -c.z);
                 UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
-                foreach (var r in renderers) r.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
+                foreach (var r in renderers) r.sortingOrder = FootOrder(layer);
             }
             SetLayer(model, layer);
             if (leftward) flip.localScale = new Vector3(1f, -1f, 1f);   // 左へ飛ぶときに足が逆さにならないように
@@ -595,7 +588,7 @@ public partial class TwoPlayerShop2D
             var sr = foot.AddComponent<SpriteRenderer>();
             sr.sprite = kickFootSprite != null ? kickFootSprite : GetFootSprite();
             sr.color = kickFootSprite != null ? Color.white : playerColor;
-            sr.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
+            sr.sortingOrder = FootOrder(layer);
             sr.flipY = leftward;      // 左へ飛ぶときに靴が逆さにならないように
             Vector2 size = sr.sprite.bounds.size;
             float scale = kickFootSize / Mathf.Max(size.x, size.y, 0.01f);
@@ -605,6 +598,10 @@ public partial class TwoPlayerShop2D
         foot.transform.rotation = front ? Quaternion.Euler(kickFootFrontRotation) : Quaternion.Euler(0f, 0f, angle);
         return foot;
     }
+
+    // 足の描く順番: 棚の画面は 1500(商品とカーソルより手前、掴み合いのゲージより奥)。
+    // 袋の画面は 1700(袋・袋の中の商品・画面の下の献立の帯(1600〜1625)より手前。前は帯の後ろに隠れていた)
+    int FootOrder(int layer) => layer == layerShop ? 1500 : 1700;
 
     // ---------- 足の見え方の確認(kickFootPreview) ----------
     // 棚の画面の左に 1P 用(右上へ飛ぶ向き)・右に 2P 用(左上へ飛ぶ向き)の足を止めて出す。設定を変えたら作り直す
