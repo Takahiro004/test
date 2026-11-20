@@ -8,6 +8,9 @@ using UnityEngine.Playables;
 // 棚を操作中(商品を持っていないとき)に LB → 自分のレジ袋の画面の真ん中にゲージ → A で威力を決める
 // → 棚の画面の下から相手側の上へ足が飛ぶ → 相手のレジ袋が威力に合わせて揺れる
 // ゲージ中にもう一度 LB を押すとやめる
+// 足の動き: kickFootExtend が ON(初め)なら、画面の下の自分の側から相手の側へ足を伸ばし(kickExtendTime 秒。kickFootReach まで)、
+//  届いた瞬間に相手の袋を揺らし(KickImpact)、kickExtendHold 秒止めて、kickRetractTime 秒で引っ込める。
+//  モーション kickFootClip は、kickFootClipFit なら伸ばし切ったときに終わる速さで再生する。OFF なら前のように画面を横切って飛ぶ
 // 足の見た目: kickFootModel(3Dモデル)→ kickFootSprite(画像)→ 自動生成の靴 の順に、入っているものを使う(MakeFootVisual)。
 //  - 3Dモデルは「つま先が右(+X)・足の裏が下」になるように kickFootModelRotation で回す。大きさは縦横の長いほうが kickFootSize。
 //    位置のずれ kickFootModelOffset(足の大きさを1として)。飛ぶ間 kickFootClip を再生できる(速さ kickFootClipSpeed)
@@ -316,6 +319,34 @@ public partial class TwoPlayerShop2D
         Vector2 end = new Vector2(-side * (view.x / 2f + 1.5f), view.y / 2f + 1.5f);
         Vector2 dir = (end - start).normalized;
 
+        if (kickFootExtend)
+        {
+            // 伸ばす動き: 画面の下(自分の側)から、相手の側へ足をぐっと伸ばし(モーションも一緒に)、届いたら少し止めて、引っ込める
+            float extendTime = Mathf.Max(0.05f, kickExtendTime);
+            float clipSpeed = kickFootClip != null && kickFootClipFit ? kickFootClip.length / extendTime : -1f;   // 伸ばし切ったときにモーションも終わる速さ
+            var leg = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var legGraph, clipSpeed);
+            Vector2 reach = Vector2.Lerp(start, end, Mathf.Clamp01(kickFootReach));
+            for (float time = 0f; time < extendTime; time += Time.deltaTime)
+            {
+                float k = time / extendTime;
+                leg.transform.position = Vector2.Lerp(start, reach, 1f - (1f - k) * (1f - k));   // 最初は速く、届くところでゆっくり
+                yield return null;
+            }
+            leg.transform.position = reach;
+            KickImpact(from, target, power);   // 届いた瞬間に相手の袋を揺らす
+            for (float time = 0f; time < kickExtendHold; time += Time.deltaTime) yield return null;
+            float backTime = Mathf.Max(0.05f, kickRetractTime);
+            for (float time = 0f; time < backTime; time += Time.deltaTime)
+            {
+                float k = time / backTime;
+                leg.transform.position = Vector2.Lerp(reach, start, k * k);   // ゆっくり戻り始めて、すっと引っ込む
+                yield return null;
+            }
+            if (legGraph.IsValid()) legGraph.Destroy();
+            Destroy(leg);
+            yield break;
+        }
+
         var foot = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var footGraph);
 
         for (float time = 0f; time < kickFlightTime; time += Time.deltaTime)
@@ -325,7 +356,12 @@ public partial class TwoPlayerShop2D
         }
         if (footGraph.IsValid()) footGraph.Destroy();
         Destroy(foot);
+        KickImpact(from, target, power);
+    }
 
+    // 足が届いた: 相手のレジ袋と画面を揺らす(蹴った人も少し)
+    void KickImpact(Player from, Player target, float power)
+    {
         // 蹴った向き: 1Pが蹴ると右へ、2Pが蹴ると左へ
         float toTarget = from == p1 ? 1f : -1f;
         // 蹴る強さ(kickStrength)を、袋と画面の揺れの全部にかける
@@ -433,7 +469,7 @@ public partial class TwoPlayerShop2D
     }
 
     // 足の見た目を作る(3Dモデル → 画像 → 自動生成の靴)。dir = 飛ぶ向き。play なら kickFootClip を再生する(graph を返す。止めたら Destroy する)
-    GameObject MakeFootVisual(string objName, Color playerColor, Vector2 dir, bool play, out PlayableGraph graph)
+    GameObject MakeFootVisual(string objName, Color playerColor, Vector2 dir, bool play, out PlayableGraph graph, float clipSpeed = -1f)
     {
         graph = default;
         bool leftward = dir.x < 0f;
@@ -477,7 +513,7 @@ public partial class TwoPlayerShop2D
                 var animator = model.GetComponentInChildren<Animator>();
                 if (animator == null) animator = model.AddComponent<Animator>();
                 var playable = AnimationPlayableUtilities.PlayClip(animator, kickFootClip, out graph);
-                playable.SetSpeed(Mathf.Max(0.01f, kickFootClipSpeed));
+                playable.SetSpeed(Mathf.Max(0.01f, clipSpeed > 0f ? clipSpeed : kickFootClipSpeed));
             }
         }
         else
