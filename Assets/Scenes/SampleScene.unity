@@ -1790,11 +1790,12 @@ MonoBehaviour:
   pricePopupTime: 1
   removeAfterStopTime: 0.5
   productPrices: 6400000096000000c8000000fa0000002c010000f4010000
-  bagSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
+  bagSprite: {fileID: 21300000, guid: 06ffe841ecffd16479fe1a22c5c7f3b3, type: 3}
   bagSpriteScale: {x: 1.2, y: 1.5}
   bagSpriteOffset: {x: 0, y: -1.5}
-  bagFrontSprite: {fileID: 21300000, guid: 6ebaf4b7074c3374f840fd86f81e6ae2, type: 3}
-  bagFrontColor: {r: 1, g: 1, b: 1, a: 0.6}
+  bagFrontSprite: {fileID: 21300000, guid: 914e0e2acf5480d468b1d9bd5b9d3548, type: 3}
+  bagFrontColor: {r: 1, g: 1, b: 1, a: 1}
+  bagFrontMultiply: 1
   bagFrontScale: {x: 1.2, y: 1.5}
   bagFrontOffset: {x: 0, y: -1.5}
   menuList:
