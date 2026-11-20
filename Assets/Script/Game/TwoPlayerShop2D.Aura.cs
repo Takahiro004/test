@@ -221,37 +221,7 @@ public partial class TwoPlayerShop2D
     // 読める絵(3Dモデルを撮った絵など)はそのまま読む。読めない設定(Read/Write OFF)の絵は、いったん RenderTexture に写してから読む
     static Sprite MakeAuraHaloSprite(Sprite src, int widthPx)
     {
-        var tex = src.texture;
-        Rect rect = src.textureRect;
-        float scale = Mathf.Min(1f, HaloMaxSize / Mathf.Max(rect.width, rect.height));
-        int w = Mathf.Max(4, Mathf.RoundToInt(rect.width * scale)), h = Mathf.Max(4, Mathf.RoundToInt(rect.height * scale));
-        var srcPx = new Color32[w * h];
-        if (tex.isReadable)
-        {
-            // 間引いて読む(一番近いピクセル)
-            var all = tex.GetPixels32();
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    int sx = Mathf.Clamp((int)(rect.x + (x + 0.5f) / scale), 0, tex.width - 1);
-                    int sy = Mathf.Clamp((int)(rect.y + (y + 0.5f) / scale), 0, tex.height - 1);
-                    srcPx[y * w + x] = all[sy * tex.width + sx];
-                }
-        }
-        else
-        {
-            var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
-            Graphics.Blit(tex, rt, new Vector2(rect.width / tex.width, rect.height / tex.height), new Vector2(rect.x / tex.width, rect.y / tex.height));
-            var prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-            read.Apply();
-            RenderTexture.active = prev;
-            RenderTexture.ReleaseTemporary(rt);
-            srcPx = read.GetPixels32();
-            Object.Destroy(read);
-        }
+        var srcPx = ReadSpritePixels(src, HaloMaxSize, out int w, out int h, out float scale);
         // 透明な所がほとんど無い(= 透明が読めていない)ときは、形が四角い光になってしまうので作らない
         int opaque = 0;
         foreach (var c in srcPx) if (c.a > 60) opaque++;
@@ -278,6 +248,42 @@ public partial class TwoPlayerShop2D
         outTex.Apply();
         Vector2 pivot = new Vector2((src.pivot.x * scale + pad) / W, (src.pivot.y * scale + pad) / H);
         return Sprite.Create(outTex, new Rect(0, 0, W, H), pivot, src.pixelsPerUnit * scale);
+    }
+
+    // 絵のピクセルを読む(縦横の長いほうが maxSize ピクセルまでに間引く。scale = 間引いた割合)。
+    // 読める絵はそのまま、読めない設定(Read/Write OFF)の絵は、いったん RenderTexture に写してから読む
+    static Color32[] ReadSpritePixels(Sprite src, int maxSize, out int w, out int h, out float scale)
+    {
+        var tex = src.texture;
+        Rect rect = src.textureRect;
+        scale = Mathf.Min(1f, maxSize / Mathf.Max(rect.width, rect.height));
+        w = Mathf.Max(4, Mathf.RoundToInt(rect.width * scale));
+        h = Mathf.Max(4, Mathf.RoundToInt(rect.height * scale));
+        var px = new Color32[w * h];
+        if (tex.isReadable)
+        {
+            var all = tex.GetPixels32();
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int sx = Mathf.Clamp((int)(rect.x + (x + 0.5f) / scale), 0, tex.width - 1);
+                    int sy = Mathf.Clamp((int)(rect.y + (y + 0.5f) / scale), 0, tex.height - 1);
+                    px[y * w + x] = all[sy * tex.width + sx];
+                }
+            return px;
+        }
+        var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+        Graphics.Blit(tex, rt, new Vector2(rect.width / tex.width, rect.height / tex.height), new Vector2(rect.x / tex.width, rect.y / tex.height));
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        read.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        read.Apply();
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+        px = read.GetPixels32();
+        Object.Destroy(read);
+        return px;
     }
 
     // 縦横 r ピクセルの範囲の一番大きい値(形を太らせる)
