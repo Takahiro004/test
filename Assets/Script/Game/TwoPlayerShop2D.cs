@@ -666,7 +666,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 kickFootFrontRotation = Vector3.zero;
     [Tooltip("手前から蹴る: 足の置き場所(X = 袋の真ん中から右へ・Y = 画面の下のふちから上へ。どちらも画面の大きさの割合。マイナスで画面の外)")]
     public Vector2 kickFrontRestPosition = new Vector2(0f, -0.1f);
-    [Tooltip("手前から蹴る: 足の先を、袋のどの高さまで届かせるか(0 = 袋の底 〜 1 = 袋の上)")]
+    [Tooltip("手前から蹴る: 足の真ん中(Kick Foot Model Offset で合わせた点)を、袋のどの高さまで上げるか(0 = 袋の底 〜 1 = 袋の上)")]
     [Range(0f, 1f)] public float kickFrontHitHeight = 0.35f;
     [Tooltip("手前から蹴る: 蹴り終わり(奥)での足の大きさ(1 で変わらない・0.8 で 8割)。小さくすると、奥へ蹴り込んだように見える")]
     public float kickFrontDepthScale = 0.8f;
