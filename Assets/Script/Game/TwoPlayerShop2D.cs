@@ -660,6 +660,16 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kickFootReachToEdge = true;   // 2026-11-20 プログラマー: 足は画面の外寄りから出し、足先が袋のふちにちょうど当たるようにする
     [Tooltip("足を伸ばす動き: 棚の画面には出さず、蹴られた人の画面(袋の画面)に出して、相手の袋を蹴る(1P のキックは 2P の画面の左から・2P のキックは 1P の画面の右から)。置き場所 Kick Foot Rest Position もその画面の中になる。OFF なら棚の画面に出す")]
     public bool kickOnBagScreen = true;
+    [Tooltip("足を伸ばす動き: 手前から奥へ蹴る(画面の下から袋へ向かって足を上へ伸ばし、奥へ行くほど少し小さくする)。足の向きは Kick Foot Preview を見ながら Kick Foot Model Rotation(と Kick Foot Front Rotation)で合わせる。OFF なら横から蹴る")]
+    public bool kickFootFromFront = true;
+    [Tooltip("手前から蹴る: 足の全体の向き(度。X/Y/Z)。足先が奥(画面の向こう)を向くように回す")]
+    public Vector3 kickFootFrontRotation = Vector3.zero;
+    [Tooltip("手前から蹴る: 足の置き場所(X = 袋の真ん中から右へ・Y = 画面の下のふちから上へ。どちらも画面の大きさの割合。マイナスで画面の外)")]
+    public Vector2 kickFrontRestPosition = new Vector2(0f, -0.1f);
+    [Tooltip("手前から蹴る: 足の先を、袋のどの高さまで届かせるか(0 = 袋の底 〜 1 = 袋の上)")]
+    [Range(0f, 1f)] public float kickFrontHitHeight = 0.35f;
+    [Tooltip("手前から蹴る: 蹴り終わり(奥)での足の大きさ(1 で変わらない・0.8 で 8割)。小さくすると、奥へ蹴り込んだように見える")]
+    public float kickFrontDepthScale = 0.8f;
     [Tooltip("足を伸ばす動き: 伸ばし切ってから止まっている秒数")]
     public float kickExtendHold = 0.2f;
     [Tooltip("足を伸ばす動き: 引っ込める秒数")]
