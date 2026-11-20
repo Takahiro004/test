@@ -66,6 +66,7 @@ public partial class TwoPlayerShop2D
             p.cursorOwn.gameObject.SetActive(false);
             p.cursorShop.gameObject.SetActive(false);   // 棚の画面の手も消す(持ち上げ・結果発表の画面に手が残らないように)
             if (p.kickLabel != null) p.kickLabel.gameObject.SetActive(false);   // 「LB: キック OK」も消す(もう蹴れない。カメラが上がると置いていかれるため)
+            if (p.kickIcon != null) p.kickIcon.gameObject.SetActive(false);     // 左上の足のマークも
         }
     }
 

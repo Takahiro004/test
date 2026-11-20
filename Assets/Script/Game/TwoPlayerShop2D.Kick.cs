@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -11,6 +12,10 @@ using UnityEngine.Playables;
 //  - 3Dモデルは「つま先が右(+X)・足の裏が下」になるように kickFootModelRotation で回す。大きさは縦横の長いほうが kickFootSize。
 //    位置のずれ kickFootModelOffset(足の大きさを1として)。飛ぶ間 kickFootClip を再生できる(速さ kickFootClipSpeed)
 //  - 飛ぶ向きに合わせて全体を回す。左へ飛ぶとき(2P)は上下を反転して、足の裏が下のままになるようにする
+// キックのため(kickCharge): 袋に商品を入れるたびにたまり、kickChargeItems 個で満タンになったら蹴れる。蹴ったら 0 に戻る(待ち時間 kickCooldown は使わない)。
+//  - 自分の画面の左上の足のマーク(kickIconSprite。空なら自動生成の足)がゲージ: 半透明(kickIconEmptyColor)の上に、
+//    たまった分だけ下から濃い足(kickIconFillColor)を重ねる。満タンになると足が脈打ち、右に「LB: キック OK」を出す
+//  - 大きさ kickIconSize・位置のずれ kickIconOffset
 //  - kickFootPreview を ON にすると、棚の画面の真ん中あたりに 1P 用・2P 用の足を止めて出す(再生中に向き・大きさを変えるとすぐ反映)
 public partial class TwoPlayerShop2D
 {
@@ -27,6 +32,7 @@ public partial class TwoPlayerShop2D
     {
         if (p.kick != null) { EndKickGauge(p); lastEvent = $"{p.name}がキックをやめた"; return; }
         if (!kickEnabled || !p.inShop || p.held != null || p.kickCooldown > 0f) return;
+        if (kickCharge && p.kickChargeCount < Mathf.Max(1, kickChargeItems)) return;   // まだたまっていない
         StartKickGauge(p);
     }
 
@@ -94,7 +100,8 @@ public partial class TwoPlayerShop2D
     {
         float power = p.kick.value;
         EndKickGauge(p);
-        p.kickCooldown = kickCooldown;
+        if (kickCharge) p.kickChargeCount = 0;   // ためた分を使い切る(待ち時間は使わない)
+        else p.kickCooldown = kickCooldown;
 
         int score = Mathf.RoundToInt(power * 100);
         bool perfect = power >= kickPerfect;
@@ -107,12 +114,19 @@ public partial class TwoPlayerShop2D
         Debug.Log($"[Shop2D] {lastEvent}");
     }
 
-    // 自分の画面に「LB: キック」/「キック あと○秒」を出す
+    // 自分の画面に「LB: キック」/「キック あと○秒」を出す(キックのためが ON なら、足のマークのゲージと、満タンのときだけ右に「LB: キック OK」)
     void UpdateKickLabel(Player p)
     {
-        if (!kickEnabled) { if (p.kickLabel != null) p.kickLabel.gameObject.SetActive(false); return; }
+        if (!kickEnabled)
+        {
+            if (p.kickLabel != null) p.kickLabel.gameObject.SetActive(false);
+            if (p.kickIcon != null) p.kickIcon.gameObject.SetActive(false);
+            return;
+        }
         if (p.kickLabel == null)
             p.kickLabel = MakeText($"KickLabel_{p.name}", null, p.layer, "", Color.white, 1500);
+        if (kickCharge) { UpdateKickIcon(p); return; }
+        if (p.kickIcon != null) p.kickIcon.gameObject.SetActive(false);
         p.kickLabel.gameObject.SetActive(p.kick == null);
         // 1P/2Pの画面の範囲の左上
         Vector2 view = PlayerViewSize();
@@ -122,6 +136,83 @@ public partial class TwoPlayerShop2D
         p.kickLabel.transform.position = new Vector3(-view.x / 2f + 0.3f, view.y / 2f - 0.3f, 0f);
         p.kickLabel.text = p.kickCooldown > 0f ? $"キック あと{Mathf.CeilToInt(p.kickCooldown)}秒" : "LB: キック OK";
         p.kickLabel.color = p.kickCooldown > 0f ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.95f, 0.3f);
+    }
+
+    // 足のマークのゲージ(左上)。半透明の足の上に、たまった分だけ下から濃い足を重ねる
+    void UpdateKickIcon(Player p)
+    {
+        int need = Mathf.Max(1, kickChargeItems);
+        int have = Mathf.Clamp(p.kickChargeCount, 0, need);
+        bool full = have >= need;
+        var sprite = kickIconSprite != null ? kickIconSprite : GetFootSprite();
+        if (p.kickIcon == null)
+        {
+            p.kickIcon = new GameObject($"KickIcon_{p.name}").transform;
+            p.kickIcon.gameObject.layer = p.layer;
+            p.kickIconBack = MakeIconPart("Back", p.kickIcon, p.layer, 1500);
+            p.kickIconFill = MakeIconPart("Fill", p.kickIcon, p.layer, 1501);
+        }
+        p.kickIcon.gameObject.SetActive(true);
+        if (p.kickIcon.gameObject.layer != p.layer) SetLayer(p.kickIcon.gameObject, p.layer);
+
+        // 大きさ: 縦が kickIconSize。足の下の端を基準に置く(下から満ちるので)
+        Rect rect = sprite.textureRect;
+        float h = Mathf.Max(0.05f, kickIconSize);
+        float k = h / Mathf.Max(0.01f, rect.height / sprite.pixelsPerUnit);
+        float w = rect.width / sprite.pixelsPerUnit * k;
+        Vector2 view = PlayerViewSize();
+        Vector3 bottomLeft = new Vector3(-view.x / 2f + 0.3f + kickIconOffset.x, view.y / 2f - 0.3f - h + kickIconOffset.y, 0f);
+        p.kickIcon.position = bottomLeft;
+
+        // 満タンなら少し脈打つ
+        float pulse = full ? 1f + 0.08f * Mathf.Sin(Time.time * 8f) : 1f;
+        p.kickIcon.localScale = new Vector3(pulse, pulse, 1f);
+
+        p.kickIconBack.sprite = KickIconPart(sprite, 1f);
+        p.kickIconBack.color = kickIconEmptyColor;
+        p.kickIconBack.transform.localPosition = new Vector3(w / 2f, 0f, 0f);
+        p.kickIconBack.transform.localScale = new Vector3(k, k, 1f);
+        float frac = (float)have / need;
+        p.kickIconFill.enabled = frac > 0f;
+        if (frac > 0f) p.kickIconFill.sprite = KickIconPart(sprite, frac);
+        p.kickIconFill.color = full ? Color.Lerp(kickIconFillColor, Color.white, 0.25f + 0.25f * Mathf.Sin(Time.time * 8f)) : kickIconFillColor;
+        p.kickIconFill.transform.localPosition = new Vector3(w / 2f, 0f, 0f);
+        p.kickIconFill.transform.localScale = new Vector3(k, k, 1f);
+
+        // 満タンのときだけ、足の右に「LB: キック OK」
+        p.kickLabel.gameObject.SetActive(full && p.kick == null);
+        if (full)
+        {
+            SetTextSize(p.kickLabel, HudTextSize);
+            p.kickLabel.anchor = TextAnchor.MiddleLeft;
+            p.kickLabel.alignment = TextAlignment.Left;
+            p.kickLabel.text = "LB: キック OK";
+            p.kickLabel.color = new Color(1f, 0.95f, 0.3f);
+            p.kickLabel.transform.position = bottomLeft + new Vector3(w + 0.2f, h / 2f, 0f);
+        }
+    }
+
+    static SpriteRenderer MakeIconPart(string objName, Transform parent, int layer, int order)
+    {
+        var go = new GameObject(objName);
+        go.layer = layer;
+        go.transform.SetParent(parent, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sortingOrder = order;
+        return sr;
+    }
+
+    // 足の絵の下から frac(0〜1)の高さまでを切り出した絵(ピボットは下の真ん中)。絵と高さごとに1回だけ作る
+    readonly Dictionary<(Sprite, int), Sprite> kickIconParts = new Dictionary<(Sprite, int), Sprite>();
+
+    Sprite KickIconPart(Sprite src, float frac)
+    {
+        int step = Mathf.Clamp(Mathf.RoundToInt(frac * 100f), 1, 100);
+        if (kickIconParts.TryGetValue((src, step), out var cached) && cached != null) return cached;
+        Rect r = src.textureRect;
+        var part = Sprite.Create(src.texture, new Rect(r.x, r.y, r.width, Mathf.Max(1f, r.height * step / 100f)), new Vector2(0.5f, 0f), src.pixelsPerUnit);
+        kickIconParts[(src, step)] = part;
+        return part;
     }
 
     // 棚の画面の下(自分の側)から、相手側の上へ足が飛んでいく。着いたら相手のレジ袋を揺らす

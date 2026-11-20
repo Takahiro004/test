@@ -222,6 +222,7 @@ public partial class TwoPlayerShop2D
             p.bag.totalLabel.text = $"¥{p.total}";
             if (showPricePopup) StartCoroutine(PricePopup(p, c, price, infoOf.TryGetValue(go, out var bagInfo) ? bagInfo.name : go.name));
             CheckMenuMission(p);          // 献立の食材がそろったか
+            p.kickChargeCount++;          // キックのため(TwoPlayerShop2D.Kick.cs)
 
             lastEvent = $"{p.name}の袋に {go.name} が入った +¥{price}(合計 ¥{p.total})";
             Debug.Log($"[Shop2D] {lastEvent}");
