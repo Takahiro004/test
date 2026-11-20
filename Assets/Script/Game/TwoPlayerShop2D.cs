@@ -554,6 +554,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 bagSpriteOffset = Vector2.zero;
     [Tooltip("手前の袋の画像(一番手前。色の薄い袋)。袋の中の商品より手前に重ねる(奥の画像 → 商品 → この画像の3枚)。空なら出さない")]
     public Sprite bagFrontSprite;
+    [Tooltip("ふちの絵(袋の中の商品より手前・Bag Front Sprite より奥に出す。空なら出さない)。大きさ・ずらしは Bag Front Scale / Bag Front Offset と同じ")]
+    public Sprite bagOutlineSprite;
     [Tooltip("手前の袋の画像の色と透明度(A を下げるほど、中の商品がよく見える)")]
     public Color bagFrontColor = new Color(1f, 1f, 1f, 0.6f);
     [Tooltip("手前の袋の絵を「乗算」で重ねる(奥の袋の絵と袋の中の商品の色に、手前の絵の色を掛ける。白い所は変わらず、しわの灰色が影として乗る)。A で掛ける強さを弱められる。再生中に変えてもすぐ反映")]
