@@ -20,7 +20,7 @@ using UnityEngine.Playables;
 //    半透明の足(kickIconEmptyColor)の上に、たまった分だけ下から、色の段階(kickIconGradient。下 = 寒色 → 上 = 暖色)の足を重ねる。
 //    満タンになったらゲージを消して、その場所に「LB: キック OK」を出す。蹴ったら(0 に戻ったら)ゲージをまた出す
 //  - 大きさ kickIconSize・位置のずれ kickIconOffset
-//  - 伸ばす動き(kickFootExtend)は、Kick Foot Preview と同じ置き場所(kickFootRestPosition)から、飛ぶ向きへ kickFootReachDistance だけ伸ばして戻す
+//  - 伸ばす動き(kickFootExtend)は、Kick Foot Preview と同じ置き場所(kickFootRestPosition)から、相手の側へ横に kickFootReachDistance だけ伸ばして戻す
 //  - kickFootPreview を ON にすると、棚の画面の真ん中あたりに 1P 用・2P 用の足を止めて出す(再生中に向き・大きさを変えるとすぐ反映)
 public partial class TwoPlayerShop2D
 {
@@ -322,13 +322,14 @@ public partial class TwoPlayerShop2D
 
         if (kickFootExtend)
         {
-            // 伸ばす動き: Kick Foot Preview と同じ置き場所(FootRestPosition)から、飛ぶ向きへ足をぐっと伸ばし(モーションも一緒に)、
+            // 伸ばす動き: Kick Foot Preview と同じ置き場所(FootRestPosition)から、相手の側へ横に足をぐっと伸ばし(キックのモーションも一緒に)、
             // 届いたら少し止めて、元の置き場所へ引っ込める
             start = FootRestPosition(from == p1);
             float extendTime = Mathf.Max(0.05f, kickExtendTime);
             float clipSpeed = kickFootClip != null && kickFootClipFit ? kickFootClip.length / extendTime : -1f;   // 伸ばし切ったときにモーションも終わる速さ
             var leg = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var legGraph, clipSpeed);
-            Vector2 reach = start + dir * Mathf.Max(0f, kickFootReachDistance);
+            // 相手の側(1P は右・2P は左)へ、まっすぐ横に伸ばす。足の向き(dir)は Preview で合わせたまま
+            Vector2 reach = start + new Vector2(from == p1 ? 1f : -1f, 0f) * Mathf.Max(0f, kickFootReachDistance);
             for (float time = 0f; time < extendTime; time += Time.deltaTime)
             {
                 float k = time / extendTime;
