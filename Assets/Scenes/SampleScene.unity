@@ -1898,14 +1898,21 @@ MonoBehaviour:
   kickFlightTime: 0.7
   kickFootPreview: 0
   kickFootModel: {fileID: 493832603122633615, guid: 0d5b77ce05b20024fa24d34a86dd7ed3, type: 3}
-  kickFootModelRotation: {x: 140, y: -140, z: -230}
-  kickFootModelOffset: {x: -0.3, y: -0.05}
+  kickFootModelRotation: {x: 0, y: 0, z: 0}
+  kickFootModelOffset: {x: 0, y: 0}
   kickFootClip: {fileID: 1827226128182048838, guid: 706e20544a847514e85d1ebfa0a620dc, type: 3}
   kickFootClipSpeed: 1
-  kickFootExtend: 1
+  kickFootExtend: 0
   kickExtendTime: 0.35
   kickFootRestPosition: {x: 0.22, y: 0}
   kickFootReachDistance: 2.5
+  kickFootReachToEdge: 1
+  kickOnBagScreen: 1
+  kickFootFromFront: 1
+  kickFootFrontRotation: {x: 0, y: 0, z: 0}
+  kickFrontRestPosition: {x: 0, y: -0.1}
+  kickFrontHitHeight: 0.35
+  kickFrontDepthScale: 0.8
   kickExtendHold: 0.2
   kickRetractTime: 0.3
   kickFootClipFit: 0
