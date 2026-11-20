@@ -189,11 +189,40 @@ public partial class TwoPlayerShop2D
         var sr = b.front.GetComponent<SpriteRenderer>();
         if (b.look != null && b.look.frontMesh != null) ScaleBagMesh(b.look.frontMeshTransform, bagFrontScale, bagFrontOffset);
         bool meshed = b.look != null && (b.look.holder != null || b.look.mesh != null);
+        // 乗算(Bag Front Multiply)なら、下の袋の絵・商品の色に、手前の絵の色を掛ける(しわの影が商品にも乗る)
+        var mat = BagFrontMaterial(sr);
+        if (sr.sharedMaterial != mat) sr.sharedMaterial = mat;
+        if (b.look != null && b.look.frontMeshTransform != null)
+        {
+            var mr = b.look.frontMeshTransform.GetComponent<MeshRenderer>();
+            if (mr != null && mr.sharedMaterial != mat) mr.sharedMaterial = mat;
+        }
         sr.enabled = bagFrontSprite != null && !meshed;
         if (!sr.enabled) return;
         sr.sprite = bagFrontSprite;
         sr.color = bagFrontColor;
         PlaceBagSprite(b.front, bagFrontSprite, bagFrontScale, bagFrontOffset);
+    }
+
+    // 手前の袋の絵のマテリアル: ふつう(絵の最初のマテリアル)か、乗算(Resources/SpriteMultiply.shader)
+    static Material bagFrontNormalMaterial, bagFrontMultiplyMaterial;
+
+    Material BagFrontMaterial(SpriteRenderer sr)
+    {
+        if (bagFrontNormalMaterial == null && sr.sharedMaterial != null && sr.sharedMaterial != bagFrontMultiplyMaterial)
+            bagFrontNormalMaterial = sr.sharedMaterial;
+        if (!bagFrontMultiply) return bagFrontNormalMaterial != null ? bagFrontNormalMaterial : sr.sharedMaterial;
+        if (bagFrontMultiplyMaterial == null)
+        {
+            var shader = Resources.Load<Shader>("SpriteMultiply");
+            if (shader == null)
+            {
+                Debug.LogWarning("[Shop2D] Resources/SpriteMultiply.shader が見つからないので、手前の袋の絵を乗算にできません");
+                return sr.sharedMaterial;
+            }
+            bagFrontMultiplyMaterial = new Material(shader) { name = "BagFrontMultiply" };
+        }
+        return bagFrontMultiplyMaterial;
     }
 
     // 落とした商品の中心が袋の内側に入ったら、金額を出して合計に足す(1個につき1回だけ)
