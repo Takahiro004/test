@@ -653,11 +653,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("足を伸ばす動き: 足を伸ばし切るまでの秒数")]
     public float kickExtendTime = 0.35f;
     [Tooltip("足の置き場所(Kick Foot Preview で見える場所・伸ばす動きの出発点)。X = 画面の真ん中から自分の側へ(画面の幅の割合。1P は左・2P は右)・Y = 上へ(画面の高さの割合)。再生中に変えると、Preview もすぐ動く")]
-    public Vector2 kickFootRestPosition = new Vector2(0.22f, 0f);
+    public Vector2 kickFootRestPosition = new Vector2(0.5f, 0f);   // 2026-11-20 プログラマー: 足は全体が見えなくていい(袋が蹴られたと分かればいい)。画面の外寄りに置く
     [Tooltip("足を伸ばす動き: 置き場所から、相手の側(1P は右・2P は左)へ横にどれだけ伸ばすか(ゲームの長さ。足が画面の真ん中(相手の側との境目)に届くくらいにする)")]
     public float kickFootReachDistance = 2.5f;
     [Tooltip("足を伸ばす動き: 足の先が、相手の側の画面のふち(1P は右・2P は左の枠)にちょうど届くまで伸ばす(長さは足の大きさから自動。Kick Foot Reach Distance は使わない)")]
-    public bool kickFootReachToEdge = false;   // 2026-11-20 プログラマー: キックの動きは動画のまま(Kick Foot Reach Distance の長さ)でいい
+    public bool kickFootReachToEdge = true;   // 2026-11-20 プログラマー: 足は画面の外寄りから出し、足先が袋のふちにちょうど当たるようにする
     [Tooltip("足を伸ばす動き: 棚の画面には出さず、蹴られた人の画面(袋の画面)に出して、相手の袋を蹴る(1P のキックは 2P の画面の左から・2P のキックは 1P の画面の右から)。置き場所 Kick Foot Rest Position もその画面の中になる。OFF なら棚の画面に出す")]
     public bool kickOnBagScreen = true;
     [Tooltip("足を伸ばす動き: 伸ばし切ってから止まっている秒数")]
