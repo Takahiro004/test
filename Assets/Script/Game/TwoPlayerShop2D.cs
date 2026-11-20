@@ -622,8 +622,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 kickIconOffset = Vector2.zero;
     [Tooltip("足のマークの、たまっていない所の色(半透明)")]
     public Color kickIconEmptyColor = new Color(0.6f, 0.6f, 0.6f, 0.35f);
-    [Tooltip("足のマークの、たまった所の色")]
-    public Color kickIconFillColor = new Color(0.45f, 0.45f, 0.45f, 1f);
+    [Tooltip("足のマークの、たまった所の色の段階(左 = 足の下 → 右 = 足の上)。初めは 寒色(青) → 緑 → 黄 → オレンジ → 暖色(赤)。再生中に変えてもすぐ反映")]
+    public Gradient kickIconGradient = DefaultKickGradient();
+    [Tooltip("足のマークの縁取りの色")]
+    public Color kickIconOutlineColor = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+    [Tooltip("足のマークの縁取りの太さ(足の縦の長さの割合。0 なら縁取りなし)")]
+    [Range(0f, 0.2f)] public float kickIconOutlineWidth = 0.05f;
     [Tooltip("足が棚の画面を飛んでいく秒数")]
     public float kickFlightTime = 0.7f;
     [Tooltip("足の見え方の確認: ON にすると、棚の画面の左に 1P 用・右に 2P 用の足を止めて出す(飛ぶときと同じ向き)。下の足の欄を再生中に変えるとすぐ反映。決まったら OFF に戻す")]
@@ -775,7 +779,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
         public int kickChargeCount;      // キックのため: 袋に入れた商品の数(蹴ったら 0)
         public Transform kickIcon;       // 左上の足のマーク(ゲージ)
-        public SpriteRenderer kickIconBack, kickIconFill;
+        public SpriteRenderer kickIconOutline, kickIconBack, kickIconFill;
         public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
         public Coroutine screenShakeRoutine;   // 自分の画面(カメラ)が揺れている処理
         public string completedMenu;     // 完成した献立の名前(献立ミッション。まだなら null)

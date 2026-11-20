@@ -13,8 +13,9 @@ using UnityEngine.Playables;
 //    位置のずれ kickFootModelOffset(足の大きさを1として)。飛ぶ間 kickFootClip を再生できる(速さ kickFootClipSpeed)
 //  - 飛ぶ向きに合わせて全体を回す。左へ飛ぶとき(2P)は上下を反転して、足の裏が下のままになるようにする
 // キックのため(kickCharge): 袋に商品を入れるたびにたまり、kickChargeItems 個で満タンになったら蹴れる。蹴ったら 0 に戻る(待ち時間 kickCooldown は使わない)。
-//  - 自分の画面の左上の足のマーク(kickIconSprite。空なら自動生成の足)がゲージ: 半透明(kickIconEmptyColor)の上に、
-//    たまった分だけ下から濃い足(kickIconFillColor)を重ねる。満タンになると足が脈打ち、右に「LB: キック OK」を出す
+//  - 自分の画面の左上の足のマーク(kickIconSprite。空なら自動生成の足)がゲージ: 縁取り(kickIconOutlineColor・太さ kickIconOutlineWidth)と
+//    半透明の足(kickIconEmptyColor)の上に、たまった分だけ下から、色の段階(kickIconGradient。下 = 寒色 → 上 = 暖色)の足を重ねる。
+//    満タンになったらゲージを消して、その場所に「LB: キック OK」を出す。蹴ったら(0 に戻ったら)ゲージをまた出す
 //  - 大きさ kickIconSize・位置のずれ kickIconOffset
 //  - kickFootPreview を ON にすると、棚の画面の真ん中あたりに 1P 用・2P 用の足を止めて出す(再生中に向き・大きさを変えるとすぐ反映)
 public partial class TwoPlayerShop2D
@@ -138,58 +139,57 @@ public partial class TwoPlayerShop2D
         p.kickLabel.color = p.kickCooldown > 0f ? new Color(1f, 1f, 1f, 0.5f) : new Color(1f, 0.95f, 0.3f);
     }
 
-    // 足のマークのゲージ(左上)。半透明の足の上に、たまった分だけ下から濃い足を重ねる
+    // 足のマークのゲージ(左上)。縁取り(kickIconOutlineColor)・半透明の足(kickIconEmptyColor)の上に、
+    // たまった分だけ下から、色が下 = 寒色 → 上 = 暖色(kickIconGradient)の足を重ねる。
+    // 満タンになったらゲージを消して「LB: キック OK」を出す。蹴ったら(0 に戻ったら)ゲージをまた出す
     void UpdateKickIcon(Player p)
     {
         int need = Mathf.Max(1, kickChargeItems);
         int have = Mathf.Clamp(p.kickChargeCount, 0, need);
         bool full = have >= need;
-        var sprite = kickIconSprite != null ? kickIconSprite : GetFootSprite();
+        Vector2 view = PlayerViewSize();
+        Vector3 topLeft = new Vector3(-view.x / 2f + 0.3f + kickIconOffset.x, view.y / 2f - 0.3f + kickIconOffset.y, 0f);
+
+        // 満タン: ゲージを消して文字だけ
+        p.kickLabel.gameObject.SetActive(full && p.kick == null);
+        if (full)
+        {
+            if (p.kickIcon != null) p.kickIcon.gameObject.SetActive(false);
+            SetTextSize(p.kickLabel, HudTextSize);
+            p.kickLabel.anchor = TextAnchor.UpperLeft;
+            p.kickLabel.alignment = TextAlignment.Left;
+            p.kickLabel.text = "LB: キック OK";
+            p.kickLabel.color = new Color(1f, 0.95f, 0.3f);
+            p.kickLabel.transform.position = topLeft;
+            return;
+        }
+
+        var look = GetKickIconLook(kickIconSprite != null ? kickIconSprite : GetFootSprite());
+        if (look == null) return;
         if (p.kickIcon == null)
         {
             p.kickIcon = new GameObject($"KickIcon_{p.name}").transform;
             p.kickIcon.gameObject.layer = p.layer;
+            p.kickIconOutline = MakeIconPart("Outline", p.kickIcon, p.layer, 1499);
             p.kickIconBack = MakeIconPart("Back", p.kickIcon, p.layer, 1500);
             p.kickIconFill = MakeIconPart("Fill", p.kickIcon, p.layer, 1501);
         }
         p.kickIcon.gameObject.SetActive(true);
         if (p.kickIcon.gameObject.layer != p.layer) SetLayer(p.kickIcon.gameObject, p.layer);
 
-        // 大きさ: 縦が kickIconSize。足の下の端を基準に置く(下から満ちるので)
-        Rect rect = sprite.textureRect;
-        float h = Mathf.Max(0.05f, kickIconSize);
-        float k = h / Mathf.Max(0.01f, rect.height / sprite.pixelsPerUnit);
-        float w = rect.width / sprite.pixelsPerUnit * k;
-        Vector2 view = PlayerViewSize();
-        Vector3 bottomLeft = new Vector3(-view.x / 2f + 0.3f + kickIconOffset.x, view.y / 2f - 0.3f - h + kickIconOffset.y, 0f);
-        p.kickIcon.position = bottomLeft;
+        // 大きさ: 足の縦が kickIconSize(絵は足の縦が 1 になるように作ってある)。足の下の真ん中を基準に置く
+        float hgt = Mathf.Max(0.05f, kickIconSize);
+        p.kickIcon.position = topLeft + new Vector3(look.aspect * hgt / 2f, -hgt, 0f);
+        p.kickIcon.localScale = new Vector3(hgt, hgt, 1f);
 
-        // 満タンなら少し脈打つ
-        float pulse = full ? 1f + 0.08f * Mathf.Sin(Time.time * 8f) : 1f;
-        p.kickIcon.localScale = new Vector3(pulse, pulse, 1f);
-
-        p.kickIconBack.sprite = KickIconPart(sprite, 1f);
+        p.kickIconOutline.sprite = look.outline;
+        p.kickIconOutline.color = kickIconOutlineColor;
+        p.kickIconBack.sprite = look.back;
         p.kickIconBack.color = kickIconEmptyColor;
-        p.kickIconBack.transform.localPosition = new Vector3(w / 2f, 0f, 0f);
-        p.kickIconBack.transform.localScale = new Vector3(k, k, 1f);
         float frac = (float)have / need;
         p.kickIconFill.enabled = frac > 0f;
-        if (frac > 0f) p.kickIconFill.sprite = KickIconPart(sprite, frac);
-        p.kickIconFill.color = full ? Color.Lerp(kickIconFillColor, Color.white, 0.25f + 0.25f * Mathf.Sin(Time.time * 8f)) : kickIconFillColor;
-        p.kickIconFill.transform.localPosition = new Vector3(w / 2f, 0f, 0f);
-        p.kickIconFill.transform.localScale = new Vector3(k, k, 1f);
-
-        // 満タンのときだけ、足の右に「LB: キック OK」
-        p.kickLabel.gameObject.SetActive(full && p.kick == null);
-        if (full)
-        {
-            SetTextSize(p.kickLabel, HudTextSize);
-            p.kickLabel.anchor = TextAnchor.MiddleLeft;
-            p.kickLabel.alignment = TextAlignment.Left;
-            p.kickLabel.text = "LB: キック OK";
-            p.kickLabel.color = new Color(1f, 0.95f, 0.3f);
-            p.kickLabel.transform.position = bottomLeft + new Vector3(w + 0.2f, h / 2f, 0f);
-        }
+        if (frac > 0f) p.kickIconFill.sprite = look.FillPart(frac);
+        p.kickIconFill.color = Color.white;   // 色は絵に入っている(下 = 寒色 → 上 = 暖色)
     }
 
     static SpriteRenderer MakeIconPart(string objName, Transform parent, int layer, int order)
@@ -202,17 +202,109 @@ public partial class TwoPlayerShop2D
         return sr;
     }
 
-    // 足の絵の下から frac(0〜1)の高さまでを切り出した絵(ピボットは下の真ん中)。絵と高さごとに1回だけ作る
-    readonly Dictionary<(Sprite, int), Sprite> kickIconParts = new Dictionary<(Sprite, int), Sprite>();
-
-    Sprite KickIconPart(Sprite src, float frac)
+    // 足のマークの絵(縁取り・半透明の足・色の付いた足)。元の絵・色の段階・縁取りの太さが変わったら作り直す
+    class KickIconLook
     {
-        int step = Mathf.Clamp(Mathf.RoundToInt(frac * 100f), 1, 100);
-        if (kickIconParts.TryGetValue((src, step), out var cached) && cached != null) return cached;
-        Rect r = src.textureRect;
-        var part = Sprite.Create(src.texture, new Rect(r.x, r.y, r.width, Mathf.Max(1f, r.height * step / 100f)), new Vector2(0.5f, 0f), src.pixelsPerUnit);
-        kickIconParts[(src, step)] = part;
-        return part;
+        public Sprite outline, back;
+        public Texture2D fillTex;
+        public int pad, footH, W, H;
+        public float aspect;   // 足の 横 ÷ 縦
+        readonly Dictionary<int, Sprite> parts = new Dictionary<int, Sprite>();
+
+        // 下から frac(0〜1)の高さまでを切り出した、色の付いた足(ピボットは足の下の真ん中)
+        public Sprite FillPart(float frac)
+        {
+            int step = Mathf.Clamp(Mathf.RoundToInt(frac * 100f), 1, 100);
+            if (parts.TryGetValue(step, out var s) && s != null) return s;
+            float h = pad + footH * step / 100f;
+            s = Sprite.Create(fillTex, new Rect(0, 0, W, h), new Vector2(0.5f, pad / h), footH);
+            parts[step] = s;
+            return s;
+        }
+    }
+    KickIconLook kickIconLook;
+    string kickIconLookKey;
+
+    KickIconLook GetKickIconLook(Sprite src)
+    {
+        var sb = new System.Text.StringBuilder($"{src.GetInstanceID()}_{kickIconOutlineWidth:0.###}");
+        if (kickIconGradient != null)
+        {
+            foreach (var c in kickIconGradient.colorKeys) sb.Append($"_{c.color}{c.time:0.##}");
+            foreach (var a in kickIconGradient.alphaKeys) sb.Append($"_{a.alpha:0.##}{a.time:0.##}");
+        }
+        string key = sb.ToString();
+        if (kickIconLook != null && key == kickIconLookKey) return kickIconLook;
+        kickIconLookKey = key;
+
+        var px = ReadSpritePixels(src, 128, out int w, out int h, out float _);
+        // 足の形(色の付いた所)の、上と下の端を探す(色の段階を足の下から上に合わせるため)
+        int minY = h, maxY = -1;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (px[y * w + x].a > 60) { minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y); }
+        if (maxY < 0) { kickIconLook = null; return null; }
+        int footH = maxY - minY + 1;
+        int o = Mathf.Clamp(Mathf.RoundToInt(footH * Mathf.Max(0f, kickIconOutlineWidth)), 0, 20);   // 縁取りの太さ(ピクセル)
+        int W = w + o * 2, H = footH + o * 2;
+        var mask = new float[W * H];
+        for (int y = 0; y < footH; y++)
+            for (int x = 0; x < w; x++)
+                mask[(y + o) * W + x + o] = px[(y + minY) * w + x].a / 255f;
+        var grown = o > 0 ? MaxFilter(mask, W, H, o) : mask;
+
+        var outPx = new Color32[W * H];
+        var backPx = new Color32[W * H];
+        var fillPx = new Color32[W * H];
+        var grad = kickIconGradient ?? DefaultKickGradient();
+        for (int y = 0; y < H; y++)
+        {
+            Color g = grad.Evaluate(Mathf.Clamp01((y - o) / (float)Mathf.Max(1, footH - 1)));   // 足の下 0 → 上 1
+            for (int x = 0; x < W; x++)
+            {
+                int i = y * W + x;
+                byte m = (byte)(Mathf.Clamp01(mask[i]) * 255f);
+                byte ring = (byte)(Mathf.Clamp01(grown[i] - mask[i]) * 255f);   // 縁取りは、足のまわりだけ(半透明の足の下から透けないように)
+                outPx[i] = new Color32(255, 255, 255, ring);
+                backPx[i] = new Color32(255, 255, 255, m);
+                fillPx[i] = new Color32((byte)(g.r * 255f), (byte)(g.g * 255f), (byte)(g.b * 255f), m);
+            }
+        }
+        Texture2D Make(Color32[] data)
+        {
+            var t = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            t.SetPixels32(data);
+            t.Apply();
+            return t;
+        }
+        var pivot = new Vector2(0.5f, o / (float)H);   // 足の下の真ん中
+        kickIconLook = new KickIconLook
+        {
+            outline = Sprite.Create(Make(outPx), new Rect(0, 0, W, H), pivot, footH),
+            back = Sprite.Create(Make(backPx), new Rect(0, 0, W, H), pivot, footH),
+            fillTex = Make(fillPx),
+            pad = o, footH = footH, W = W, H = H,
+            aspect = w / (float)footH,
+        };
+        return kickIconLook;
+    }
+
+    // 下 = 寒色(青) → 緑 → 黄 → オレンジ → 上 = 暖色(赤)
+    static Gradient DefaultKickGradient()
+    {
+        var g = new Gradient();
+        g.SetKeys(
+            new[]
+            {
+                new GradientColorKey(new Color(0.15f, 0.35f, 1f), 0f),
+                new GradientColorKey(new Color(0.1f, 0.8f, 0.9f), 0.25f),
+                new GradientColorKey(new Color(0.2f, 0.85f, 0.2f), 0.45f),
+                new GradientColorKey(new Color(1f, 0.9f, 0.1f), 0.65f),
+                new GradientColorKey(new Color(1f, 0.5f, 0.05f), 0.82f),
+                new GradientColorKey(new Color(0.95f, 0.1f, 0.1f), 1f),
+            },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+        return g;
     }
 
     // 棚の画面の下(自分の側)から、相手側の上へ足が飛んでいく。着いたら相手のレジ袋を揺らす
