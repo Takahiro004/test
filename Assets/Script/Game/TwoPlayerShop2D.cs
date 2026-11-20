@@ -193,6 +193,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showClashWinLose = true;
     [Tooltip("キック: 棚を操作中(商品を持っていないとき)にLBでキックできる")]
     public bool kickEnabled = true;
+    [Tooltip("キック: 袋に商品を入れてためる。Kick Charge Items 個で満タンになったら蹴れる(左上の足のマークがゲージ)。蹴ったら 0 に戻る。OFF なら今までどおり Kick Cooldown 秒ごとに蹴れる")]
+    public bool kickCharge = true;
     [Tooltip("キック: 足が届いたら相手のレジ袋を揺らす")]
     public bool kickShakeBag = true;
     [Tooltip("キック: 足が届いたら1P/2Pの画面を揺らす")]
@@ -608,8 +610,20 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float kickGaugeSpeed = 1.2f;
     [Tooltip("ゲージがこれ以上で止めたら「パーフェクト!」(1が最大)")]
     [Range(0f, 1f)] public float kickPerfect = 0.95f;
-    [Tooltip("1回蹴ってから、次に蹴れるまでの秒数")]
+    [Tooltip("1回蹴ってから、次に蹴れるまでの秒数(キックのため Kick Charge が OFF のときだけ)")]
     public float kickCooldown = 3f;
+    [Tooltip("キックのため: 袋に何個入れたら満タン(蹴れる)か")]
+    public int kickChargeItems = 5;
+    [Tooltip("左上の足のマーク(ゲージ)の絵。空なら自動生成の足。足が上・つま先が下の、縦長の絵を想定")]
+    public Sprite kickIconSprite;
+    [Tooltip("足のマークの縦の長さ(ゲームの長さ)")]
+    public float kickIconSize = 1.6f;
+    [Tooltip("足のマークの位置のずれ(画面の左上から。X 右・Y 上)")]
+    public Vector2 kickIconOffset = Vector2.zero;
+    [Tooltip("足のマークの、たまっていない所の色(半透明)")]
+    public Color kickIconEmptyColor = new Color(0.6f, 0.6f, 0.6f, 0.35f);
+    [Tooltip("足のマークの、たまった所の色")]
+    public Color kickIconFillColor = new Color(0.45f, 0.45f, 0.45f, 1f);
     [Tooltip("足が棚の画面を飛んでいく秒数")]
     public float kickFlightTime = 0.7f;
     [Tooltip("足の見え方の確認: ON にすると、棚の画面の左に 1P 用・右に 2P 用の足を止めて出す(飛ぶときと同じ向き)。下の足の欄を再生中に変えるとすぐ反映。決まったら OFF に戻す")]
@@ -759,6 +773,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public KickGauge kick;           // キックのゲージ中なら null 以外
         public float kickCooldown;       // 0より大きい間は蹴れない
         public TextMesh kickLabel;       // 自分の画面の「LB: キック」表示
+        public int kickChargeCount;      // キックのため: 袋に入れた商品の数(蹴ったら 0)
+        public Transform kickIcon;       // 左上の足のマーク(ゲージ)
+        public SpriteRenderer kickIconBack, kickIconFill;
         public Coroutine shakeRoutine;   // 自分のレジ袋が揺れている処理
         public Coroutine screenShakeRoutine;   // 自分の画面(カメラ)が揺れている処理
         public string completedMenu;     // 完成した献立の名前(献立ミッション。まだなら null)
