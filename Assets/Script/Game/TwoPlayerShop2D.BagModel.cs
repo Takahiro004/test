@@ -37,6 +37,8 @@ public partial class TwoPlayerShop2D
         public PlayableGraph graph;    // 裂けるアニメーションを再生する仕組み
         public Mesh mesh;              // モデルが無いとき、袋の絵を曲げる網目(初めて伸びたときに作る)
         public Mesh frontMesh;         // 手前の袋の絵の網目(bagFrontSprite があるとき。奥と同じ点を使う)
+        public Mesh outlineMesh;       // ふちの絵の網目(bagOutlineSprite があるとき。奥と同じ点を使う)
+        public Transform outlineMeshTransform;
         public Transform meshTransform, frontMeshTransform;   // 網目を出しているもの(画像の大きさ bagSpriteScale / bagFrontScale をかける)
         public Vector3[] vertices;
     }
@@ -87,9 +89,9 @@ public partial class TwoPlayerShop2D
         FindBlendShapes(model, bagStretchShape, bag.look.stretchShapes, "伸びない");
         FindBlendShapes(model, bagOpenShape, bag.look.openShapes, "底の開き方は当たり判定だけ");
 
-        // 袋の絵(奥・手前)と仮の袋の四角は隠す(当たり判定はそのまま)
-        foreach (var part in new[] { bag.back, bag.front, bag.left, bag.right, bag.bottom })
-            part.GetComponent<SpriteRenderer>().enabled = false;
+        // 袋の絵(奥・ふち・手前)と仮の袋の四角は隠す(当たり判定はそのまま)
+        foreach (var part in new[] { bag.back, bag.front, bag.outline, bag.left, bag.right, bag.bottom })
+            if (part != null) part.GetComponent<SpriteRenderer>().enabled = false;
 
         bag.look.holder = holder;
         bag.look.model = model;
@@ -167,6 +169,9 @@ public partial class TwoPlayerShop2D
         var frontSr = bag.front.GetComponent<SpriteRenderer>();
         if (frontSr.sprite != null && bagFrontSprite != null)
             look.frontMesh = MakeBagMeshLayer(p, bag, frontSr, "BagFrontMesh", out look.frontMeshTransform);
+        var outlineSr = bag.outline != null ? bag.outline.GetComponent<SpriteRenderer>() : null;
+        if (outlineSr != null && outlineSr.sprite != null && bagOutlineSprite != null)
+            look.outlineMesh = MakeBagMeshLayer(p, bag, outlineSr, "BagOutlineMesh", out look.outlineMeshTransform);
     }
 
     // 1枚の絵(SpriteRenderer)の網目を作る
@@ -268,6 +273,11 @@ public partial class TwoPlayerShop2D
         {
             look.frontMesh.vertices = look.vertices;
             look.frontMesh.RecalculateBounds();
+        }
+        if (look.outlineMesh != null)
+        {
+            look.outlineMesh.vertices = look.vertices;
+            look.outlineMesh.RecalculateBounds();
         }
         // 合計金額の表示も、伸びた持ち手の上へ
         bag.totalLabel.transform.localPosition = new Vector3(bagX, BagFloorY + bagHeight + extra + look.snapLift + 0.2f + HudTextSize * 4f, 0f);

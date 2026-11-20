@@ -5,13 +5,15 @@ using UnityEngine;
 public partial class TwoPlayerShop2D
 {
     // レジ袋(左右のふち + 底 + 背景 + 合計の表示)。
-    // 見た目は3枚の重なり: 一番奥に袋の絵(back。bagSprite)・まん中に袋の中の商品・一番手前に薄い袋の絵(front。bagFrontSprite)
+    // 見た目は4枚の重なり: 一番奥に袋の絵(back。bagSprite)・袋の中の商品(当たり判定の中)・ふちの絵(outline。bagOutlineSprite。描く順番 899)・
+    // 一番手前に薄い袋の絵(front。bagFrontSprite。乗算にできる)。ふちの絵は手前の絵と同じ大きさ・ずらし(bagFrontScale / bagFrontOffset)で置く
     class Bag
     {
         public Transform root;
         public Rigidbody2D body;   // 揺らすとき用(Kinematic。動かすと中の商品を押す)
         public Transform back, left, right, bottom;
         public Transform front;        // 手前の薄い袋の絵(商品より手前。当たり判定なし)
+        public Transform outline;      // ふちの絵(商品より手前・手前の薄い袋の絵より奥)
         public TextMesh totalLabel;
         public bool torn;              // 最後に持ち上げたとき破れた(TwoPlayerShop2D.Weight.cs)
         public BagLook look;           // 3Dモデル・伸び・裂けるアニメーション(TwoPlayerShop2D.BagModel.cs)
@@ -52,6 +54,8 @@ public partial class TwoPlayerShop2D
         // 手前の薄い袋の絵(袋の中の商品より手前・持ち運び中の商品(999)より奥。絵は ApplyBagFrameVisibility で毎フレーム入れる)
         bag.front = MakeBagPart("Front", root.transform, p.layer, bagFrontColor, BagFrontOrder, false);
         bag.front.GetComponent<SpriteRenderer>().enabled = false;
+        bag.outline = MakeBagPart("Outline", root.transform, p.layer, Color.white, BagFrontOrder - 1, false);
+        bag.outline.GetComponent<SpriteRenderer>().enabled = false;
 
         bag.totalLabel = MakeText($"BagTotal_{p.name}", root.transform, p.layer, "¥0", Color.white, 1001);
         SetTextSize(bag.totalLabel, HudTextSize);
@@ -186,6 +190,7 @@ public partial class TwoPlayerShop2D
     // 3Dモデルの袋のときと、伸びて網目になったあと(TwoPlayerShop2D.BagModel.cs)は、絵のほうは出さない
     void ApplyBagFront(Bag b)
     {
+        ApplyBagOutline(b);
         var sr = b.front.GetComponent<SpriteRenderer>();
         if (b.look != null && b.look.frontMesh != null) ScaleBagMesh(b.look.frontMeshTransform, bagFrontScale, bagFrontOffset);
         bool meshed = b.look != null && (b.look.holder != null || b.look.mesh != null);
@@ -202,6 +207,20 @@ public partial class TwoPlayerShop2D
         sr.sprite = bagFrontSprite;
         sr.color = bagFrontColor;
         PlaceBagSprite(b.front, bagFrontSprite, bagFrontScale, bagFrontOffset);
+    }
+
+    // ふちの絵: 手前の薄い袋の絵と同じ大きさ・ずらしで置く(ふつうの描き方。再生中に絵を変えてもすぐ反映)
+    void ApplyBagOutline(Bag b)
+    {
+        if (b.outline == null) return;
+        var sr = b.outline.GetComponent<SpriteRenderer>();
+        if (b.look != null && b.look.outlineMesh != null) ScaleBagMesh(b.look.outlineMeshTransform, bagFrontScale, bagFrontOffset);
+        bool meshed = b.look != null && (b.look.holder != null || b.look.mesh != null);
+        sr.enabled = bagOutlineSprite != null && !meshed;
+        if (!sr.enabled) return;
+        sr.sprite = bagOutlineSprite;
+        sr.color = Color.white;
+        PlaceBagSprite(b.outline, bagOutlineSprite, bagFrontScale, bagFrontOffset);
     }
 
     // 手前の袋の絵のマテリアル: ふつう(絵の最初のマテリアル)か、乗算(Resources/SpriteMultiply.shader)
