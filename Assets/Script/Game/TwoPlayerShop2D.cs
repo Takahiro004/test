@@ -656,6 +656,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector2 kickFootRestPosition = new Vector2(0.22f, 0f);
     [Tooltip("足を伸ばす動き: 置き場所から、相手の側(1P は右・2P は左)へ横にどれだけ伸ばすか(ゲームの長さ。足が画面の真ん中(相手の側との境目)に届くくらいにする)")]
     public float kickFootReachDistance = 2.5f;
+    [Tooltip("足を伸ばす動き: 足の先が、相手の側の画面のふち(1P は右・2P は左の枠)にちょうど届くまで伸ばす(長さは足の大きさから自動。Kick Foot Reach Distance は使わない)")]
+    public bool kickFootReachToEdge = true;
     [Tooltip("足を伸ばす動き: 伸ばし切ってから止まっている秒数")]
     public float kickExtendHold = 0.2f;
     [Tooltip("足を伸ばす動き: 引っ込める秒数")]

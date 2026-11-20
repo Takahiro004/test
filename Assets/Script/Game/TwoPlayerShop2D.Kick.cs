@@ -328,8 +328,24 @@ public partial class TwoPlayerShop2D
             float extendTime = Mathf.Max(0.05f, kickExtendTime);
             float clipSpeed = kickFootClip != null && kickFootClipFit ? kickFootClip.length / extendTime : -1f;   // 伸ばし切ったときにモーションも終わる速さ
             var leg = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var legGraph, clipSpeed);
-            // 相手の側(1P は右・2P は左)へ、まっすぐ横に伸ばす。足の向き(dir)は Preview で合わせたまま
-            Vector2 reach = start + new Vector2(from == p1 ? 1f : -1f, 0f) * Mathf.Max(0f, kickFootReachDistance);
+            leg.transform.position = start;
+            // 相手の側(1P は右・2P は左)へ、まっすぐ横に伸ばす。足の向き(dir)は Preview で合わせたまま。
+            // kickFootReachToEdge なら、足の先(相手の側のはし)が、相手の側の画面のふちにちょうど届く長さ
+            float toward = from == p1 ? 1f : -1f;
+            float distance = Mathf.Max(0f, kickFootReachDistance);
+            if (kickFootReachToEdge)
+            {
+                var rs = leg.GetComponentsInChildren<Renderer>();
+                if (rs.Length > 0)
+                {
+                    Bounds b = rs[0].bounds;
+                    foreach (var r in rs) b.Encapsulate(r.bounds);
+                    float tip = toward > 0f ? b.max.x : b.min.x;   // 足の先
+                    float edge = toward * view.x / 2f;             // 相手の側の画面のふち
+                    distance = Mathf.Max(0f, (edge - tip) * toward);
+                }
+            }
+            Vector2 reach = start + new Vector2(toward, 0f) * distance;
             for (float time = 0f; time < extendTime; time += Time.deltaTime)
             {
                 float k = time / extendTime;
