@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 //  - 描く順番は画像のカーソルと同じ CursorOrder(2900。商品・画面の枠(2800)より手前、大きな文字・結果発表(3000〜)より奥)。3Dモデルの商品と同じく、描く順のグループを透明にして sortingOrder で並べる
 //  - 手は全部 z=0 より手前に置く(3Dモデルの商品・棚は z=0 より奥。手がめり込んで後ろに隠れないように)
 //  - 当たり判定は付けない(掴む判定の邪魔になるため)
-//  - どちらの手か分かるように: 手のモデルにプレイヤーの色をうっすら付け(cursorModelTintAmount)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
+//  - どちらの手か分かるように: 手のモデル全体にプレイヤーの色を掛けて(乗算)うっすら色を付け(cursorModelTintAmount。再生中もすぐ反映)、手の縁を枠と同じプレイヤーの色で縁取り(cursorOutlineWidth)、
 //    棚の画面の手のそばに「1P」「2P」を出す(cursorShowPlayerLabel)
 //  - 手のモデル専用のライト(handLight): 手だけを照らすライトを1つ足す。ライトレイヤー(URP の Rendering Layers。UniversalRP.asset で ON)を使い、
 //    手のモデルの renderingLayerMask に HandLightLayerBit を足して、そのライトはそのビットの物だけを照らす(商品・棚は照らさない)
@@ -164,23 +164,17 @@ public partial class TwoPlayerShop2D
         cursorGraphs.Clear();
     }
 
-    // 手のモデルに、プレイヤーの色をうっすら付ける(マテリアルの色 _BaseColor / _Color に混ぜる。マテリアルはこの手だけのもの)
+    // 手のモデルに、プレイヤーの色をうっすら付ける: どのマテリアルがどのプレイヤーの手かを覚えるだけ。
+    // 色は UpdateHandBrightness が毎フレーム、元の色 x Lerp(白, プレイヤーの色, cursorModelTintAmount) で掛ける(乗算。再生中に変えてもすぐ反映)
+    readonly Dictionary<Material, Color> handTints = new Dictionary<Material, Color>();
+
     void TintCursorModel(Transform cursor, Color color)
     {
-        if (cursor == null || cursorModelTintAmount <= 0f) return;
+        if (cursor == null) return;
         foreach (var r in cursor.GetComponentsInChildren<Renderer>())
-            foreach (var m in r.materials)
-            {
-                foreach (var prop in new[] { "_BaseColor", "_Color" })
-                    if (m.HasProperty(prop))
-                    {
-                        Color c = m.GetColor(prop);
-                        m.SetColor(prop, new Color(Mathf.Lerp(c.r, color.r, cursorModelTintAmount), Mathf.Lerp(c.g, color.g, cursorModelTintAmount),
-                                                   Mathf.Lerp(c.b, color.b, cursorModelTintAmount), c.a));
-                    }
-            }
+            foreach (var m in r.sharedMaterials)
+                if (m != null && handMaterials.Contains(m)) handTints[m] = new Color(color.r, color.g, color.b, 1f);   // 手のモデルのマテリアルだけ(縁取りは除く)
     }
-
     // 棚の画面のカーソルのそばに「1P」「2P」(プレイヤーの色・影付き)。カーソルの子なので一緒に動く(左右反転はしない)
     readonly Dictionary<Player, TextMesh> cursorLabels = new Dictionary<Player, TextMesh>();
 
@@ -248,7 +242,9 @@ public partial class TwoPlayerShop2D
             string prop = m.HasProperty("_BaseColor") ? "_BaseColor" : m.HasProperty("_Color") ? "_Color" : null;
             if (prop == null) continue;
             if (!handBaseColors.TryGetValue(m, out var c)) { c = m.GetColor(prop); handBaseColors[m] = c; }
-            m.SetColor(prop, new Color(c.r * k, c.g * k, c.b * k, c.a));
+            // プレイヤーの色を掛ける(乗算)。cursorModelTintAmount 0 なら白(そのまま)、1 ならプレイヤーの色そのものを掛ける
+            Color tint = handTints.TryGetValue(m, out var pc) ? Color.Lerp(Color.white, pc, Mathf.Clamp01(cursorModelTintAmount)) : Color.white;
+            m.SetColor(prop, new Color(c.r * k * tint.r, c.g * k * tint.g, c.b * k * tint.b, c.a));
         }
     }
 }
