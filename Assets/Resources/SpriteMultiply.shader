@@ -1,5 +1,6 @@
 // 絵を「乗算」で重ねる(下にあるものの色に、絵の色を掛ける。白い所は変わらず、灰色の所は暗くなる)。
 // 透明な所は掛けない(白と同じ)。色(SpriteRenderer の Color)の A で、掛ける強さを弱められる。
+// _Strength で濃さを強める(白からの暗さを何倍にするか。白っぽい絵でも、しわの影がはっきり出る)。
 // TwoPlayerShop2D の手前のレジ袋の絵(Bag Front Multiply)で使う。Resources に置いて、ビルドにも入るようにしている
 Shader "Shop2D/SpriteMultiply"
 {
@@ -7,6 +8,7 @@ Shader "Shop2D/SpriteMultiply"
     {
         [PerRendererData] _MainTex ("Sprite", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
+        _Strength ("Strength", Float) = 1
     }
     SubShader
     {
@@ -28,6 +30,7 @@ Shader "Shop2D/SpriteMultiply"
 
             sampler2D _MainTex;
             fixed4 _Color;
+            float _Strength;
 
             v2f vert (appdata v)
             {
@@ -41,7 +44,9 @@ Shader "Shop2D/SpriteMultiply"
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 c = tex2D(_MainTex, i.uv) * i.color;
-                return fixed4(lerp(fixed3(1, 1, 1), c.rgb, c.a), 1);   // 透明な所・A が小さい所は白(= 掛けても変わらない)
+                fixed3 m = lerp(fixed3(1, 1, 1), c.rgb, c.a);   // 透明な所・A が小さい所は白(= 掛けても変わらない)
+                m = saturate(1 - (1 - m) * _Strength);           // 白からの暗さを _Strength 倍にする
+                return fixed4(m, 1);
             }
             ENDCG
         }

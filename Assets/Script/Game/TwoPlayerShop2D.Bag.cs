@@ -222,6 +222,7 @@ public partial class TwoPlayerShop2D
             }
             bagFrontMultiplyMaterial = new Material(shader) { name = "BagFrontMultiply" };
         }
+        bagFrontMultiplyMaterial.SetFloat("_Strength", Mathf.Max(0f, bagFrontMultiplyStrength));   // 再生中に変えてもすぐ反映
         return bagFrontMultiplyMaterial;
     }
 
