@@ -20,6 +20,7 @@ using UnityEngine.Playables;
 //    半透明の足(kickIconEmptyColor)の上に、たまった分だけ下から、色の段階(kickIconGradient。下 = 寒色 → 上 = 暖色)の足を重ねる。
 //    満タンになったらゲージを消して、その場所に「LB: キック OK」を出す。蹴ったら(0 に戻ったら)ゲージをまた出す
 //  - 大きさ kickIconSize・位置のずれ kickIconOffset
+//  - kickOnBagScreen(初め ON)なら、伸ばすキックは棚の画面には出さず、蹴られた人の画面(袋の画面)の、蹴った人の側から出して、相手の袋のふちを蹴る
 //  - 伸ばす動き(kickFootExtend)は、Kick Foot Preview と同じ置き場所(kickFootRestPosition)から、相手の側へ横に kickFootReachDistance だけ伸ばして戻す
 //  - kickFootPreview を ON にすると、棚の画面の真ん中あたりに 1P 用・2P 用の足を止めて出す(再生中に向き・大きさを変えるとすぐ反映)
 public partial class TwoPlayerShop2D
@@ -324,13 +325,16 @@ public partial class TwoPlayerShop2D
         {
             // 伸ばす動き: Kick Foot Preview と同じ置き場所(FootRestPosition)から、相手の側へ横に足をぐっと伸ばし(キックのモーションも一緒に)、
             // 届いたら少し止めて、元の置き場所へ引っ込める
+            // kickOnBagScreen なら、棚の画面ではなく、蹴られた人の画面(袋の画面)に出して、相手の袋を蹴る
+            bool onBag = kickOnBagScreen;
+            int legLayer = onBag ? target.layer : layerShop;
             start = FootRestPosition(from == p1);
             float extendTime = Mathf.Max(0.05f, kickExtendTime);
             float clipSpeed = kickFootClip != null && kickFootClipFit ? kickFootClip.length / extendTime : -1f;   // 伸ばし切ったときにモーションも終わる速さ
-            var leg = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var legGraph, clipSpeed);
+            var leg = MakeFootVisual($"Foot_{from.name}", from.color, dir, true, out var legGraph, clipSpeed, legLayer);
             leg.transform.position = start;
             // 相手の側(1P は右・2P は左)へ、まっすぐ横に伸ばす。足の向き(dir)は Preview で合わせたまま。
-            // kickFootReachToEdge なら、足の先(相手の側のはし)が、相手の側の画面のふちにちょうど届く長さ
+            // kickFootReachToEdge なら、足の先(相手の側のはし)が、相手の側の画面のふち(袋の画面なら、袋の近いほうのふち)にちょうど届く長さ
             float toward = from == p1 ? 1f : -1f;
             float distance = Mathf.Max(0f, kickFootReachDistance);
             if (kickFootReachToEdge)
@@ -341,7 +345,8 @@ public partial class TwoPlayerShop2D
                     Bounds b = rs[0].bounds;
                     foreach (var r in rs) b.Encapsulate(r.bounds);
                     float tip = toward > 0f ? b.max.x : b.min.x;   // 足の先
-                    float edge = toward * view.x / 2f;             // 相手の側の画面のふち
+                    float edge = onBag ? BagHitX - toward * BagHitWidth / 2f   // 袋の、足が来る側のふち
+                                       : toward * view.x / 2f;                 // 相手の側の画面のふち
                     distance = Mathf.Max(0f, (edge - tip) * toward);
                 }
             }
@@ -489,12 +494,13 @@ public partial class TwoPlayerShop2D
     }
 
     // 足の見た目を作る(3Dモデル → 画像 → 自動生成の靴)。dir = 飛ぶ向き。play なら kickFootClip を再生する(graph を返す。止めたら Destroy する)
-    GameObject MakeFootVisual(string objName, Color playerColor, Vector2 dir, bool play, out PlayableGraph graph, float clipSpeed = -1f)
+    GameObject MakeFootVisual(string objName, Color playerColor, Vector2 dir, bool play, out PlayableGraph graph, float clipSpeed = -1f, int layer = -1)
     {
         graph = default;
+        if (layer < 0) layer = layerShop;
         bool leftward = dir.x < 0f;
         var foot = new GameObject(objName);
-        foot.layer = layerShop;
+        foot.layer = layer;
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + kickFootRotation;
 
         if (kickFootModel != null)
@@ -526,7 +532,7 @@ public partial class TwoPlayerShop2D
                 UseSpriteOrder(renderers);   // 絵と同じ sortingOrder の順で描く(TwoPlayerShop2D.Products.cs)
                 foreach (var r in renderers) r.sortingOrder = 1500;   // 商品とカーソルより手前、掴み合いのゲージより奥
             }
-            SetLayer(model, layerShop);
+            SetLayer(model, layer);
             if (leftward) flip.localScale = new Vector3(1f, -1f, 1f);   // 左へ飛ぶときに足が逆さにならないように
             if (play && kickFootClip != null)
             {
@@ -554,13 +560,14 @@ public partial class TwoPlayerShop2D
     // ---------- 足の見え方の確認(kickFootPreview) ----------
     // 棚の画面の左に 1P 用(右上へ飛ぶ向き)・右に 2P 用(左上へ飛ぶ向き)の足を止めて出す。設定を変えたら作り直す
     GameObject footPreview1, footPreview2;
+    bool footPreviewOnBag;
     PlayableGraph footPreviewGraph1, footPreviewGraph2;
     (GameObject model, Sprite sprite, Vector3 rot, Vector2 offset, float size, float rotation, AnimationClip clip, float clipSpeed) footPreviewBuilt;
 
     void UpdateKickFootPreview()
     {
         var want = (kickFootModel, kickFootSprite, kickFootModelRotation, kickFootModelOffset, kickFootSize, kickFootRotation, kickFootClip, kickFootClipSpeed);
-        bool changed = !want.Equals(footPreviewBuilt);
+        bool changed = !want.Equals(footPreviewBuilt) || footPreviewOnBag != (kickOnBagScreen && kickFootExtend);
         if (!kickFootPreview || changed)
         {
             if (footPreviewGraph1.IsValid()) footPreviewGraph1.Destroy();
@@ -574,10 +581,13 @@ public partial class TwoPlayerShop2D
         if (footPreview1 == null)
         {
             footPreviewBuilt = want;
+            footPreviewOnBag = kickOnBagScreen && kickFootExtend;
+            // 袋の画面に出すときは、1P のキックは 2P の画面に・2P のキックは 1P の画面に出す
+            int layer1 = footPreviewOnBag ? p2.layer : layerShop, layer2 = footPreviewOnBag ? p1.layer : layerShop;
             // 飛ぶ向きは FlyFoot と同じ(1P は左下から右上へ・2P は右下から左上へ)
             Vector2 s1 = new Vector2(-view.x * 0.25f, -view.y / 2f - 1.5f), e1 = new Vector2(view.x / 2f + 1.5f, view.y / 2f + 1.5f);
-            footPreview1 = MakeFootVisual("FootPreview_1P", p1.color, (e1 - s1).normalized, true, out footPreviewGraph1);
-            footPreview2 = MakeFootVisual("FootPreview_2P", p2.color, (new Vector2(-e1.x, e1.y) - new Vector2(-s1.x, s1.y)).normalized, true, out footPreviewGraph2);
+            footPreview1 = MakeFootVisual("FootPreview_1P", p1.color, (e1 - s1).normalized, true, out footPreviewGraph1, -1f, layer1);
+            footPreview2 = MakeFootVisual("FootPreview_2P", p2.color, (new Vector2(-e1.x, e1.y) - new Vector2(-s1.x, s1.y)).normalized, true, out footPreviewGraph2, -1f, layer2);
         }
         footPreview1.transform.position = FootRestPosition(true);
         footPreview2.transform.position = FootRestPosition(false);
@@ -585,11 +595,13 @@ public partial class TwoPlayerShop2D
 
     // 足の置き場所(Kick Foot Preview で出す場所。伸ばす動きは、ここから伸ばして、ここへ引っ込める)。
     // kickFootRestPosition: X = 画面の真ん中から自分の側へ(画面の幅の割合。1P は左・2P は右)・Y = 上へ(画面の高さの割合)
+    // (袋の画面に出すとき(kickOnBagScreen)は、蹴られた人の画面の中で、蹴った人の側(1P のキックは左・2P は右)。持ち上げでカメラが上がったら一緒に)
     Vector3 FootRestPosition(bool isP1)
     {
-        Vector2 view = ShopViewSize();
+        bool onBag = kickOnBagScreen && kickFootExtend;
+        Vector2 view = onBag ? PlayerViewSize() : ShopViewSize();
         float side = isP1 ? -1f : 1f;
-        return new Vector3(side * view.x * kickFootRestPosition.x, view.y * kickFootRestPosition.y, 0f);
+        return new Vector3(side * view.x * kickFootRestPosition.x, view.y * kickFootRestPosition.y + (onBag ? CameraFollowY : 0f), 0f);
     }
 
     // 自動生成の靴(つま先が右)。足の画像ができたら kickFootSprite に入れる
