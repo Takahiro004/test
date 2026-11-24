@@ -481,9 +481,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("おばあさんの絵(空なら Assets/Resources/Granny/Granny_back。Claude が描いた後ろ姿)")]
     public Sprite grannySprite;
     [Tooltip("おばあさんの大きさ(絵の縦。画面の高さの割合)。袋の前に立って、大きな背中で袋を隠すくらい")]
-    public float grannyHeight = 1f;
+    public float grannyHeight = 1.35f;   // 2026-11-24 プログラマー: もっと大きく
     [Tooltip("絵の下のはしの高さ(画面の下から。画面の高さの割合。マイナスで足が画面の外)")]
-    public float grannyBottom = -0.12f;
+    public float grannyBottom = -0.2f;
     [Tooltip("歩いてくる・去る秒数")]
     public float grannyEnterTime = 0.7f;
     [Tooltip("袋の前でガサゴソする秒数")]
