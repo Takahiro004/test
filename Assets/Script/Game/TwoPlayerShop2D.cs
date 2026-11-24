@@ -471,35 +471,37 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋の画面で、子どもの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
     public float kidBagHeadTop = 0.45f;
 
-    [Header("袋あらしのおばあさん(妨害。ランダムな1人の袋に手を突っ込んでかき回し、商品を1つ取っていく)")]
+    [Header("袋あらしのおばあさん(妨害。ランダムな1人の袋の前に立って、ガサゴソして、商品を1つ抜き取っていく)")]
     [Tooltip("袋あらしのおばあさんを出す")]
     public bool grannyEnabled = true;
-    [Tooltip("見え方の確認: ON にすると、1P(左)・2P(右)の画面に、立っているおばあさんと、真上から袋へ入れた手を出しっぱなしにする。下の大きさ・位置の欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
+    [Tooltip("見え方の確認: ON にすると、1P・2P の画面の袋の前に、おばあさんを出しっぱなしにする。下の大きさ・高さの欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
     public bool grannyPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
     public float[] grannyTimes = { 65f, 20f };
-    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_front。近くに立った正面のおばあさん。口もとから下・右の腕を上げている)")]
+    [Tooltip("おばあさんの絵(空なら Assets/Resources/Granny/Granny_back。Claude が描いた後ろ姿)")]
     public Sprite grannySprite;
-    [Tooltip("体の絵の、上げた腕が右にあるなら ON(上げた腕が袋の側 = 1P の画面では右・2P の画面では左 になるように反転する)")]
-    public bool grannySpriteFacesRight = true;
-    [Tooltip("おばあさんの腕(そで + 手)の絵。左のはし = 肩・右のはし = 指先。真上から下へ伸ばして使う(空なら Assets/Resources/Granny/Granny_hand)")]
-    public Sprite grannyHandSprite;
-    [Tooltip("おばあさんの大きさ(体の絵の縦。画面の高さの割合)。近くに立っているので大きく映る")]
+    [Tooltip("おばあさんの大きさ(絵の縦。画面の高さの割合)。袋の前に立って、大きな背中で袋を隠すくらい")]
     public float grannyHeight = 1f;
-    [Tooltip("体の絵の上のはしの高さ(画面の下から。画面の高さの割合。1 より大きいと顔の上が画面の外)")]
-    public float grannyTop = 1.02f;
-    [Tooltip("体の真ん中の位置(画面の真ん中から外側へ。画面の幅の割合。1P は左・2P は右)")]
-    public float grannyEdgeX = 0.55f;   // 正面の絵は横幅があるので、体の半分くらいが画面の外(画面の外側の半分くらいに映る)
-    [Tooltip("真上から下ろす腕の太さ(画面の幅の割合)")]
-    public float grannyHandWidth = 0.12f;
-    [Tooltip("出てくる・去る秒数")]
-    public float grannyEnterTime = 0.6f;
-    [Tooltip("袋をかき回す秒数")]
-    public float grannyStirTime = 1.5f;
-    [Tooltip("かき回す強さ(袋の中の商品をはじく速さ)")]
-    public float grannyStirPower = 4f;
-    [Tooltip("かき回すときの袋の揺れの強さ(キックの揺れと同じ。0 で揺れない)")]
+    [Tooltip("絵の下のはしの高さ(画面の下から。画面の高さの割合。マイナスで足が画面の外)")]
+    public float grannyBottom = -0.12f;
+    [Tooltip("歩いてくる・去る秒数")]
+    public float grannyEnterTime = 0.7f;
+    [Tooltip("袋の前でガサゴソする秒数")]
+    public float grannyStirTime = 2f;
+    [Tooltip("ガサゴソで、袋の中の商品をはじく強さ")]
+    public float grannyStirPower = 2.5f;
+    [Tooltip("ガサゴソのときの袋の揺れの強さ(キックの揺れと同じ。0 で揺れない)")]
     public float grannyShake = 0.3f;
+    [Tooltip("ガサゴソの音(空ならスクリプトで作った、袋をこするような音)")]
+    public AudioClip grannyRustleClip;
+    [Tooltip("ガサゴソの音の大きさ(0 で鳴らさない)")]
+    [Range(0f, 1f)] public float grannyRustleVolume = 0.8f;
+    [Tooltip("「ガサゴソ」の文字も出す")]
+    public bool grannyRustleText = true;
+    [Tooltip("「ガサゴソ」の文字の色")]
+    public Color grannyRustleTextColor = new Color(1f, 0.95f, 0.4f, 1f);
+    [Tooltip("「ガサゴソ」の文字の大きさ(1 でふつう)")]
+    public float grannyRustleTextSize = 1.6f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
