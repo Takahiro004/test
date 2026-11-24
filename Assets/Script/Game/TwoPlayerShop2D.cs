@@ -498,14 +498,18 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Range(0f, 1f)] public float grannyStaticChance = 0.35f;
     [Tooltip("ノイズの演出: 砂嵐の濃さ(0〜1)")]
     [Range(0f, 1f)] public float grannyStaticAlpha = 0.85f;
+    [Tooltip("ノイズの演出: おばあさんがいる間も出し続ける弱いノイズの強さ(0 で出さない・1 でいちばん強い)")]
+    [Range(0f, 1f)] public float grannyIdleNoise = 0.2f;
     [Tooltip("ノイズの演出: ノイズの音(ザーッ)も鳴らす(大きさは Granny Rustle Volume の 6割)")]
     public bool grannyNoiseSound = true;
-    [Tooltip("吹き出し: 目の前に出てきたときに、吹き出しを出す")]
+    [Tooltip("叫び: 目の前に出てきたときに、「アビダ」を出す")]
     public bool grannyBubble = true;
+    [Tooltip("叫び: マンガの「ドン」のような、ギザギザの形と太い文字をひとつ、叩きつけるように大きく出す(いる間ずっと)。OFF なら丸い吹き出し")]
+    public bool grannyShoutStyle = true;
     [Tooltip("吹き出しの文字")]
     public string grannyBubbleText = "アビダ";
     [Tooltip("吹き出し: ガサゴソの間も何回も叫ぶ(場所・大きさ・傾きを少しずつ変えて、何個も出す)")]
-    public bool grannyBubbleRepeat = true;
+    public bool grannyBubbleRepeat = false;   // 2026-11-24 プログラマー: 大きく一つでいい(Granny Shout Style)
     [Tooltip("吹き出し: 何秒ごとに叫ぶか")]
     public float grannyBubbleInterval = 0.35f;
     [Tooltip("吹き出し: 2回目からの吹き出しが、どのくらい散らばるか(画面の大きさの割合)")]
@@ -513,9 +517,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("吹き出しを出しておく秒数(2回目からは 6割)")]
     public float grannyBubbleTime = 1.2f;
     [Tooltip("吹き出しの大きさ(1 でふつう)")]
-    public float grannyBubbleSize = 1f;
+    public float grannyBubbleSize = 1.1f;
     [Tooltip("吹き出しの位置(画面の真ん中から。画面の大きさの割合。X 右・Y 上。2P は左右反対)")]
-    public Vector2 grannyBubblePosition = new Vector2(-0.12f, 0.3f);
+    public Vector2 grannyBubblePosition = new Vector2(0f, 0.28f);
     [Tooltip("吹き出しの文字の色")]
     public Color grannyBubbleTextColor = new Color(0.1f, 0.1f, 0.1f, 1f);
     [Tooltip("おばあさんの絵(空なら Assets/Resources/Granny/Granny_back。Claude が描いた後ろ姿)")]
@@ -524,6 +528,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float grannyHeight = 1.35f;   // 2026-11-24 プログラマー: もっと大きく
     [Tooltip("絵の下のはしの高さ(画面の下から。画面の高さの割合。マイナスで足が画面の外)")]
     public float grannyBottom = -0.2f;
+    [Tooltip("背景: おばあさんがいる間、その人の画面の背景を砂漠にする")]
+    public bool grannyDesert = true;
+    [Tooltip("背景: 砂漠の絵(空ならスクリプトで描いた砂漠。画面いっぱいに広げる)")]
+    public Sprite grannyDesertSprite;
     [Tooltip("歩いてくる・去る秒数")]
     public float grannyEnterTime = 0.7f;
     [Tooltip("袋の前でガサゴソする秒数")]
