@@ -20,9 +20,40 @@ public partial class TwoPlayerShop2D
     bool kidRunning;
     static Sprite kidDefaultSprite;
 
+    // 見え方の確認(kidPreview): 棚の画面(全身)と 1P・2P の画面(上半身)の真ん中に、子どもを止めて出す。
+    // 大きさ・高さの欄を再生中に変えると、すぐ動く(子どもが出てくるのを待たなくていい)
+    SpriteRenderer[] kidPreviews;
+
+    void UpdateKidPreview()
+    {
+        bool show = kidPreview && p1 != null && p2 != null;
+        if (!show)
+        {
+            if (kidPreviews != null) foreach (var k in kidPreviews) if (k != null) Destroy(k.gameObject);
+            kidPreviews = null;
+            return;
+        }
+        int[] layers = { layerShop, p1.layer, p2.layer };
+        if (kidPreviews == null)
+        {
+            kidPreviews = new SpriteRenderer[3];
+            for (int i = 0; i < 3; i++) kidPreviews[i] = MakeKid();
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            var k = kidPreviews[i];
+            SetLayer(k.gameObject, layers[i]);
+            k.sortingOrder = layers[i] == layerShop ? 1500 : 1800;
+            KidFrame(k, false);   // 歩くコマ(動いて見える)
+            k.flipX = kidSpriteFacesRight;   // 左向き
+            PlaceKid(k, null, layers[i], 0f, Time.time);
+        }
+    }
+
     // LateUpdate から毎フレーム
     void UpdateKid()
     {
+        UpdateKidPreview();
         if (!kidEnabled || kidTimes == null || InEntry || timeLeft < 0f || IsTimeUp || kidRunning || p1 == null || p2 == null) return;
         for (int i = 0; i < kidTimes.Length; i++)
         {
