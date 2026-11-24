@@ -341,6 +341,9 @@ public partial class TwoPlayerShop2D
             float hitY = (kickOnBagScreen ? BagFloorY + bagHeight * Mathf.Clamp01(kickFrontHitHeight) : 0f) + (kickOnBagScreen ? CameraFollowY : 0f);
             // 横は、袋の真ん中から蹴った人の側へ、袋の幅の 1/4 の所(袋の手前側のふちのあたり)
             float hitX = (kickOnBagScreen ? BagHitX : 0f) + kSide * (kickOnBagScreen ? BagHitWidth : 2f) * 0.25f;
+            Vector2 nudge = FootScreenOffset(from == p1);   // 画面ごとの微調整(出る場所も届く場所も一緒にずらす)
+            hitX += nudge.x;
+            hitY += nudge.y;
             Vector3 fReach = new Vector3(hitX, Mathf.Max(fStart.y, hitY), fStart.z);
             for (float time = 0f; time < fTime; time += Time.deltaTime)
             {
@@ -607,14 +610,17 @@ public partial class TwoPlayerShop2D
     }
 
     // 足の描く順番: 棚の画面は 1500(商品とカーソルより手前、掴み合いのゲージより奥)。
-    // 袋の画面は 1700(袋・袋の中の商品・画面の下の献立の帯(1600〜1625)より手前。前は帯の後ろに隠れていた)
-    int FootOrder(int layer) => layer == layerShop ? 1500 : 1700;
+    // 袋の画面は 5000(一番手前。袋・商品・献立の帯・文字・結果発表(3000〜)より手前。2026-11-24 プログラマー)
+    int FootOrder(int layer) => layer == layerShop ? 1500 : 5000;
 
     // ---------- 足の見え方の確認(kickFootPreview) ----------
     // 棚の画面の左に 1P 用(右上へ飛ぶ向き)・右に 2P 用(左上へ飛ぶ向き)の足を止めて出す。設定を変えたら作り直す
     GameObject footPreview1, footPreview2;
     bool footPreviewOnBag, footPreviewFront;
     Vector3 footPreviewFrontRotation;
+
+    // 足の位置の、画面ごとの微調整(ゲームの長さ)。1P のキックは 2P の画面に出るので kickFootOffsetOnP2Screen、2P のキックは kickFootOffsetOnP1Screen
+    Vector2 FootScreenOffset(bool kickerIsP1) => kickerIsP1 ? kickFootOffsetOnP2Screen : kickFootOffsetOnP1Screen;
 
     // 手前から蹴るときの足の置き場所: 蹴られた人の画面の下の、蹴った人の側の角(2P のキックは右下・1P のキックは左下)。
     // kickFrontCornerPosition: X = 画面の真ん中から蹴った人の側へ・Y = 画面の下のふちから上へ(どちらも画面の大きさの割合。0.5 で画面のふち)
@@ -624,6 +630,9 @@ public partial class TwoPlayerShop2D
         float side = kickerIsP1 ? -1f : 1f;
         float x = side * view.x * kickFrontCornerPosition.x;
         float y = -view.y / 2f + view.y * kickFrontCornerPosition.y + (kickOnBagScreen ? CameraFollowY : 0f);
+        Vector2 nudge = FootScreenOffset(kickerIsP1);
+        x += nudge.x;
+        y += nudge.y;
         return new Vector3(x, y, 0f);
     }
     PlayableGraph footPreviewGraph1, footPreviewGraph2;
