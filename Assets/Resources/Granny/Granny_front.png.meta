@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: f07e01d75f8a4232a05768a700161600
+guid: 8d468248b3ee45bc886d4fd021f7c4ed
 TextureImporter:
   internalIDToNameTable:
   - first:
       213: 792698433244650028
-    second: Granny_body_0
+    second: Granny_front_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Granny_body_0
+      name: Granny_front_0
       rect:
         serializedVersion: 2
         x: 0
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Granny_body_0: 792698433244650028
+      Granny_front_0: 792698433244650028
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
