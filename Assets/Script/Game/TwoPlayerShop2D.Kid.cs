@@ -141,6 +141,7 @@ public partial class TwoPlayerShop2D
         for (float t = 0f; t < time; t += Time.deltaTime)
         {
             if (KidShouldStop) yield break;
+            KidFrame(kid, false);   // 歩くコマ
             PlaceKid(kid, carried, layer, Mathf.Lerp(fromX, toX, t / time), Time.time);
             yield return null;
         }
@@ -155,9 +156,21 @@ public partial class TwoPlayerShop2D
         for (float s = 0f; s < kidPauseTime; s += Time.deltaTime)
         {
             if (KidShouldStop) yield break;
+            KidFrame(kid, true);    // 取る・入れるポーズ
             PlaceKid(kid, carried, layer, x, Time.time * 0.5f);
             yield return null;
         }
+    }
+
+    // 絵のコマを選ぶ: action なら取る・入れるポーズ、そうでなければ歩くコマ(kidWalkFps で順番に)
+    void KidFrame(SpriteRenderer kid, bool action)
+    {
+        Sprite s = null;
+        if (action && kidActionSprite != null) s = kidActionSprite;
+        else if (kidWalkFrames != null && kidWalkFrames.Length > 0)
+            s = kidWalkFrames[Mathf.FloorToInt(Time.time * Mathf.Max(0.1f, kidWalkFps)) % kidWalkFrames.Length];
+        if (s == null) s = kidSprite != null ? kidSprite : GetKidSprite();
+        kid.sprite = s;
     }
 
     // 歩く高さ: 袋の画面は袋の上のふちのすぐ上(+ Kid Walk Y)、棚の画面は Kid Shop Walk Y
