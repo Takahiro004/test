@@ -474,22 +474,24 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("袋あらしのおばあさん(妨害。ランダムな1人の袋に手を突っ込んでかき回し、商品を1つ取っていく)")]
     [Tooltip("袋あらしのおばあさんを出す")]
     public bool grannyEnabled = true;
-    [Tooltip("見え方の確認: ON にすると、1P・2P の画面に、おばあさんが袋へ手を伸ばした形を出しっぱなしにする。下の大きさ・位置の欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
+    [Tooltip("見え方の確認: ON にすると、1P(左)・2P(右)の画面に、立っているおばあさんと、真上から袋へ入れた手を出しっぱなしにする。下の大きさ・位置の欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
     public bool grannyPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
     public float[] grannyTimes = { 65f, 20f };
-    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_body)")]
+    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_side。近くに立った横向きのおばあさん。口もとから下)")]
     public Sprite grannySprite;
-    [Tooltip("おばあさんの腕(そで + 手)の絵。左のはし = 肩・右のはし = 指先(空なら Assets/Resources/Granny/Granny_hand)")]
+    [Tooltip("体の絵が右を向いているなら ON(1P の画面では右・2P の画面では左 = 袋のほうを向くように反転する)")]
+    public bool grannySpriteFacesRight = true;
+    [Tooltip("おばあさんの腕(そで + 手)の絵。左のはし = 肩・右のはし = 指先。真上から下へ伸ばして使う(空なら Assets/Resources/Granny/Granny_hand)")]
     public Sprite grannyHandSprite;
-    [Tooltip("おばあさんの大きさ(体の絵の縦。画面の高さの割合)。袋は近いので大きく映る")]
-    public float grannyHeight = 0.55f;
-    [Tooltip("おばあさんの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
-    public float grannyHeadTop = 0.92f;   // 2026-11-24 プログラマー: 画面の右上のふちから、ひょっこりのぞく
-    [Tooltip("おばあさんが止まる位置(体の真ん中。画面の真ん中から右へ。画面の幅の割合。0.5 で画面の右のふち = 体が半分だけ見える)")]
-    public float grannyStandX = 0.5f;
-    [Tooltip("おばあさんの体の傾き(度。プラスで画面の中へ傾く。のぞきこむ感じ)")]
-    public float grannyLean = 12f;
+    [Tooltip("おばあさんの大きさ(体の絵の縦。画面の高さの割合)。近くに立っているので大きく映る")]
+    public float grannyHeight = 1f;
+    [Tooltip("体の絵の上のはしの高さ(画面の下から。画面の高さの割合。1 より大きいと顔の上が画面の外)")]
+    public float grannyTop = 1.02f;
+    [Tooltip("体の真ん中の位置(画面の真ん中から外側へ。画面の幅の割合。1P は左・2P は右)")]
+    public float grannyEdgeX = 0.3f;
+    [Tooltip("真上から下ろす腕の太さ(画面の幅の割合)")]
+    public float grannyHandWidth = 0.12f;
     [Tooltip("出てくる・去る秒数")]
     public float grannyEnterTime = 0.6f;
     [Tooltip("袋をかき回す秒数")]
