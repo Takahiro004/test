@@ -665,7 +665,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("手前から蹴る: 足の全体の向き(度。X/Y/Z)。足先が奥(画面の向こう)を向くように回す")]
     public Vector3 kickFootFrontRotation = Vector3.zero;
     [Tooltip("手前から蹴る: 足の置き場所(角)。X = 画面の真ん中から蹴った人の側へ・Y = 画面の下のふちから上へ(どちらも画面の大きさの割合。X 0.5 で画面の横のふち・Y マイナスで画面の下の外)")]
-    public Vector2 kickFrontCornerPosition = new Vector2(0.4f, 0.05f);   // 2026-11-24 プログラマー: 2P のキックは 1P の画面の右下・1P のキックは 2P の画面の左下に出す
+    public Vector2 kickFrontCornerPosition = new Vector2(0.4f, 0.05f);
+    [Tooltip("手前から蹴る: 1P の画面に出る足(2P のキック)の位置の微調整(ゲームの長さ。X 右・Y 上)。出る場所も届く場所も一緒にずれる。再生中に変えると Preview もすぐ動く")]
+    public Vector2 kickFootOffsetOnP1Screen = Vector2.zero;
+    [Tooltip("手前から蹴る: 2P の画面に出る足(1P のキック)の位置の微調整(ゲームの長さ。X 右・Y 上)。出る場所も届く場所も一緒にずれる。再生中に変えると Preview もすぐ動く")]
+    public Vector2 kickFootOffsetOnP2Screen = Vector2.zero;   // 2026-11-24 プログラマー: 2P のキックは 1P の画面の右下・1P のキックは 2P の画面の左下に出す
     [Tooltip("手前から蹴る: 足の真ん中(Kick Foot Model Offset で合わせた点)を、袋のどの高さまで上げるか(0 = 袋の底 〜 1 = 袋の上)")]
     [Range(0f, 1f)] public float kickFrontHitHeight = 0.35f;
     [Tooltip("手前から蹴る: 蹴り終わり(奥)での足の大きさ(1 で変わらない・0.8 で 8割)。小さくすると、奥へ蹴り込んだように見える")]
