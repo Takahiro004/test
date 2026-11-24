@@ -444,9 +444,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kidEnabled = true;
     [Tooltip("出てくる時(残り時間の秒数)。例: 90 と 45 なら、残り 1:30 と 0:45 に1回ずつ")]
     public float[] kidTimes = { 90f, 45f };
-    [Tooltip("子どもの絵(空なら自動生成の子ども)。左へ歩く")]
+    [Tooltip("子どもの絵(空なら自動生成の子ども)。左向きの絵を想定(歩く向きに合わせて反転する)")]
     public Sprite kidSprite;
-    [Tooltip("子どもの絵が右を向いているなら ON(左へ歩くので左右反転する)")]
+    [Tooltip("子どもの絵が右を向いているなら ON")]
     public bool kidSpriteFacesRight = false;
     [Tooltip("子どもの背の高さ(ゲームの長さ)")]
     public float kidSize = 2.5f;
@@ -454,7 +454,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Color kidColor = new Color(1f, 0.8f, 0.5f, 1f);
     [Tooltip("1つの画面を横切る秒数")]
     public float kidCrossTime = 2.5f;
-    [Tooltip("棚の画面で、商品を取るときに立ち止まる秒数")]
+    [Tooltip("商品を取る・袋に落とすときに立ち止まる秒数")]
     public float kidPauseTime = 0.6f;
     [Tooltip("袋の画面で歩く高さのずれ(袋の上のふちのすぐ上から。ゲームの長さ。プラスで上)")]
     public float kidWalkY = 0f;

@@ -4,9 +4,10 @@ using UnityEngine;
 // おじゃまキッズ(妨害。TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「おじゃまキッズ」)
 // 試合中、残り時間が kidTimes の秒数になったら、小さい子どもが出てきて、2人の袋に勝手に商品を1つずつ入れていく。
 //  1. 2P の画面: 右のふちから出てきて、左へ歩いて抜ける(棚へ向かう)
-//  2. 棚の画面: 右から出てきて、真ん中で立ち止まって商品を取る(このとき 2P の袋に、ランダムな商品を1つ上から落とす)。
-//     取った商品を頭の上に持って、左へ抜ける
-//  3. 1P の画面: 右から出てきて、袋の上を横切るときに、持っていた商品を 1P の袋へ落として、左へ抜ける
+//  2. 棚の画面: 右から真ん中まで歩き、立ち止まってランダムな商品を取り(頭の上に持つ)、右へ戻る(2P の画面へ)
+//  3. 2P の画面: 左から出てきて、袋の上のランダムな位置まで歩き、商品を袋へ落とし、左へ戻る
+//  4. 棚の画面: 右から左へ横切りながら、真ん中で立ち止まってもう1つランダムな商品を取る
+//  5. 1P の画面: 右から袋の上のランダムな位置まで歩き、立ち止まって商品を袋へ落とし、左へ抜ける
 //  - 入れる商品は、商品の一覧(productList)の全部からランダム。落とした商品は、ふつうに落とした商品と同じ(袋に入ったら金額・重さに数える)
 //  - 子どもの絵は kidSprite(空なら自動生成の子ども)。大きさ kidSize・色 kidColor・1つの画面を横切る秒数 kidCrossTime・歩く高さ kidWalkY(画面の高さの割合)
 //  - タイムアップ・袋持ち上げが始まったら、途中でもやめる
@@ -37,79 +38,102 @@ public partial class TwoPlayerShop2D
         var kid = MakeKid();
         var carried = new GameObject("KidCarry").AddComponent<SpriteRenderer>();   // 頭の上に持っている商品
         carried.enabled = false;
+        Vector2 pv = PlayerViewSize(), sv = ShopViewSize();
+        float pEdge = pv.x / 2f + kidSize, sEdge = sv.x / 2f + kidSize;   // 画面の外(子どもが見えなくなる所)
 
         // 1. 2P の画面を右から左へ
-        yield return KidWalk(kid, p2.layer, PlayerViewSize(), -1f, float.NaN, null);
-        // 2. 棚の画面: 真ん中で商品を取って、2P の袋に1つ入れる
-        if (!KidShouldStop)
-            yield return KidWalk(kid, layerShop, ShopViewSize(), 0.5f, float.NaN, () =>
-            {
-                DropRandomProduct(p2, null);
-                var info = RandomProduct();
-                kidCarry = info;
-                carried.sprite = ProductIconSprite(info);
-                carried.enabled = carried.sprite != null;
-            }, carried);
-        // 3. 1P の画面: 袋の上で、持っていた商品を落とす
-        if (!KidShouldStop)
-            yield return KidWalk(kid, p1.layer, PlayerViewSize(), -1f, bagX, () =>
-            {
-                if (kidCarry != null) DropRandomProduct(p1, kidCarry);
-                kidCarry = null;
-                carried.enabled = false;
-            }, carried);
+        yield return KidMove(kid, carried, p2.layer, pEdge, -pEdge, pv.x);
+        // 2. 棚の画面: 真ん中まで行って商品を取り、右へ戻る
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, 0f, sv.x);
+        if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, 0f, sEdge, sv.x);
+        // 3. 2P の画面: 左から袋の上のランダムな位置まで行って落とし、左へ戻る
+        float drop2 = KidDropX();
+        if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, -pEdge, drop2, pv.x);
+        if (!KidShouldStop) { KidDrop(p2, carried); yield return KidPause(kid, carried); }
+        if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, drop2, -pEdge, pv.x);
+        // 4. 棚の画面: 横切りながら、真ん中でもう1つ取る
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, 0f, sv.x);
+        if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, 0f, -sEdge, sv.x);
+        // 5. 1P の画面: 袋の上のランダムな位置まで行って落とし、左へ抜ける
+        float drop1 = KidDropX();
+        if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, pEdge, drop1, pv.x);
+        if (!KidShouldStop) { KidDrop(p1, carried); yield return KidPause(kid, carried); }
+        if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, drop1, -pEdge, pv.x);
 
         Destroy(kid.gameObject);
         Destroy(carried.gameObject);
+        kidCarry = null;
         kidRunning = false;
     }
 
-    ProductInfo kidCarry;
+    ProductInfo kidCarry;   // 頭の上に持っている商品
 
-    // 1つの画面を、右のふちの外から左のふちの外へ歩く。
-    // pauseAt(0〜1。画面を横切る割合)で立ち止まって action をする / dropX(その画面の x)を通るときに action をする(どちらか。使わないほうは負の数・NaN)
-    IEnumerator KidWalk(SpriteRenderer kid, int layer, Vector2 view, float pauseAt, float dropX, System.Action action, SpriteRenderer carried = null)
+    // 袋の上のランダムな位置(袋の幅の内側)
+    float KidDropX() => bagX + Random.Range(-0.35f, 0.35f) * bagWidth;
+
+    // 商品を取る(ランダム。頭の上に持つ)
+    void KidGrab(SpriteRenderer carried)
+    {
+        kidCarry = RandomProduct();
+        carried.sprite = ProductIconSprite(kidCarry);
+        carried.enabled = carried.sprite != null;
+    }
+
+    // 持っている商品を、p の袋の、子どもの真下へ落とす
+    void KidDrop(Player p, SpriteRenderer carried)
+    {
+        if (kidCarry != null) DropRandomProduct(p, kidCarry, carried.transform.position.x);
+        kidCarry = null;
+        carried.enabled = false;
+    }
+
+    // 1つの画面の中を、fromX から toX へ歩く(画面の幅 width を Kid Cross Time 秒で歩く速さ)。歩く向きに絵の向きを合わせる
+    IEnumerator KidMove(SpriteRenderer kid, SpriteRenderer carried, int layer, float fromX, float toX, float width)
     {
         SetLayer(kid.gameObject, layer);
         kid.sortingOrder = layer == layerShop ? 1500 : 1800;   // 袋の画面では袋・商品より手前
-        if (carried != null) { SetLayer(carried.gameObject, layer); carried.sortingOrder = kid.sortingOrder + 1; }
-        float h = Mathf.Max(0.1f, kidSize);
-        float w = h * kid.sprite.bounds.size.x / Mathf.Max(0.01f, kid.sprite.bounds.size.y);
-        float startX = view.x / 2f + w, endX = -view.x / 2f - w;
-        float y = layer == layerShop ? view.y * (kidShopWalkY - 0.5f) : BagFloorY + bagHeight + h * 0.5f + kidWalkY + CameraFollowY;
-        float time = Mathf.Max(0.3f, kidCrossTime);
-        bool acted = false;
+        SetLayer(carried.gameObject, layer);
+        carried.sortingOrder = kid.sortingOrder + 1;
+        bool left = toX < fromX;
+        kid.flipX = left == kidSpriteFacesRight;   // 絵の向き(右向きの絵を左へ歩かせるときなど)は反転
+        float time = Mathf.Max(0.05f, Mathf.Max(0.3f, kidCrossTime) * Mathf.Abs(toX - fromX) / Mathf.Max(0.1f, width + kidSize * 2f));
         for (float t = 0f; t < time; t += Time.deltaTime)
         {
             if (KidShouldStop) yield break;
-            float k = t / time;
-            float x = Mathf.Lerp(startX, endX, k);
-            // 立ち止まる所
-            if (!acted && pauseAt >= 0f && k >= pauseAt)
-            {
-                acted = true;
-                action?.Invoke();
-                for (float s = 0f; s < kidPauseTime; s += Time.deltaTime)
-                {
-                    if (KidShouldStop) yield break;
-                    PlaceKid(kid, carried, x, y, h, s * 3f);
-                    yield return null;
-                }
-            }
-            // 袋の上を通る所
-            if (!acted && pauseAt < 0f && action != null && x <= dropX)
-            {
-                acted = true;
-                action.Invoke();
-            }
-            PlaceKid(kid, carried, x, y, h, t);
+            PlaceKid(kid, carried, layer, Mathf.Lerp(fromX, toX, t / time), Time.time);
+            yield return null;
+        }
+        PlaceKid(kid, carried, layer, toX, Time.time);
+    }
+
+    // 立ち止まる(Kid Pause Time 秒。その場で小さく弾む)
+    IEnumerator KidPause(SpriteRenderer kid, SpriteRenderer carried)
+    {
+        float x = kid.transform.position.x;
+        int layer = kid.gameObject.layer;
+        for (float s = 0f; s < kidPauseTime; s += Time.deltaTime)
+        {
+            if (KidShouldStop) yield break;
+            PlaceKid(kid, carried, layer, x, Time.time * 0.5f);
             yield return null;
         }
     }
 
-    // 子どもを置く(歩いて上下に弾む・少し左右に揺れる)。持っている商品は頭の上
-    void PlaceKid(SpriteRenderer kid, SpriteRenderer carried, float x, float y, float h, float t)
+    // 歩く高さ: 袋の画面は袋の上のふちのすぐ上(+ Kid Walk Y)、棚の画面は Kid Shop Walk Y
+    float KidY(int layer)
     {
+        float h = Mathf.Max(0.1f, kidSize);
+        return layer == layerShop ? ShopViewSize().y * (kidShopWalkY - 0.5f)
+                                  : BagFloorY + bagHeight + h * 0.5f + kidWalkY + CameraFollowY;
+    }
+
+    // 子どもを置く(歩いて上下に弾む・少し左右に揺れる)。持っている商品は頭の上
+    void PlaceKid(SpriteRenderer kid, SpriteRenderer carried, int layer, float x, float t)
+    {
+        float h = Mathf.Max(0.1f, kidSize);
+        float y = KidY(layer);
         float bob = Mathf.Abs(Mathf.Sin(t * 10f)) * h * 0.06f;
         kid.transform.position = new Vector3(x, y + bob, 0f);
         kid.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * 10f) * 5f);
@@ -128,7 +152,6 @@ public partial class TwoPlayerShop2D
     {
         var sr = new GameObject("Kid").AddComponent<SpriteRenderer>();
         sr.sprite = kidSprite != null ? kidSprite : GetKidSprite();
-        sr.flipX = kidSpriteFacesRight;   // 左へ歩くので、右向きの絵なら反転
         return sr;
     }
 
@@ -152,13 +175,13 @@ public partial class TwoPlayerShop2D
         return GetShapeSprite(info.shape);
     }
 
-    // p の袋の上から、商品を1つ落とす(info が null ならランダム)。ふつうに落とした商品と同じ扱い(袋に入ったら数える)
-    void DropRandomProduct(Player p, ProductInfo info)
+    // p の袋の上(横の位置 x)から、商品を1つ落とす(info が null ならランダム)。ふつうに落とした商品と同じ扱い(袋に入ったら数える)
+    void DropRandomProduct(Player p, ProductInfo info, float x)
     {
         if (p == null || p.bag == null) return;
         if (info == null) info = RandomProduct();
         if (info == null) return;
-        Vector2 pos = new Vector2(bagX + Random.Range(-0.25f, 0.25f) * bagWidth, BagFloorY + bagHeight + 1f + CameraFollowY);
+        Vector2 pos = new Vector2(x, BagFloorY + bagHeight + 1f + CameraFollowY);
         var go = info.model != null ? MakeModelProduct(info.name, pos, info, p.layer)
                                     : MakeSprite(info.name, pos, info.shape, RankColor(info.rank), p.layer, info.sprite);
         float scale = info.model != null ? info.modelSize : info.size;
