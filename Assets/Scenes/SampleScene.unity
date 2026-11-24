@@ -932,7 +932,14 @@ MonoBehaviour:
   kidTimes:
   - 90
   - 45
-  kidSprite: {fileID: 21300000, guid: 81ac20c0dd3949b6a90c70e0e8ae3120, type: 3}
+  kidSprite: {fileID: 21300000, guid: 6fa53be2a0eb499ea5d0bba69248d56c, type: 3}
+  kidWalkFrames:
+  - {fileID: 21300000, guid: 6fa53be2a0eb499ea5d0bba69248d56c, type: 3}
+  - {fileID: 21300000, guid: d56dcccb98fd4d5aabca6929b7862fef, type: 3}
+  - {fileID: 21300000, guid: 6fa53be2a0eb499ea5d0bba69248d56c, type: 3}
+  - {fileID: 21300000, guid: 39ddd3e953754bea87a636b0b2379ea5, type: 3}
+  kidActionSprite: {fileID: 21300000, guid: 5ffa2cf559b04e9bb7ae5f80e176c148, type: 3}
+  kidWalkFps: 8
   kidSpriteFacesRight: 0
   kidSize: 2.5
   kidColor: {r: 1, g: 1, b: 1, a: 1}
