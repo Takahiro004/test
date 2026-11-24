@@ -334,6 +334,7 @@ public partial class TwoPlayerShop2D
             float fTime = Mathf.Max(0.05f, kickExtendTime);
             float fSpeed = kickFootClip != null && kickFootClipFit ? kickFootClip.length / fTime : -1f;
             var fLeg = MakeFootVisual($"Foot_{from.name}", from.color, new Vector2(-kSide, 0f), true, out var fGraph, fSpeed, fl, true);
+            fStart.z = FootFrontZ(fLeg);   // 足を全部、机・商品の3Dモデルより手前(カメラ側)に置く
             fLeg.transform.position = fStart;
             float far = Mathf.Clamp(kickFrontDepthScale, 0.1f, 2f);
             // どこまで上げるか: 足の真ん中(Kick Foot Model Offset で合わせた点)が、袋の高さの kickFrontHitHeight の所に来るまで。
@@ -617,6 +618,21 @@ public partial class TwoPlayerShop2D
     // 棚の画面の左に 1P 用(右上へ飛ぶ向き)・右に 2P 用(左上へ飛ぶ向き)の足を止めて出す。設定を変えたら作り直す
     GameObject footPreview1, footPreview2;
     bool footPreviewOnBag, footPreviewFront;
+    float footPreviewZ1, footPreviewZ2;
+
+    // 足の奥行きの置き場所: 足のいちばん奥が z = -0.1 になる z(足の今の位置 z からの値ではなく、置く z)。
+    // 机や商品の3Dモデルは z = 0 より奥にあり、奥行きの重なりで足の奥半分が隠れていた(献立の帯の後ろに隠れたように見えた)ため、足を全部手前に出す。
+    // カメラは z = -10(近くは -9.7 まで映る)なので、足の奥行きが 9.6 より長いと手前が少し切れる
+    static float FootFrontZ(GameObject foot)
+    {
+        var rs = foot.GetComponentsInChildren<Renderer>();
+        if (rs.Length == 0) return 0f;
+        Bounds b = rs[0].bounds;
+        foreach (var r in rs) b.Encapsulate(r.bounds);
+        float pz = foot.transform.position.z;
+        float z = pz - b.max.z - 0.1f;                        // いちばん奥を -0.1 へ
+        return Mathf.Max(z, pz - 9.6f - b.min.z);             // ただし、いちばん手前がカメラに切られない所まで
+    }
     Vector3 footPreviewFrontRotation;
 
     // 足の位置の、画面ごとの微調整(ゲームの長さ)。1P のキックは 2P の画面に出るので kickFootOffsetOnP2Screen、2P のキックは kickFootOffsetOnP1Screen
@@ -666,10 +682,12 @@ public partial class TwoPlayerShop2D
             Vector2 s1 = new Vector2(-view.x * 0.25f, -view.y / 2f - 1.5f), e1 = new Vector2(view.x / 2f + 1.5f, view.y / 2f + 1.5f);
             footPreview1 = MakeFootVisual("FootPreview_1P", p1.color, (e1 - s1).normalized, true, out footPreviewGraph1, -1f, layer1, front);
             footPreview2 = MakeFootVisual("FootPreview_2P", p2.color, (new Vector2(-e1.x, e1.y) - new Vector2(-s1.x, s1.y)).normalized, true, out footPreviewGraph2, -1f, layer2, front);
+            footPreviewZ1 = front ? FootFrontZ(footPreview1) : 0f;
+            footPreviewZ2 = front ? FootFrontZ(footPreview2) : 0f;
         }
         // 手前から蹴るときは、蹴り終わり(袋に届いた所)の手前の置き場所に出す
-        footPreview1.transform.position = front ? FootFrontRestPosition(true) : FootRestPosition(true);
-        footPreview2.transform.position = front ? FootFrontRestPosition(false) : FootRestPosition(false);
+        footPreview1.transform.position = front ? FootFrontRestPosition(true) + Vector3.forward * footPreviewZ1 : FootRestPosition(true);
+        footPreview2.transform.position = front ? FootFrontRestPosition(false) + Vector3.forward * footPreviewZ2 : FootRestPosition(false);
     }
 
     // 足の置き場所(Kick Foot Preview で出す場所。伸ばす動きは、ここから伸ばして、ここへ引っ込める)。
