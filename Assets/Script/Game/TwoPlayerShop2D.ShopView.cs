@@ -114,6 +114,7 @@ public partial class TwoPlayerShop2D
             timerPlaceholder.gameObject.SetActive(IsPortrait && showTimerPlaceholder && !showGameTimer && portraitTopSpace > 0f);
         UpdateGameTimer();
         UpdateHighRankNotice();   // 高額商品の予告を流す(TwoPlayerShop2D.Notice.cs)
+        UpdateKid();              // おじゃまキッズ(TwoPlayerShop2D.Kid.cs)
         UpdateHandLight();        // 手のモデル専用のライト(TwoPlayerShop2D.CursorModel.cs)
         UpdateHandBrightness();   // 手のモデルの明るさ(TwoPlayerShop2D.CursorModel.cs)
         UpdateRotateHints();      // 商品を落とすターンの回転の目印(TwoPlayerShop2D.RotateHint.cs)
