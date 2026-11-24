@@ -928,6 +928,18 @@ MonoBehaviour:
   auraOnShelf: 1
   auraWhileHeld: 1
   auraInBag: 0
+  kidEnabled: 1
+  kidTimes:
+  - 90
+  - 45
+  kidSprite: {fileID: 0}
+  kidSpriteFacesRight: 0
+  kidSize: 2.5
+  kidColor: {r: 1, g: 0.8, b: 0.5, a: 1}
+  kidCrossTime: 2.5
+  kidPauseTime: 0.6
+  kidWalkY: 0
+  kidShopWalkY: 0.25
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
@@ -1910,7 +1922,9 @@ MonoBehaviour:
   kickOnBagScreen: 1
   kickFootFromFront: 1
   kickFootFrontRotation: {x: 0, y: 0, z: 0}
-  kickFrontRestPosition: {x: 0, y: -0.1}
+  kickFrontCornerPosition: {x: 0.4, y: 0.05}
+  kickFootOffsetOnP1Screen: {x: 1, y: 0}
+  kickFootOffsetOnP2Screen: {x: -1.1, y: 0}
   kickFrontHitHeight: 0.35
   kickFrontDepthScale: 0.8
   kickExtendHold: 0.2
