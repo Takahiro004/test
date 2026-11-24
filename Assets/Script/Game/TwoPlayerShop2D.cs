@@ -485,9 +485,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("おばあさんの大きさ(体の絵の縦。画面の高さの割合)。袋は近いので大きく映る")]
     public float grannyHeight = 0.55f;
     [Tooltip("おばあさんの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
-    public float grannyHeadTop = 0.62f;
-    [Tooltip("おばあさんが止まる位置(画面の真ん中から右へ。画面の幅の割合)")]
-    public float grannyStandX = 0.3f;
+    public float grannyHeadTop = 0.92f;   // 2026-11-24 プログラマー: 画面の右上のふちから、ひょっこりのぞく
+    [Tooltip("おばあさんが止まる位置(体の真ん中。画面の真ん中から右へ。画面の幅の割合。0.5 で画面の右のふち = 体が半分だけ見える)")]
+    public float grannyStandX = 0.5f;
+    [Tooltip("おばあさんの体の傾き(度。プラスで画面の中へ傾く。のぞきこむ感じ)")]
+    public float grannyLean = 12f;
     [Tooltip("出てくる・去る秒数")]
     public float grannyEnterTime = 0.6f;
     [Tooltip("袋をかき回す秒数")]
