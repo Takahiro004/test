@@ -4,7 +4,7 @@ using UnityEngine;
 // おじゃまキッズ(妨害。TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「おじゃまキッズ」)
 // 試合中、残り時間が kidTimes の秒数になったら、小さい子どもが出てきて、2人の袋に勝手に商品を1つずつ入れていく。
 //  1. 2P の画面: 右のふちから出てきて、左へ歩いて抜ける(棚へ向かう)
-//  2. 棚の画面: 棚に今並んでいる商品からランダムに1つ選び、その所まで歩いて取り(棚から無くなり、補充される。頭の上に持つ)、右へ戻る(2P の画面へ)
+//  2. 棚の画面: 棚に今並んでいる商品からランダムに1つ選び(棚が空なら、真ん中で補充されるまで待つ)、その所まで歩いて取り(棚から無くなり、補充される。頭の上に持つ)、右へ戻る(2P の画面へ)
 //  3. 2P の画面: 左から出てきて、袋の上のランダムな位置まで歩き、商品を袋へ落とし、左へ戻る
 //  4. 棚の画面: 右から左へ横切りながら、棚の商品をもう1つ同じように取る
 //  5. 1P の画面: 右から袋の上のランダムな位置まで歩き、立ち止まって商品を袋へ落とし、左へ抜ける
@@ -77,21 +77,17 @@ public partial class TwoPlayerShop2D
 
         // 1. 2P の画面を右から左へ
         yield return KidMove(kid, carried, p2.layer, pEdge, -pEdge, pv.x);
-        // 2. 棚の画面: 棚に並んでいる商品からランダムに1つ選び、その商品の所まで行って取り、右へ戻る
-        float grabX = KidPickShelfX();
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, grabX, sv.x);
-        if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, grabX, sEdge, sv.x);
+        // 2. 棚の画面: 棚に並んでいる商品からランダムに1つ選び、その商品の所まで行って取り、右へ戻る(棚が空なら補充を待つ)
+        if (!KidShouldStop) yield return KidGetFromShelf(kid, carried, sEdge);
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, kidX, sEdge, sv.x);
         // 3. 2P の画面: 左から袋の上のランダムな位置まで行って落とし、左へ戻る
         float drop2 = KidDropX();
         if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, -pEdge, drop2, pv.x);
         if (!KidShouldStop) { KidDrop(p2, carried); yield return KidPause(kid, carried); }
         if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, drop2, -pEdge, pv.x);
-        // 4. 棚の画面: 横切りながら、棚に並んでいる商品をもう1つ取る
-        grabX = KidPickShelfX();
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, grabX, sv.x);
-        if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, grabX, -sEdge, sv.x);
+        // 4. 棚の画面: 横切りながら、棚に並んでいる商品をもう1つ取る(棚が空なら補充を待つ)
+        if (!KidShouldStop) yield return KidGetFromShelf(kid, carried, sEdge);
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, kidX, -sEdge, sv.x);
         // 5. 1P の画面: 袋の上のランダムな位置まで行って落とし、左へ抜ける
         float drop1 = KidDropX();
         if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, pEdge, drop1, pv.x);
@@ -105,6 +101,43 @@ public partial class TwoPlayerShop2D
     }
 
     ProductInfo kidCarry;   // 頭の上に持っている商品
+    float kidX;             // 棚の画面で、商品を取った所(KidGetFromShelf)
+
+    // 棚の画面で商品を取る: 並んでいる商品からランダムに選んでその所まで歩き、取る。
+    // 棚に何も無いときは、真ん中で待って(足踏みしながら)、補充された商品を取る。歩いている間に取られたら、選び直す
+    IEnumerator KidGetFromShelf(SpriteRenderer kid, SpriteRenderer carried, float fromX)
+    {
+        Vector2 sv = ShopViewSize();
+        float x = fromX;
+        while (!KidShouldStop)
+        {
+            float target = KidPickShelfX();
+            if (kidTarget == null)
+            {
+                // 棚が空: 真ん中まで行って、補充されるまで待つ
+                if (Mathf.Abs(x) > 0.01f) { yield return KidMove(kid, carried, layerShop, x, 0f, sv.x); x = 0f; }
+                for (float w = 0f; w < 0.2f && !KidShouldStop; w += Time.deltaTime)
+                {
+                    KidFrame(kid, true);   // 待っている間は正面(腕を上げて、まだかなという感じ)
+                    PlaceKid(kid, carried, layerShop, x, Time.time * 0.4f);
+                    yield return null;
+                }
+                continue;
+            }
+            yield return KidMove(kid, carried, layerShop, x, target, sv.x);
+            x = target;
+            if (KidShouldStop) break;
+            if (kidTarget != null && slotOf.ContainsKey(kidTarget))
+            {
+                KidGrab(carried);
+                kidX = x;
+                yield return KidPause(kid, carried);
+                yield break;
+            }
+            // 着く前に誰かに取られた: 選び直す
+        }
+        kidX = x;
+    }
 
     // 袋の上のランダムな位置(袋の幅の内側)
     float KidDropX() => bagX + Random.Range(-0.35f, 0.35f) * bagWidth;
