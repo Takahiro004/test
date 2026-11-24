@@ -7,7 +7,7 @@ using UnityEngine;
 //  2. 棚の画面: 右から真ん中まで歩き、立ち止まってランダムな商品を取り(頭の上に持つ)、右へ戻る(2P の画面へ)
 //  3. 2P の画面: 左から出てきて、袋の上のランダムな位置まで歩き、商品を袋へ落とし、左へ戻る
 //  4. 棚の画面: 右から左へ横切りながら、真ん中で立ち止まってもう1つランダムな商品を取る
-//  5. 1P の画面: 右から左へ横切りながら、袋の上のランダムな位置で商品を落とす
+//  5. 1P の画面: 右から袋の上のランダムな位置まで歩き、立ち止まって商品を袋へ落とし、左へ抜ける
 //  - 入れる商品は、商品の一覧(productList)の全部からランダム。落とした商品は、ふつうに落とした商品と同じ(袋に入ったら金額・重さに数える)
 //  - 子どもの絵は kidSprite(空なら自動生成の子ども)。大きさ kidSize・色 kidColor・1つの画面を横切る秒数 kidCrossTime・歩く高さ kidWalkY(画面の高さの割合)
 //  - タイムアップ・袋持ち上げが始まったら、途中でもやめる
@@ -56,10 +56,10 @@ public partial class TwoPlayerShop2D
         if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, 0f, sv.x);
         if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
         if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, 0f, -sEdge, sv.x);
-        // 5. 1P の画面: 横切りながら、袋の上のランダムな位置で落とす
+        // 5. 1P の画面: 袋の上のランダムな位置まで行って落とし、左へ抜ける
         float drop1 = KidDropX();
         if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, pEdge, drop1, pv.x);
-        if (!KidShouldStop) KidDrop(p1, carried);
+        if (!KidShouldStop) { KidDrop(p1, carried); yield return KidPause(kid, carried); }
         if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, drop1, -pEdge, pv.x);
 
         Destroy(kid.gameObject);
