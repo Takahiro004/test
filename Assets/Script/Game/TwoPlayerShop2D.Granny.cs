@@ -4,7 +4,9 @@ using UnityEngine;
 // 袋あらしのおばあさん(妨害。TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋あらしのおばあさん」)
 // 試合中、残り時間が grannyTimes の秒数になったら、ランダムに選んだ1人の袋の画面に、おばあさんが出てくる。
 //  1. 出てくる: grannyGlitch(初め ON)なら、その人の画面全体にノイズが走り、ときどき砂嵐が出て、収まると目の前(袋の前)にいる。
-//     吹き出し(grannyBubble。文字 grannyBubbleText「アビダ」)を出し、ガサゴソの間も何回も叫ぶ(grannyBubbleRepeat・grannyBubbleInterval 秒ごと)。
+//     叫び(grannyBubble。文字 grannyBubbleText「アビダ」)。grannyShoutStyle(初め ON)なら、マンガの「ドン」のような大きな文字を
+//     ひとつ、叩きつけるように出して、いる間ずっと出しておく(GrannyShout)。OFF なら吹き出し(何回も叫ぶ grannyBubbleRepeat)。
+//     いる間も弱いノイズ(grannyIdleNoise)を出し続ける。
 //     ノイズはハッキングされたパソコン画面のよう(色のブロック・横に走る線・走査線・画面が一瞬その色に・緑の文字・カラーの砂嵐)。OFF なら、外側(1P は左・2P は右)から歩いてくる。
 //     大きな背中で、レジ袋が隠れて見えない
 //  2. その場でもぞもぞ動きながら、「ガサゴソ」という音(grannyRustleClip。空ならスクリプトで作った音)と文字を出す。
@@ -99,8 +101,11 @@ public partial class TwoPlayerShop2D
             }
         }
         body.enabled = true;
-        // 吹き出し(grannyBubble。「アビダ」など)
-        if (grannyBubble && !GrannyShouldStop) StartCoroutine(GrannyBubble(p, true));
+        // 叫び(grannyBubble。「アビダ」)。grannyShoutStyle なら、マンガの「ドン」のような大きな文字をひとつ、勢いよく
+        if (grannyBubble && !GrannyShouldStop)
+            StartCoroutine(grannyShoutStyle ? GrannyShout(p, grannyStirTime + 0.2f) : GrannyBubble(p, true));
+        // いる間も、弱いノイズ(grannyIdleNoise)を出し続ける
+        GlitchFx idle = grannyGlitch && grannyIdleNoise > 0f ? MakeGlitch(p) : null;
         // 2. その場でガサゴソ(音・文字・袋が揺れる・中の商品がかき回される)
         if (!GrannyShouldStop) GrannyRustleSound(p);
         if (!GrannyShouldStop && kickShakeBag) ShakeBag(p, -side, grannyShake, false);
@@ -108,12 +113,19 @@ public partial class TwoPlayerShop2D
         for (float t = 0f; t < grannyStirTime && !GrannyShouldStop; t += Time.deltaTime)
         {
             PlaceGrannyBody(body, standX, Time.time, 1f);
+            if (idle != null)
+            {
+                StepGlitch(idle, Mathf.Clamp01(grannyIdleNoise), t);
+                body.color = Random.value < 0.06f ? glitchColors[Random.Range(0, 3)] : Color.white;   // ときどき色がおかしくなる
+            }
             // 「アビダ」を何回も叫ぶ(grannyBubbleInterval 秒ごとに、場所・大きさ・傾きを少し変えて)
-            if (grannyBubble && grannyBubbleRepeat && t >= nextShout) { nextShout = t + Mathf.Max(0.1f, grannyBubbleInterval); StartCoroutine(GrannyBubble(p, false)); }
+            if (grannyBubble && grannyBubbleRepeat && !grannyShoutStyle && t >= nextShout) { nextShout = t + Mathf.Max(0.1f, grannyBubbleInterval); StartCoroutine(GrannyBubble(p, false)); }
             if (t >= nextStir) { nextStir = t + 0.15f; GrannyStir(p); }
             if (grannyRustleText && t >= nextWord) { nextWord = t + 0.45f; StartCoroutine(GrannyWord(p, body)); }
             yield return null;
         }
+        if (idle != null) Destroy(idle.root.gameObject);
+        body.color = Color.white;
         if (grannyAudio != null) grannyAudio.Stop();
         // 3. 袋の中からランダムに1つ抜き取る(隠れているうちに消す。金額は去るときに引く)
         int price = -1;
@@ -149,92 +161,117 @@ public partial class TwoPlayerShop2D
         "ERROR", "SYSTEM HACKED", "ACCESS DENIED", "0x7F3A", "WARNING", "!!!!", "?? ?? ??", "01101001", "FATAL", "#&%$@", "NO SIGNAL", "0xDEAD",
     };
 
-    IEnumerator GrannyNoise(Player p, SpriteRenderer body, float time, bool appear)
+    // ノイズの部品(画面全体の砂嵐・色が一瞬変わる・走査線・色のブロック・緑の文字)
+    class GlitchFx
     {
-        Vector2 view = PlayerViewSize();
-        var root = new GameObject("GrannyNoise").transform;
-        SetLayer(root.gameObject, p.layer);
+        public Transform root;
+        public SpriteRenderer snow, flash, scan;
+        public SpriteRenderer[] blocks;
+        public TextMesh[] words;
+        public float nextFlash, flashUntil = -1f, nextColor, colorUntil = -1f;
+        public Color flashColor = Color.white;
+    }
+
+    GlitchFx MakeGlitch(Player p)
+    {
+        var g = new GlitchFx();
+        g.root = new GameObject("GrannyNoise").transform;
+        SetLayer(g.root.gameObject, p.layer);
         SpriteRenderer Part(string n, Sprite sp, int order)
         {
             var r = new GameObject(n).AddComponent<SpriteRenderer>();
-            r.transform.SetParent(root, false);
+            r.transform.SetParent(g.root, false);
             r.gameObject.layer = p.layer;
             r.sprite = sp;
             r.sortingOrder = order;
             return r;
         }
-        var snow = Part("Static", null, 4500);                         // 砂嵐(画面全体)
-        var flash = Part("ColorFlash", GetSquareSprite(), 4502);       // 画面全体が一瞬その色に
-        var scan = Part("Scanlines", GetScanlineSprite(), 4503);       // 走査線
-        var blocks = new SpriteRenderer[Mathf.Clamp(grannyNoiseLineCount, 0, 60)];
-        for (int i = 0; i < blocks.Length; i++) blocks[i] = Part("GlitchBlock", GetSquareSprite(), 4501);
-        var words = new TextMesh[Mathf.Clamp(grannyHackTextCount, 0, 20)];
-        for (int i = 0; i < words.Length; i++)
+        g.snow = Part("Static", null, 4500);                         // 砂嵐(画面全体)
+        g.flash = Part("ColorFlash", GetSquareSprite(), 4502);       // 画面全体が一瞬その色に
+        g.scan = Part("Scanlines", GetScanlineSprite(), 4503);       // 走査線
+        g.blocks = new SpriteRenderer[Mathf.Clamp(grannyNoiseLineCount, 0, 60)];
+        for (int i = 0; i < g.blocks.Length; i++) g.blocks[i] = Part("GlitchBlock", GetSquareSprite(), 4501);
+        g.words = new TextMesh[Mathf.Clamp(grannyHackTextCount, 0, 20)];
+        for (int i = 0; i < g.words.Length; i++)
         {
-            words[i] = MakeText("HackText", root, p.layer, "", new Color(0.2f, 1f, 0.3f), 4504);
-            words[i].fontStyle = FontStyle.Bold;
+            g.words[i] = MakeText("HackText", g.root, p.layer, "", new Color(0.2f, 1f, 0.3f), 4504);
+            g.words[i].fontStyle = FontStyle.Bold;
         }
+        return g;
+    }
+
+    // ノイズを1フレームぶん動かす(power = 強さ 0〜1)
+    void StepGlitch(GlitchFx g, float power, float t)
+    {
+        Vector2 view = PlayerViewSize();
+        float cy = CameraFollowY;
         var statics = GetStaticSprites();
+        // 砂嵐: ときどき(grannyStaticChance)、ぱっと出る。強いときほど出やすい
+        if (t >= g.nextFlash)
+        {
+            g.nextFlash = t + 0.08f;
+            if (Random.value < grannyStaticChance * power) g.flashUntil = t + Random.Range(0.05f, 0.18f);
+        }
+        bool flashing = t < g.flashUntil;
+        g.snow.sprite = statics[Random.Range(0, statics.Length)];
+        Vector2 ss = g.snow.sprite.bounds.size;
+        g.snow.transform.localScale = new Vector3(view.x / ss.x, view.y / ss.y, 1f);
+        g.snow.transform.position = new Vector3(0f, cy, 0f);
+        g.snow.color = new Color(1f, 1f, 1f, flashing ? grannyStaticAlpha : grannyStaticAlpha * 0.12f * power);
+        // 画面全体が一瞬シアン・マゼンタなどに染まる
+        if (t >= g.nextColor)
+        {
+            g.nextColor = t + 0.1f;
+            if (Random.value < 0.25f * power) { g.colorUntil = t + 0.05f; g.flashColor = glitchColors[Random.Range(0, 3)]; }
+        }
+        g.flash.transform.localScale = new Vector3(view.x, view.y, 1f);
+        g.flash.transform.position = new Vector3(0f, cy, 0f);
+        g.flash.color = new Color(g.flashColor.r, g.flashColor.g, g.flashColor.b, t < g.colorUntil ? 0.35f * power : 0f);
+        // 走査線
+        Vector2 sc = g.scan.sprite.bounds.size;
+        g.scan.transform.localScale = new Vector3(view.x / sc.x, view.y / sc.y, 1f);
+        g.scan.transform.position = new Vector3(0f, cy + Random.Range(0f, view.y * 0.01f), 0f);
+        g.scan.color = new Color(1f, 1f, 1f, 0.5f * power);
+        // 色のついた四角いブロック・横に走る線(毎フレーム置き直す)
+        foreach (var b in g.blocks)
+        {
+            bool on = Random.value < (0.2f + 0.7f * power) * Mathf.Min(1f, power * 3f);
+            b.enabled = on;
+            if (!on) continue;
+            bool bar = Random.value < 0.4f;   // 横に長い線
+            float wid = bar ? view.x * Random.Range(0.5f, 1.2f) : view.x * Random.Range(0.04f, 0.3f);
+            float hgt = bar ? view.y * Random.Range(0.003f, 0.015f) : view.y * Random.Range(0.01f, 0.06f);
+            b.transform.localScale = new Vector3(wid, hgt, 1f);
+            b.transform.position = new Vector3(Random.Range(-0.5f, 0.5f) * view.x, cy + Random.Range(-0.5f, 0.5f) * view.y, 0f);
+            var c = glitchColors[Random.Range(0, glitchColors.Length)];
+            b.color = new Color(c.r, c.g, c.b, grannyNoiseLineAlpha * Random.Range(0.5f, 1f) * (0.3f + 0.7f * power));
+        }
+        // 緑の文字(ERROR など)がチカチカ
+        foreach (var w in g.words)
+        {
+            bool on = Random.value < 0.5f * power;
+            w.gameObject.SetActive(on);
+            if (!on) continue;
+            if (Random.value < 0.3f || w.text.Length == 0) w.text = hackWords[Random.Range(0, hackWords.Length)];
+            SetTextSize(w, HudTextSize * Random.Range(0.8f, 1.6f));
+            w.transform.position = new Vector3(Random.Range(-0.35f, 0.35f) * view.x, cy + Random.Range(-0.45f, 0.45f) * view.y, 0f);
+            w.color = Random.value < 0.8f ? new Color(0.2f, 1f, 0.3f, 0.9f) : new Color(1f, 0.2f, 0.2f, 0.9f);
+        }
+    }
+
+    IEnumerator GrannyNoise(Player p, SpriteRenderer body, float time, bool appear)
+    {
+        Vector2 view = PlayerViewSize();
+        var g = MakeGlitch(p);
         if (grannyNoiseSound && grannyRustleVolume > 0f) GrannyNoiseSound(true);
-        float nextFlash = 0f, flashUntil = -1f, nextColor = 0f, colorUntil = -1f;
-        Color flashColor = Color.white;
         for (float t = 0f; t < time && !GrannyShouldStop; t += Time.deltaTime)
         {
             float k = t / time;
-            // ノイズの強さ: 出てくるときは 1 → 0 へ収まる / 消えるときは 0 → 1 → 0(真ん中でいちばん強い)
+            // ノイズの強さ: 出てくるときは 1 → 0 へ収まる / 消えるときは 0 → 1 → 0(真ん中でいちばん強い)。
+            // ただし、いる間の弱いノイズ(grannyIdleNoise)より弱くはしない(つながって見えるように)
             float power = appear ? 1f - k * k : Mathf.Sin(k * Mathf.PI);
-            float cy = CameraFollowY;
-            // 砂嵐: ときどき(grannyStaticChance)、ぱっと出る。強いときほど出やすい
-            if (t >= nextFlash)
-            {
-                nextFlash = t + 0.08f;
-                if (Random.value < grannyStaticChance * power) flashUntil = t + Random.Range(0.05f, 0.18f);
-            }
-            bool flashing = t < flashUntil;
-            snow.sprite = statics[Random.Range(0, statics.Length)];
-            Vector2 ss = snow.sprite.bounds.size;
-            snow.transform.localScale = new Vector3(view.x / ss.x, view.y / ss.y, 1f);
-            snow.transform.position = new Vector3(0f, cy, 0f);
-            snow.color = new Color(1f, 1f, 1f, flashing ? grannyStaticAlpha : grannyStaticAlpha * 0.12f * power);
-            // 画面全体が一瞬シアン・マゼンタなどに染まる
-            if (t >= nextColor)
-            {
-                nextColor = t + 0.1f;
-                if (Random.value < 0.25f * power) { colorUntil = t + 0.05f; flashColor = glitchColors[Random.Range(0, 3)]; }
-            }
-            flash.transform.localScale = new Vector3(view.x, view.y, 1f);
-            flash.transform.position = new Vector3(0f, cy, 0f);
-            flash.color = new Color(flashColor.r, flashColor.g, flashColor.b, t < colorUntil ? 0.35f * power : 0f);
-            // 走査線
-            Vector2 sc = scan.sprite.bounds.size;
-            scan.transform.localScale = new Vector3(view.x / sc.x, view.y / sc.y, 1f);
-            scan.transform.position = new Vector3(0f, cy + Random.Range(0f, view.y * 0.01f), 0f);
-            scan.color = new Color(1f, 1f, 1f, 0.5f * power);
-            // 色のついた四角いブロック・横に走る線(毎フレーム置き直す)
-            foreach (var b in blocks)
-            {
-                bool on = Random.value < (0.2f + 0.7f * power);
-                b.enabled = on;
-                if (!on) continue;
-                bool bar = Random.value < 0.4f;   // 横に長い線
-                float wid = bar ? view.x * Random.Range(0.5f, 1.2f) : view.x * Random.Range(0.04f, 0.3f);
-                float hgt = bar ? view.y * Random.Range(0.003f, 0.015f) : view.y * Random.Range(0.01f, 0.06f);
-                b.transform.localScale = new Vector3(wid, hgt, 1f);
-                b.transform.position = new Vector3(Random.Range(-0.5f, 0.5f) * view.x, cy + Random.Range(-0.5f, 0.5f) * view.y, 0f);
-                var c = glitchColors[Random.Range(0, glitchColors.Length)];
-                b.color = new Color(c.r, c.g, c.b, grannyNoiseLineAlpha * Random.Range(0.5f, 1f) * (0.3f + 0.7f * power));
-            }
-            // 緑の文字(ERROR など)がチカチカ
-            foreach (var w in words)
-            {
-                bool on = Random.value < 0.5f * power;
-                w.gameObject.SetActive(on);
-                if (!on) continue;
-                if (Random.value < 0.3f) w.text = hackWords[Random.Range(0, hackWords.Length)];
-                SetTextSize(w, HudTextSize * Random.Range(0.8f, 1.6f));
-                w.transform.position = new Vector3(Random.Range(-0.35f, 0.35f) * view.x, cy + Random.Range(-0.45f, 0.45f) * view.y, 0f);
-                w.color = Random.value < 0.8f ? new Color(0.2f, 1f, 0.3f, 0.9f) : new Color(1f, 0.2f, 0.2f, 0.9f);
-            }
+            power = Mathf.Max(power, appear ? Mathf.Clamp01(grannyIdleNoise) * k : Mathf.Clamp01(grannyIdleNoise) * (1f - k));
+            StepGlitch(g, power, t);
             // おばあさん: 出てくるときは途中からチラチラ見え始める / 消えるときは途中までチラチラして消える
             float show = Mathf.Clamp01(grannyNoiseShowAt);
             bool visible = appear ? (k >= show && (k > 0.9f || Random.value < 0.5f + 0.5f * k))
@@ -249,7 +286,7 @@ public partial class TwoPlayerShop2D
         if (grannyNoiseSound && grannyAudio != null) grannyAudio.Stop();
         body.enabled = appear;
         body.color = Color.white;
-        Destroy(root.gameObject);
+        Destroy(g.root.gameObject);
     }
 
     // 走査線の絵(横じま。2ピクセルおきに暗い線)
@@ -361,6 +398,91 @@ public partial class TwoPlayerShop2D
         }
         Destroy(bub.gameObject);
         Destroy(tm.gameObject);
+    }
+
+    // マンガの「ドン」のような叫び: ギザギザのはじける形(白・黒いふち)の上に、太い文字(黒・白いふち)をひとつ、大きく。
+    // 画面の外から叩きつけるように大きく出て(grannyShoutSize の 2.5倍 → 1倍)、少し傾いて、ぶるぶる震えながら life 秒そのまま
+    static Sprite burstSprite;
+
+    IEnumerator GrannyShout(Player p, float life)
+    {
+        Vector2 view = PlayerViewSize();
+        var burst = new GameObject("GrannyShoutBurst").AddComponent<SpriteRenderer>();
+        burst.sprite = GetBurstSprite();
+        burst.gameObject.layer = p.layer;
+        burst.sortingOrder = 4100;
+        string text = grannyBubbleText ?? "";
+        // 文字のふち(白)は、少しずらした白い文字を8つ後ろに重ねて作る
+        var outline = new TextMesh[8];
+        for (int i = 0; i < 8; i++) { outline[i] = MakeText("GrannyShoutEdge", null, p.layer, text, Color.white, 4101); outline[i].fontStyle = FontStyle.Bold; }
+        var tm = MakeText("GrannyShout", null, p.layer, text, grannyBubbleTextColor, 4102);
+        tm.fontStyle = FontStyle.Bold;
+        float size = Mathf.Max(0.1f, grannyBubbleSize);
+        float mirror = p == p2 ? -1f : 1f;
+        Vector2 pos = new Vector2(view.x * grannyBubblePosition.x * mirror, view.y * grannyBubblePosition.y);
+        float tilt = -8f * mirror;
+        life = Mathf.Max(0.3f, life);
+        for (float t = 0f; t < life && !GrannyShouldStop; t += Time.deltaTime)
+        {
+            // 叩きつける: 2.5倍 → 0.9倍(0.12秒)→ 1倍。そのあとぶるぶる
+            float slam = t < 0.12f ? Mathf.Lerp(2.5f, 0.9f, t / 0.12f) : (t < 0.2f ? Mathf.Lerp(0.9f, 1f, (t - 0.12f) / 0.08f) : 1f);
+            float fade = Mathf.Clamp01((life - t) / 0.15f);
+            float shakeK = t < 0.35f ? 1f : 0.35f;
+            Vector3 shake = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f) * view.x * 0.008f * shakeK;
+            Quaternion rot = Quaternion.Euler(0f, 0f, tilt + Mathf.Sin(t * 40f) * 1.5f);
+            Vector3 at = new Vector3(pos.x, pos.y + CameraFollowY, 0f) + shake;
+            float bw = view.x * 0.8f * size * slam;   // はじける形の幅
+            Vector2 bs = burst.sprite.bounds.size;
+            burst.transform.localScale = new Vector3(bw / bs.x, bw / bs.x, 1f);
+            burst.transform.SetPositionAndRotation(at, rot);
+            burst.color = new Color(1f, 1f, 1f, fade);
+            float ts = HudTextSize * 3.2f * size * slam;
+            SetTextSize(tm, ts);
+            tm.transform.SetPositionAndRotation(at, rot);
+            var c = grannyBubbleTextColor; c.a *= fade; tm.color = c;
+            float o = ts * 0.9f;   // ふちの太さ
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI / 4f;
+                SetTextSize(outline[i], ts);
+                outline[i].transform.SetPositionAndRotation(at + rot * new Vector3(Mathf.Cos(a) * o, Mathf.Sin(a) * o, 0f), rot);
+                outline[i].color = new Color(1f, 1f, 1f, fade);
+            }
+            yield return null;
+        }
+        Destroy(burst.gameObject);
+        Destroy(tm.gameObject);
+        foreach (var e in outline) Destroy(e.gameObject);
+    }
+
+    // はじける形(ギザギザの星。白に黒いふち)
+    static Sprite GetBurstSprite()
+    {
+        if (burstSprite != null) return burstSprite;
+        const int size = 256;
+        var rnd = new System.Random(9);
+        const int spikes = 18;
+        var radius = new float[spikes * 2];
+        for (int i = 0; i < radius.Length; i++) radius[i] = i % 2 == 0 ? 0.92f + (float)rnd.NextDouble() * 0.08f : 0.6f + (float)rnd.NextDouble() * 0.1f;
+        float R(float ang)   // 角度 ang の向きの、ふちまでの長さ(0〜1)
+        {
+            float f = (ang / (Mathf.PI * 2f) + 1f) % 1f * radius.Length;
+            int i0 = (int)f % radius.Length, i1 = (i0 + 1) % radius.Length;
+            return Mathf.Lerp(radius[i0], radius[i1], f - Mathf.Floor(f));
+        }
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        var px = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = (x + 0.5f) / size * 2f - 1f, v = ((y + 0.5f) / size * 2f - 1f) * 1.35f;   // 少し横長
+                float r = Mathf.Sqrt(u * u + v * v), edge = R(Mathf.Atan2(v, u));
+                px[y * size + x] = r > edge ? new Color32(0, 0, 0, 0) : r > edge - 0.07f ? new Color32(25, 25, 25, 255) : new Color32(255, 255, 255, 255);
+            }
+        tex.SetPixels32(px);
+        tex.Apply();
+        burstSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        return burstSprite;
     }
 
     // 吹き出しの絵(白い丸に黒いふち。左下にしっぽ)
