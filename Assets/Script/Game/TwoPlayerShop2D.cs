@@ -489,7 +489,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("体の絵の上のはしの高さ(画面の下から。画面の高さの割合。1 より大きいと顔の上が画面の外)")]
     public float grannyTop = 1.02f;
     [Tooltip("体の真ん中の位置(画面の真ん中から外側へ。画面の幅の割合。1P は左・2P は右)")]
-    public float grannyEdgeX = 0.3f;
+    public float grannyEdgeX = 0.55f;   // 正面の絵は横幅があるので、体の半分くらいが画面の外(画面の外側の半分くらいに映る)
     [Tooltip("真上から下ろす腕の太さ(画面の幅の割合)")]
     public float grannyHandWidth = 0.12f;
     [Tooltip("出てくる・去る秒数")]
