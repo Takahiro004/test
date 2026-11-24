@@ -4,11 +4,11 @@ using UnityEngine;
 // おじゃまキッズ(妨害。TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「おじゃまキッズ」)
 // 試合中、残り時間が kidTimes の秒数になったら、小さい子どもが出てきて、2人の袋に勝手に商品を1つずつ入れていく。
 //  1. 2P の画面: 右のふちから出てきて、左へ歩いて抜ける(棚へ向かう)
-//  2. 棚の画面: 右から真ん中まで歩き、立ち止まってランダムな商品を取り(頭の上に持つ)、右へ戻る(2P の画面へ)
+//  2. 棚の画面: 棚に今並んでいる商品からランダムに1つ選び、その所まで歩いて取り(棚から無くなり、補充される。頭の上に持つ)、右へ戻る(2P の画面へ)
 //  3. 2P の画面: 左から出てきて、袋の上のランダムな位置まで歩き、商品を袋へ落とし、左へ戻る
-//  4. 棚の画面: 右から左へ横切りながら、真ん中で立ち止まってもう1つランダムな商品を取る
+//  4. 棚の画面: 右から左へ横切りながら、棚の商品をもう1つ同じように取る
 //  5. 1P の画面: 右から袋の上のランダムな位置まで歩き、立ち止まって商品を袋へ落とし、左へ抜ける
-//  - 入れる商品は、商品の一覧(productList)の全部からランダム。落とした商品は、ふつうに落とした商品と同じ(袋に入ったら金額・重さに数える)
+//  - 入れる商品は、棚に今並んでいる商品からランダム(棚が空なら商品の一覧の全部から)。落とした商品は、ふつうに落とした商品と同じ(袋に入ったら金額・重さに数える)
 //  - 子どもの絵は kidSprite(空なら自動生成の子ども)。大きさ kidSize・色 kidColor・1つの画面を横切る秒数 kidCrossTime・歩く高さ kidWalkY(画面の高さの割合)
 //  - タイムアップ・袋持ち上げが始まったら、途中でもやめる
 public partial class TwoPlayerShop2D
@@ -43,19 +43,21 @@ public partial class TwoPlayerShop2D
 
         // 1. 2P の画面を右から左へ
         yield return KidMove(kid, carried, p2.layer, pEdge, -pEdge, pv.x);
-        // 2. 棚の画面: 真ん中まで行って商品を取り、右へ戻る
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, 0f, sv.x);
+        // 2. 棚の画面: 棚に並んでいる商品からランダムに1つ選び、その商品の所まで行って取り、右へ戻る
+        float grabX = KidPickShelfX();
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, grabX, sv.x);
         if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, 0f, sEdge, sv.x);
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, grabX, sEdge, sv.x);
         // 3. 2P の画面: 左から袋の上のランダムな位置まで行って落とし、左へ戻る
         float drop2 = KidDropX();
         if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, -pEdge, drop2, pv.x);
         if (!KidShouldStop) { KidDrop(p2, carried); yield return KidPause(kid, carried); }
         if (!KidShouldStop) yield return KidMove(kid, carried, p2.layer, drop2, -pEdge, pv.x);
-        // 4. 棚の画面: 横切りながら、真ん中でもう1つ取る
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, 0f, sv.x);
+        // 4. 棚の画面: 横切りながら、棚に並んでいる商品をもう1つ取る
+        grabX = KidPickShelfX();
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, sEdge, grabX, sv.x);
         if (!KidShouldStop) { KidGrab(carried); yield return KidPause(kid, carried); }
-        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, 0f, -sEdge, sv.x);
+        if (!KidShouldStop) yield return KidMove(kid, carried, layerShop, grabX, -sEdge, sv.x);
         // 5. 1P の画面: 袋の上のランダムな位置まで行って落とし、左へ抜ける
         float drop1 = KidDropX();
         if (!KidShouldStop) yield return KidMove(kid, carried, p1.layer, pEdge, drop1, pv.x);
@@ -73,12 +75,49 @@ public partial class TwoPlayerShop2D
     // 袋の上のランダムな位置(袋の幅の内側)
     float KidDropX() => bagX + Random.Range(-0.35f, 0.35f) * bagWidth;
 
-    // 商品を取る(ランダム。頭の上に持つ)
+    // 取りに行く棚の商品(KidPickShelfX で選ぶ)
+    GameObject kidTarget;
+
+    // 棚に今並んでいる商品から、取りに行く1つをランダムに選び、その横の位置を返す(棚が空なら真ん中)。
+    // 画面に全部映っていない商品・掴み合い中の商品・取られたばかりの商品は選ばない
+    float KidPickShelfX()
+    {
+        var list = new System.Collections.Generic.List<GameObject>();
+        foreach (var go in slotOf.Keys)
+        {
+            if (go == null || !go.activeInHierarchy || !CanGrabOnShelf(go)) continue;
+            if (clash != null && clash.product == go) continue;
+            if ((p1 != null && p1.lastTaken == go) || (p2 != null && p2.lastTaken == go)) continue;
+            list.Add(go);
+        }
+        kidTarget = list.Count > 0 ? list[Random.Range(0, list.Count)] : null;
+        return kidTarget != null ? kidTarget.transform.position.x : 0f;
+    }
+
+    // 商品を取る: 選んだ棚の商品を棚から取って(その場所は補充される)、頭の上に持つ。
+    // 選んだ商品が無くなっていたら(誰かが取った・棚が回った)、その時に並んでいる物から選び直す。棚が空なら全部の商品からランダム
     void KidGrab(SpriteRenderer carried)
     {
-        kidCarry = RandomProduct();
+        if (kidTarget == null || !slotOf.ContainsKey(kidTarget)) KidPickShelfX();
+        if (kidTarget != null && infoOf.TryGetValue(kidTarget, out var info))
+        {
+            kidCarry = info;
+            TakeFromShelf(kidTarget);
+        }
+        else kidCarry = RandomProduct();
+        kidTarget = null;
         carried.sprite = ProductIconSprite(kidCarry);
         carried.enabled = carried.sprite != null;
+    }
+
+    // 棚の商品を取り除く(プレイヤーが取ったときと同じく、山札に戻して、その場所に補充する)
+    void TakeFromShelf(GameObject go)
+    {
+        if (!slotOf.TryGetValue(go, out var slot)) return;
+        ForgetShelfProduct(go);   // 棚の商品を消す(TwoPlayerShop2D.Shelf.cs)
+        if (UseDeck) { ReturnCard(slot.product); slot.product = -1; }
+        SetSlotTag(slot);
+        if (refillShelf) StartCoroutine(RefillLater(slot, null));
     }
 
     // 持っている商品を、p の袋の、子どもの真下へ落とす
