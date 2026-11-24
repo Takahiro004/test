@@ -9,7 +9,10 @@ using UnityEngine;
 //  4. 棚の画面: 右から左へ横切りながら、棚の商品をもう1つ同じように取る
 //  5. 1P の画面: 右から袋の上のランダムな位置まで歩き、立ち止まって商品を袋へ落とし、左へ抜ける
 //  - 入れる商品は、棚に今並んでいる商品からランダム(棚が空なら商品の一覧の全部から)。落とした商品は、ふつうに落とした商品と同じ(袋に入ったら金額・重さに数える)
-//  - 子どもの絵は kidSprite(空なら自動生成の子ども)。大きさ kidSize・色 kidColor・1つの画面を横切る秒数 kidCrossTime・歩く高さ kidWalkY(画面の高さの割合)
+//  - 子どもの絵は kidSprite(空なら自動生成の子ども)。色 kidColor・1つの画面を横切る秒数 kidCrossTime
+//  - 大きさ・高さは画面ごと(どちらも画面の高さの割合):
+//    棚の画面 = 棚全体が映っているので、全身(背 kidShopHeight・足を画面の下から kidShopBottom の高さに)
+//    袋の画面 = 袋は近いので、大きく映って上半身だけ(背 kidBagHeight・頭のてっぺんを画面の下から kidBagHeadTop の高さに。脚は画面の下へはみ出す)
 //  - タイムアップ・袋持ち上げが始まったら、途中でもやめる
 public partial class TwoPlayerShop2D
 {
@@ -39,7 +42,7 @@ public partial class TwoPlayerShop2D
         var carried = new GameObject("KidCarry").AddComponent<SpriteRenderer>();   // 頭の上に持っている商品
         carried.enabled = false;
         Vector2 pv = PlayerViewSize(), sv = ShopViewSize();
-        float pEdge = pv.x / 2f + kidSize, sEdge = sv.x / 2f + kidSize;   // 画面の外(子どもが見えなくなる所)
+        float pEdge = pv.x / 2f + KidHeight(p1.layer) * 0.4f, sEdge = sv.x / 2f + KidHeight(layerShop) * 0.4f;   // 画面の外(子どもが見えなくなる所)
 
         // 1. 2P の画面を右から左へ
         yield return KidMove(kid, carried, p2.layer, pEdge, -pEdge, pv.x);
@@ -137,7 +140,7 @@ public partial class TwoPlayerShop2D
         carried.sortingOrder = kid.sortingOrder + 1;
         bool left = toX < fromX;
         kid.flipX = left == kidSpriteFacesRight;   // 絵の向き(右向きの絵を左へ歩かせるときなど)は反転
-        float time = Mathf.Max(0.05f, Mathf.Max(0.3f, kidCrossTime) * Mathf.Abs(toX - fromX) / Mathf.Max(0.1f, width + kidSize * 2f));
+        float time = Mathf.Max(0.05f, Mathf.Max(0.3f, kidCrossTime) * Mathf.Abs(toX - fromX) / Mathf.Max(0.1f, width + KidHeight(layer) * 0.8f));
         for (float t = 0f; t < time; t += Time.deltaTime)
         {
             if (KidShouldStop) yield break;
@@ -176,15 +179,25 @@ public partial class TwoPlayerShop2D
     // 歩く高さ: 袋の画面は袋の上のふちのすぐ上(+ Kid Walk Y)、棚の画面は Kid Shop Walk Y
     float KidY(int layer)
     {
-        float h = Mathf.Max(0.1f, kidSize);
-        return layer == layerShop ? ShopViewSize().y * (kidShopWalkY - 0.5f)
-                                  : BagFloorY + bagHeight + h * 0.5f + kidWalkY + CameraFollowY;
+        float h = KidHeight(layer);
+        if (layer == layerShop)
+        {
+            float vy = ShopViewSize().y;
+            return -vy / 2f + vy * kidShopBottom + h / 2f;                 // 足を画面の下から kidShopBottom の高さに
+        }
+        float py = PlayerViewSize().y;
+        return -py / 2f + py * kidBagHeadTop - h / 2f + CameraFollowY;     // 頭のてっぺんを kidBagHeadTop の高さに(脚は下へはみ出す)
     }
+
+    // 子どもの背(絵の縦の長さ。ゲームの長さ): 棚の画面は全身が映る大きさ・袋の画面は近くて大きい
+    float KidHeight(int layer)
+        => layer == layerShop ? ShopViewSize().y * Mathf.Max(0.05f, kidShopHeight)
+                              : PlayerViewSize().y * Mathf.Max(0.05f, kidBagHeight);
 
     // 子どもを置く(歩いて上下に弾む・少し左右に揺れる)。持っている商品は頭の上
     void PlaceKid(SpriteRenderer kid, SpriteRenderer carried, int layer, float x, float t)
     {
-        float h = Mathf.Max(0.1f, kidSize);
+        float h = KidHeight(layer);
         float y = KidY(layer);
         float bob = Mathf.Abs(Mathf.Sin(t * 10f)) * h * 0.06f;
         kid.transform.position = new Vector3(x, y + bob, 0f);

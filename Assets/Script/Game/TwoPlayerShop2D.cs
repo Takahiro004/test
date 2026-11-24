@@ -454,18 +454,20 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Sprite kidActionSprite;
     [Tooltip("歩くアニメーションの速さ(1秒に何コマ)")]
     public float kidWalkFps = 8f;
-    [Tooltip("子どもの背の高さ(ゲームの長さ)")]
-    public float kidSize = 4.5f;
     [Tooltip("子どもの色(絵にかける。白でそのまま)")]
     public Color kidColor = Color.white;
     [Tooltip("1つの画面を横切る秒数")]
     public float kidCrossTime = 2.5f;
     [Tooltip("商品を取る・袋に落とすときに立ち止まる秒数")]
     public float kidPauseTime = 0.6f;
-    [Tooltip("袋の画面で歩く高さのずれ(袋の上のふちのすぐ上から。ゲームの長さ。プラスで上)")]
-    public float kidWalkY = 0f;
-    [Tooltip("棚の画面で歩く高さ(画面の高さの割合。0 = 下・1 = 上)")]
-    [Range(0f, 1f)] public float kidShopWalkY = 0.25f;
+    [Tooltip("棚の画面の子どもの背(全身。画面の高さの割合)。棚全体が映っているので、全身が入る大きさ")]
+    public float kidShopHeight = 0.38f;
+    [Tooltip("棚の画面で、子どもの足の高さ(画面の下から。画面の高さの割合)")]
+    public float kidShopBottom = 0.02f;
+    [Tooltip("袋の画面の子どもの背(全身の絵の長さ。画面の高さの割合)。袋は近いので大きく映って、上半身だけが見える(脚は画面の下へはみ出す)")]
+    public float kidBagHeight = 0.75f;
+    [Tooltip("袋の画面で、子どもの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
+    public float kidBagHeadTop = 0.45f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
