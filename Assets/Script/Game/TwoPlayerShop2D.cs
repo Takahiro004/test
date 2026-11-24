@@ -528,6 +528,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float grannyHeight = 1.35f;   // 2026-11-24 プログラマー: もっと大きく
     [Tooltip("絵の下のはしの高さ(画面の下から。画面の高さの割合。マイナスで足が画面の外)")]
     public float grannyBottom = -0.2f;
+    [Tooltip("背景: おばあさんがいる間、その人の画面の背景を砂漠にする")]
+    public bool grannyDesert = true;
+    [Tooltip("背景: 砂漠の絵(空ならスクリプトで描いた砂漠。画面いっぱいに広げる)")]
+    public Sprite grannyDesertSprite;
     [Tooltip("歩いてくる・去る秒数")]
     public float grannyEnterTime = 0.7f;
     [Tooltip("袋の前でガサゴソする秒数")]

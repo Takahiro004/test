@@ -16,6 +16,7 @@ using UnityEngine;
 //  - 大きさ grannyHeight・絵の下のはしの高さ grannyBottom(どちらも画面の高さの割合)。横は袋の真ん中
 //  - grannyTestNow を再生中に ON にすると、すぐ 1P の画面に出す(演出を確かめる用)
 //  - grannyPreview を ON にすると、1P・2P の画面の袋の前に止めて出す(大きさ・高さを見ながら合わせる)
+//  - いる間は、その人の画面の背景を砂漠にする(grannyDesert。絵は grannyDesertSprite、空ならスクリプトで描いた砂漠)
 //  - タイムアップ・袋持ち上げが始まったら、途中でもやめる
 public partial class TwoPlayerShop2D
 {
@@ -79,6 +80,7 @@ public partial class TwoPlayerShop2D
         float side = p == p1 ? -1f : 1f;   // 1P は左・2P は右から来る(歩いて出てくるとき)
         var body = MakeGrannyBody("Granny", p.layer);
         if (body.sprite == null) { Destroy(body.gameObject); grannyRunning = false; yield break; }
+        grannyDesertNow = grannyDesert ? MakeDesert(p) : null;   // いる間の背景(砂漠)
         Vector2 view = PlayerViewSize();
         float w = GrannyHeight * body.sprite.bounds.size.x / Mathf.Max(0.01f, body.sprite.bounds.size.y);
         float outX = side * (view.x / 2f + w / 2f + 0.5f);   // 画面の外
@@ -101,6 +103,7 @@ public partial class TwoPlayerShop2D
             }
         }
         body.enabled = true;
+        ShowDesert(true);
         // 叫び(grannyBubble。「アビダ」)。grannyShoutStyle なら、マンガの「ドン」のような大きな文字をひとつ、勢いよく
         if (grannyBubble && !GrannyShouldStop)
             StartCoroutine(grannyShoutStyle ? GrannyShout(p, grannyStirTime + 0.2f) : GrannyBubble(p, true));
@@ -113,6 +116,7 @@ public partial class TwoPlayerShop2D
         for (float t = 0f; t < grannyStirTime && !GrannyShouldStop; t += Time.deltaTime)
         {
             PlaceGrannyBody(body, standX, Time.time, 1f);
+            PlaceDesert(grannyDesertNow);
             if (idle != null)
             {
                 StepGlitch(idle, Mathf.Clamp01(grannyIdleNoise), t);
@@ -141,7 +145,100 @@ public partial class TwoPlayerShop2D
             }
         if (price >= 0) StartCoroutine(MinusPopup(p, price));   // 袋が見えたところで -¥
         Destroy(body.gameObject);
+        if (grannyDesertNow != null) Destroy(grannyDesertNow.gameObject);
+        grannyDesertNow = null;
         grannyRunning = false;
+    }
+
+    // ---------- いる間の背景(砂漠) ----------
+    // その人の画面の、いちばん奥(机・袋より奥。画面の背景の色の代わり)に、砂漠の絵を画面いっぱいに出す。
+    // おばあさんが見えている間だけ出す(ノイズでチラチラするときも一緒に)。絵は grannyDesertSprite(空ならスクリプトで描いた砂漠)
+    SpriteRenderer grannyDesertNow;
+    static Sprite desertSprite;
+
+    SpriteRenderer MakeDesert(Player p)
+    {
+        var sr = new GameObject("GrannyDesert").AddComponent<SpriteRenderer>();
+        sr.sprite = grannyDesertSprite != null ? grannyDesertSprite : GetDesertSprite();
+        sr.gameObject.layer = p.layer;
+        sr.sortingOrder = -100;   // いちばん奥
+        sr.enabled = false;
+        PlaceDesert(sr);
+        return sr;
+    }
+
+    void PlaceDesert(SpriteRenderer sr)
+    {
+        if (sr == null) return;
+        Vector2 view = PlayerViewSize();
+        Vector2 bs = sr.sprite.bounds.size;
+        float k = Mathf.Max(view.x / Mathf.Max(0.01f, bs.x), view.y / Mathf.Max(0.01f, bs.y));   // 画面いっぱい(はみ出す分は切れる)
+        sr.transform.localScale = new Vector3(k, k, 1f);
+        sr.transform.position = new Vector3(0f, CameraFollowY, 20f);   // 奥(3Dモデルの机より奥)
+    }
+
+    void ShowDesert(bool on)
+    {
+        if (grannyDesertNow == null) return;
+        grannyDesertNow.enabled = on;
+        PlaceDesert(grannyDesertNow);
+    }
+
+    // スクリプトで描く砂漠: 上が青い空(下へいくほど白っぽく)・大きな太陽・遠くの砂丘・近くの砂丘(オレンジ)・サボテン
+    static Sprite GetDesertSprite()
+    {
+        if (desertSprite != null) return desertSprite;
+        const int w = 270, h = 480;
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+        var px = new Color[w * h];
+        Color skyTop = new Color(0.35f, 0.62f, 0.95f), skyLow = new Color(0.98f, 0.9f, 0.7f);
+        Color far = new Color(0.93f, 0.72f, 0.45f), near1 = new Color(0.96f, 0.66f, 0.3f), near2 = new Color(0.8f, 0.48f, 0.2f);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                float u = (float)x / w, v = (float)y / h;   // v: 0 下 〜 1 上
+                Color c = Color.Lerp(skyLow, skyTop, Mathf.InverseLerp(0.45f, 1f, v));
+                // 太陽(右上)
+                float dx = x - w * 0.72f, dy = y - h * 0.8f;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                if (d < 30f) c = new Color(1f, 0.95f, 0.6f);
+                else if (d < 46f) c = Color.Lerp(new Color(1f, 0.95f, 0.6f), c, (d - 30f) / 16f);
+                // 遠くの砂丘
+                float farTop = h * (0.5f + 0.04f * Mathf.Sin(u * 7f + 1f) + 0.025f * Mathf.Sin(u * 17f));
+                if (y < farTop) c = Color.Lerp(far * 0.92f, far, (float)y / farTop);
+                // 近くの砂丘(手前ほど濃い)
+                float nearTop = h * (0.36f + 0.07f * Mathf.Sin(u * 4.5f + 2.2f) + 0.02f * Mathf.Sin(u * 13f));
+                if (y < nearTop)
+                {
+                    c = Color.Lerp(near2, near1, (float)y / nearTop);
+                    if (Mathf.Sin(u * 40f + v * 25f) > 0.85f) c *= 0.95f;   // 風もん(砂の筋)
+                    c.a = 1f;
+                }
+                px[y * w + x] = c;
+            }
+        // サボテン(左の遠く・右の手前)
+        void Cactus(int cx, int baseY, int ht, int wd, Color col)
+        {
+            for (int y = baseY; y < baseY + ht && y < h; y++)
+                for (int x = cx - wd / 2; x <= cx + wd / 2; x++) if (x >= 0 && x < w) px[y * w + x] = col;
+            int armY = baseY + ht / 2;
+            for (int y = armY; y < armY + ht / 4; y++)
+            {
+                for (int x = cx - wd * 2; x < cx - wd / 2; x++) if (x >= 0 && x < w && (y < armY + wd || x < cx - wd * 2 + wd)) px[y * w + x] = col;
+                for (int x = cx + wd / 2; x < cx + wd * 2; x++) if (x >= 0 && x < w && (y < armY + wd || x > cx + wd * 2 - wd)) px[y * w + x] = col;
+            }
+            for (int y = armY + ht / 4; y < armY + ht / 2; y++)
+            {
+                for (int x = cx - wd * 2; x < cx - wd * 2 + wd; x++) if (x >= 0 && x < w) px[y * w + x] = col;
+                for (int x = cx + wd * 2 - wd; x < cx + wd * 2; x++) if (x >= 0 && x < w) px[y * w + x] = col;
+            }
+        }
+        Cactus(50, (int)(h * 0.5f), 40, 6, new Color(0.35f, 0.55f, 0.3f));
+        Cactus(215, (int)(h * 0.3f), 80, 12, new Color(0.25f, 0.5f, 0.25f));
+        tex.SetPixels(px);
+        tex.Apply();
+        desertSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), h);
+        return desertSprite;
     }
 
     // ---------- ノイズ・砂嵐の演出 ----------
@@ -277,6 +374,7 @@ public partial class TwoPlayerShop2D
             bool visible = appear ? (k >= show && (k > 0.9f || Random.value < 0.5f + 0.5f * k))
                                   : (k < show && (k < 0.2f || Random.value < 0.6f));
             body.enabled = visible;
+            ShowDesert(visible);   // 背景の砂漠も一緒にチラチラ
             // ノイズで横にずれる(デジタルにカクッと)
             float jump = visible && Random.value < 0.3f * power ? Random.Range(-0.06f, 0.06f) * view.x : 0f;
             PlaceGrannyBody(body, bagX + jump, Time.time, 0.3f);
@@ -285,6 +383,7 @@ public partial class TwoPlayerShop2D
         }
         if (grannyNoiseSound && grannyAudio != null) grannyAudio.Stop();
         body.enabled = appear;
+        ShowDesert(appear);
         body.color = Color.white;
         Destroy(g.root.gameObject);
     }
