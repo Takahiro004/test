@@ -929,6 +929,7 @@ MonoBehaviour:
   auraWhileHeld: 1
   auraInBag: 0
   kidEnabled: 1
+  kidPreview: 0
   kidTimes:
   - 90
   - 45
@@ -941,12 +942,54 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 42b558e4c61e47e6a858c3fd1d206315, type: 3}
   kidActionSprite: {fileID: 21300000, guid: 5ffa2cf559b04e9bb7ae5f80e176c148, type: 3}
   kidWalkFps: 8
-  kidSize: 4.5
   kidColor: {r: 1, g: 1, b: 1, a: 1}
   kidCrossTime: 2.5
   kidPauseTime: 0.6
-  kidWalkY: 0
-  kidShopWalkY: 0.25
+  kidShopHeight: 0.6
+  kidShopBottom: -0.08
+  kidBagHeight: 0.75
+  kidBagHeadTop: 0.45
+  grannyEnabled: 1
+  grannyPreview: 0
+  grannyTimes:
+  - 65
+  - 20
+  grannyTestNow: 0
+  grannyGlitch: 0
+  grannyNoiseInTime: 1.2
+  grannyNoiseOutTime: 0.8
+  grannyNoiseShowAt: 0.6
+  grannyNoiseLineCount: 12
+  grannyHackTextCount: 6
+  grannyNoiseLineAlpha: 0.7
+  grannyStaticChance: 0.35
+  grannyStaticAlpha: 0.85
+  grannyIdleNoise: 0.2
+  grannyNoiseSound: 0
+  grannyBubble: 0
+  grannyShoutStyle: 0
+  grannyBubbleText: "\u30A2\u30D3\u30C0"
+  grannyBubbleRepeat: 0
+  grannyBubbleInterval: 0.35
+  grannyBubbleSpread: 0.2
+  grannyBubbleTime: 1.2
+  grannyBubbleSize: 1
+  grannyBubblePosition: {x: -0.12, y: 0.3}
+  grannyBubbleTextColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
+  grannySprite: {fileID: 0}
+  grannyHeight: 1.54
+  grannyBottom: -0.5
+  grannyDesert: 0
+  grannyDesertSprite: {fileID: 0}
+  grannyEnterTime: 0.6
+  grannyStirTime: 1.5
+  grannyStirPower: 4
+  grannyShake: 0.3
+  grannyRustleClip: {fileID: 0}
+  grannyRustleVolume: 0.8
+  grannyRustleText: 1
+  grannyRustleTextColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  grannyRustleTextSize: 1.6
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
