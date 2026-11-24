@@ -442,6 +442,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("おじゃまキッズ(妨害。試合中に子どもが出てきて、2人の袋に勝手に商品を1つずつ入れる)")]
     [Tooltip("おじゃまキッズを出す")]
     public bool kidEnabled = true;
+    [Tooltip("見え方の確認: ON にすると、棚の画面(全身)と 1P・2P の画面(上半身)の真ん中に子どもを出しっぱなしにする。下の大きさ・高さの欄を再生中に変えるとすぐ動くので、見ながら合わせられる。決まったら OFF に戻す")]
+    public bool kidPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 90 と 45 なら、残り 1:30 と 0:45 に1回ずつ")]
     public float[] kidTimes = { 90f, 45f };
     [Tooltip("子どもの絵(空なら自動生成の子ども)。左向きの絵を想定(歩く向きに合わせて反転する)")]
