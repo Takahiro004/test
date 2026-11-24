@@ -478,6 +478,38 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool grannyPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
     public float[] grannyTimes = { 65f, 20f };
+    [Tooltip("試しに出す: 再生中に ON にすると、すぐ 1P の画面に出す(演出を確かめる用。出したら OFF に戻る)")]
+    public bool grannyTestNow = false;
+    [Tooltip("ノイズの演出: ON なら、出てくる前にその人の画面全体にノイズが走り、ときどき砂嵐が出て、収まると目の前にいる。去るときもノイズで消える。OFF なら外側から歩いてくる")]
+    public bool grannyGlitch = true;
+    [Tooltip("ノイズの演出: 出てくるときのノイズの秒数")]
+    public float grannyNoiseInTime = 1.2f;
+    [Tooltip("ノイズの演出: 消えるときのノイズの秒数")]
+    public float grannyNoiseOutTime = 0.8f;
+    [Tooltip("ノイズの演出: ノイズの途中、どこからおばあさんがチラチラ見え始めるか(出てくるとき)/ どこで消えるか(消えるとき)。0〜1")]
+    [Range(0f, 1f)] public float grannyNoiseShowAt = 0.6f;
+    [Tooltip("ノイズの演出: 横に走るノイズの線の数")]
+    public int grannyNoiseLineCount = 12;
+    [Tooltip("ノイズの演出: ノイズの線の濃さ(0〜1)")]
+    [Range(0f, 1f)] public float grannyNoiseLineAlpha = 0.7f;
+    [Tooltip("ノイズの演出: 砂嵐が出やすさ(0〜1。0.08秒ごとに、この確率で出る。ノイズが強いときほど出やすい)")]
+    [Range(0f, 1f)] public float grannyStaticChance = 0.35f;
+    [Tooltip("ノイズの演出: 砂嵐の濃さ(0〜1)")]
+    [Range(0f, 1f)] public float grannyStaticAlpha = 0.85f;
+    [Tooltip("ノイズの演出: ノイズの音(ザーッ)も鳴らす(大きさは Granny Rustle Volume の 6割)")]
+    public bool grannyNoiseSound = true;
+    [Tooltip("吹き出し: 目の前に出てきたときに、吹き出しを出す")]
+    public bool grannyBubble = true;
+    [Tooltip("吹き出しの文字")]
+    public string grannyBubbleText = "アビダ";
+    [Tooltip("吹き出しを出しておく秒数")]
+    public float grannyBubbleTime = 1.2f;
+    [Tooltip("吹き出しの大きさ(1 でふつう)")]
+    public float grannyBubbleSize = 1f;
+    [Tooltip("吹き出しの位置(画面の真ん中から。画面の大きさの割合。X 右・Y 上。2P は左右反対)")]
+    public Vector2 grannyBubblePosition = new Vector2(-0.12f, 0.3f);
+    [Tooltip("吹き出しの文字の色")]
+    public Color grannyBubbleTextColor = new Color(0.1f, 0.1f, 0.1f, 1f);
     [Tooltip("おばあさんの絵(空なら Assets/Resources/Granny/Granny_back。Claude が描いた後ろ姿)")]
     public Sprite grannySprite;
     [Tooltip("おばあさんの大きさ(絵の縦。画面の高さの割合)。袋の前に立って、大きな背中で袋を隠すくらい")]
