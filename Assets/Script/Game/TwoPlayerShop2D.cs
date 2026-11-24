@@ -478,9 +478,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool grannyPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
     public float[] grannyTimes = { 65f, 20f };
-    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_side。近くに立った横向きのおばあさん。口もとから下)")]
+    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_front。近くに立った正面のおばあさん。口もとから下・右の腕を上げている)")]
     public Sprite grannySprite;
-    [Tooltip("体の絵が右を向いているなら ON(1P の画面では右・2P の画面では左 = 袋のほうを向くように反転する)")]
+    [Tooltip("体の絵の、上げた腕が右にあるなら ON(上げた腕が袋の側 = 1P の画面では右・2P の画面では左 になるように反転する)")]
     public bool grannySpriteFacesRight = true;
     [Tooltip("おばあさんの腕(そで + 手)の絵。左のはし = 肩・右のはし = 指先。真上から下へ伸ばして使う(空なら Assets/Resources/Granny/Granny_hand)")]
     public Sprite grannyHandSprite;

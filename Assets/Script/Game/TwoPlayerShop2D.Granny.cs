@@ -3,7 +3,7 @@ using UnityEngine;
 
 // 袋あらしのおばあさん(妨害。TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「袋あらしのおばあさん」)
 // 試合中、残り時間が grannyTimes の秒数になったら、ランダムに選んだ1人の袋の画面に、いじわるなおばあさんが出てくる。
-//  1. 袋の画面の外側(1P は左・2P は右)に、近くに立った大きなおばあさん(横向きで袋のほうを向く。口もとから下が映る)が入ってくる
+//  1. 袋の画面の外側(1P は左・2P は右)に、近くに立った大きなおばあさん(正面を向く。口もとから下が映る。上げた腕は袋の側)が入ってくる
 //  2. クレーンゲームのクレーンのように、真上(画面の上の外)から手を下ろし、袋の口から中へ入れて、中の商品をぐちゃぐちゃにかき回す
 //     (商品をはじく・袋を揺らす。grannyStirTime 秒)。腕は袋の手前の絵より奥に描くので、袋の中に手を入れているように見える
 //  3. 袋の中の商品をランダムに1つつかんで、真上へ引き上げ、画面の上へ持っていき、外側へ去る。取られた商品の金額は合計から引く(-¥ を出す)
@@ -35,7 +35,7 @@ public partial class TwoPlayerShop2D
     bool GrannyShouldStop => IsTimeUp || liftStarted;
 
     static Sprite grannyBodyDefault, grannyHandDefault;
-    Sprite GrannyBodySprite => grannySprite != null ? grannySprite : (grannyBodyDefault != null ? grannyBodyDefault : grannyBodyDefault = Resources.Load<Sprite>("Granny/Granny_side"));
+    Sprite GrannyBodySprite => grannySprite != null ? grannySprite : (grannyBodyDefault != null ? grannyBodyDefault : grannyBodyDefault = Resources.Load<Sprite>("Granny/Granny_front"));
     Sprite GrannyHandSprite => grannyHandSprite != null ? grannyHandSprite : (grannyHandDefault != null ? grannyHandDefault : grannyHandDefault = Resources.Load<Sprite>("Granny/Granny_hand"));
 
     float GrannyHeight => PlayerViewSize().y * Mathf.Max(0.05f, grannyHeight);
@@ -49,7 +49,7 @@ public partial class TwoPlayerShop2D
         return sr;
     }
 
-    // 体を置く: 袋の画面の外側(1P は左・2P は右)に、近くに立った大きなおばあさん(横向き。袋のほうを向く)。
+    // 体を置く: 袋の画面の外側(1P は左・2P は右)に、近くに立った大きなおばあさん(正面。上げた腕が袋の側になるように反転)。
     // side = -1(左)/ 1(右)。x0 = 体の真ん中の、画面の真ん中から外側への距離(画面の幅の割合 grannyEdgeX)
     void PlaceGrannyBody(SpriteRenderer body, float side, float edge, float t)
     {
@@ -57,7 +57,7 @@ public partial class TwoPlayerShop2D
         float h = GrannyHeight;
         float s = h / Mathf.Max(0.01f, body.sprite.bounds.size.y);
         body.transform.localScale = new Vector3(s, s, 1f);
-        body.flipX = (side > 0f) == grannySpriteFacesRight;   // 袋(画面の内側)のほうを向く
+        body.flipX = (side > 0f) == grannySpriteFacesRight;   // 上げた腕が袋(画面の内側)の側になるように
         body.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * 5f) * 1f);
         float top = -view.y / 2f + view.y * grannyTop + CameraFollowY;
         body.transform.position = new Vector3(side * view.x * edge, top - h / 2f, 0f);
