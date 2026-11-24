@@ -450,8 +450,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool kidSpriteFacesRight = false;
     [Tooltip("子どもの背の高さ(ゲームの長さ)")]
     public float kidSize = 2.5f;
-    [Tooltip("子どもの色(絵にかける)")]
-    public Color kidColor = new Color(1f, 0.8f, 0.5f, 1f);
+    [Tooltip("子どもの色(絵にかける。白でそのまま)")]
+    public Color kidColor = Color.white;
     [Tooltip("1つの画面を横切る秒数")]
     public float kidCrossTime = 2.5f;
     [Tooltip("商品を取る・袋に落とすときに立ち止まる秒数")]

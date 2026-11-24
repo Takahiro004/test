@@ -932,10 +932,10 @@ MonoBehaviour:
   kidTimes:
   - 90
   - 45
-  kidSprite: {fileID: 0}
+  kidSprite: {fileID: 21300000, guid: 81ac20c0dd3949b6a90c70e0e8ae3120, type: 3}
   kidSpriteFacesRight: 0
   kidSize: 2.5
-  kidColor: {r: 1, g: 0.8, b: 0.5, a: 1}
+  kidColor: {r: 1, g: 1, b: 1, a: 1}
   kidCrossTime: 2.5
   kidPauseTime: 0.6
   kidWalkY: 0
