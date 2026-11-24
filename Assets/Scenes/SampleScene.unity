@@ -933,6 +933,7 @@ MonoBehaviour:
   - 90
   - 45
   kidSprite: {fileID: 21300000, guid: 6fa53be2a0eb499ea5d0bba69248d56c, type: 3}
+  kidSpriteFacesRight: 0
   kidWalkFrames:
   - {fileID: 21300000, guid: 422b2d935dd245d19c552ad8448699a7, type: 3}
   - {fileID: 21300000, guid: 18957b4c0e494da48a7c3ceb70764a94, type: 3}
@@ -940,7 +941,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 42b558e4c61e47e6a858c3fd1d206315, type: 3}
   kidActionSprite: {fileID: 21300000, guid: 5ffa2cf559b04e9bb7ae5f80e176c148, type: 3}
   kidWalkFps: 8
-  kidSpriteFacesRight: 0
   kidSize: 4.5
   kidColor: {r: 1, g: 1, b: 1, a: 1}
   kidCrossTime: 2.5
@@ -1190,9 +1190,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 0
-    sprite: {fileID: -3053547739730046739, guid: 40f11939b327dd54a909080e73dc8ffd, type: 3}
+    sprite: {fileID: 0}
     size: 1.3
-    model: {fileID: 0}
+    model: {fileID: 717011095512595641, guid: fb8934d950d386541be2b1acdb9f7318, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u3071\u3077\u308A\u304B"
@@ -1216,9 +1216,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 1
-    sprite: {fileID: 3051736609092649351, guid: 9c95c2082a63c864cb8e840c3bb02860, type: 3}
+    sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 6569140651941213828, guid: d67d0b9486946f347b395af7fce78cc6, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u3059\u3071\u3052\u3066\u3043"
@@ -1307,9 +1307,9 @@ MonoBehaviour:
     fragile: 0
     breakLoad: 3
     shape: 3
-    sprite: {fileID: -6001709017647231438, guid: 6ec3fa0635488e74a86ec92c8a4f8b57, type: 3}
+    sprite: {fileID: 0}
     size: 1.5
-    model: {fileID: 0}
+    model: {fileID: 1579474516228809963, guid: c6d3426c74c64b84e89d8b99fa5462db, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u305F\u307E\u3054"
@@ -1400,7 +1400,7 @@ MonoBehaviour:
     shape: 2
     sprite: {fileID: 0}
     size: 1
-    model: {fileID: 0}
+    model: {fileID: 1290861597984571293, guid: 981744e01f67258479632a730e55dff0, type: 3}
     modelRotation: {x: 0, y: 0, z: 0}
     modelSize: 1
   - name: "\u304E\u3087\u3046\u3056"
