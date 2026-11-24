@@ -471,6 +471,32 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("袋の画面で、子どもの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
     public float kidBagHeadTop = 0.45f;
 
+    [Header("袋あらしのおばあさん(妨害。ランダムな1人の袋に手を突っ込んでかき回し、商品を1つ取っていく)")]
+    [Tooltip("袋あらしのおばあさんを出す")]
+    public bool grannyEnabled = true;
+    [Tooltip("見え方の確認: ON にすると、1P・2P の画面に、おばあさんが袋へ手を伸ばした形を出しっぱなしにする。下の大きさ・位置の欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
+    public bool grannyPreview = false;
+    [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
+    public float[] grannyTimes = { 65f, 20f };
+    [Tooltip("おばあさんの体の絵(空なら Assets/Resources/Granny/Granny_body)")]
+    public Sprite grannySprite;
+    [Tooltip("おばあさんの腕(そで + 手)の絵。左のはし = 肩・右のはし = 指先(空なら Assets/Resources/Granny/Granny_hand)")]
+    public Sprite grannyHandSprite;
+    [Tooltip("おばあさんの大きさ(体の絵の縦。画面の高さの割合)。袋は近いので大きく映る")]
+    public float grannyHeight = 0.55f;
+    [Tooltip("おばあさんの頭のてっぺんの高さ(画面の下から。画面の高さの割合)")]
+    public float grannyHeadTop = 0.62f;
+    [Tooltip("おばあさんが止まる位置(画面の真ん中から右へ。画面の幅の割合)")]
+    public float grannyStandX = 0.3f;
+    [Tooltip("出てくる・去る秒数")]
+    public float grannyEnterTime = 0.6f;
+    [Tooltip("袋をかき回す秒数")]
+    public float grannyStirTime = 1.5f;
+    [Tooltip("かき回す強さ(袋の中の商品をはじく速さ)")]
+    public float grannyStirPower = 4f;
+    [Tooltip("かき回すときの袋の揺れの強さ(キックの揺れと同じ。0 で揺れない)")]
+    public float grannyShake = 0.3f;
+
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
     public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
