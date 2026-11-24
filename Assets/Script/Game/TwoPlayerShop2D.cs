@@ -461,7 +461,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("商品を取る・袋に落とすときに立ち止まる秒数")]
     public float kidPauseTime = 0.6f;
     [Tooltip("棚の画面の子どもの背(全身。画面の高さの割合)。棚全体が映っているので、全身が入る大きさ")]
-    public float kidShopHeight = 0.38f;
+    public float kidShopHeight = 0.5f;   // 2026-11-24 プログラマー: もう少し大きく(0.38 → 0.5)
     [Tooltip("棚の画面で、子どもの足の高さ(画面の下から。画面の高さの割合)")]
     public float kidShopBottom = 0.02f;
     [Tooltip("袋の画面の子どもの背(全身の絵の長さ。画面の高さの割合)。袋は近いので大きく映って、上半身だけが見える(脚は画面の下へはみ出す)")]
