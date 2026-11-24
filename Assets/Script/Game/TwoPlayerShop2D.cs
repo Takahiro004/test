@@ -488,9 +488,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float grannyNoiseOutTime = 0.8f;
     [Tooltip("ノイズの演出: ノイズの途中、どこからおばあさんがチラチラ見え始めるか(出てくるとき)/ どこで消えるか(消えるとき)。0〜1")]
     [Range(0f, 1f)] public float grannyNoiseShowAt = 0.6f;
-    [Tooltip("ノイズの演出: 横に走るノイズの線の数")]
-    public int grannyNoiseLineCount = 12;
-    [Tooltip("ノイズの演出: ノイズの線の濃さ(0〜1)")]
+    [Tooltip("ノイズの演出: 色のついたブロック・横に走る線の数")]
+    public int grannyNoiseLineCount = 24;
+    [Tooltip("ノイズの演出: チカチカする緑の文字(ERROR・SYSTEM HACKED など)の数(0 で出さない)")]
+    public int grannyHackTextCount = 6;
+    [Tooltip("ノイズの演出: ブロック・線の濃さ(0〜1)")]
     [Range(0f, 1f)] public float grannyNoiseLineAlpha = 0.7f;
     [Tooltip("ノイズの演出: 砂嵐が出やすさ(0〜1。0.08秒ごとに、この確率で出る。ノイズが強いときほど出やすい)")]
     [Range(0f, 1f)] public float grannyStaticChance = 0.35f;
@@ -502,7 +504,13 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool grannyBubble = true;
     [Tooltip("吹き出しの文字")]
     public string grannyBubbleText = "アビダ";
-    [Tooltip("吹き出しを出しておく秒数")]
+    [Tooltip("吹き出し: ガサゴソの間も何回も叫ぶ(場所・大きさ・傾きを少しずつ変えて、何個も出す)")]
+    public bool grannyBubbleRepeat = true;
+    [Tooltip("吹き出し: 何秒ごとに叫ぶか")]
+    public float grannyBubbleInterval = 0.35f;
+    [Tooltip("吹き出し: 2回目からの吹き出しが、どのくらい散らばるか(画面の大きさの割合)")]
+    public float grannyBubbleSpread = 0.2f;
+    [Tooltip("吹き出しを出しておく秒数(2回目からは 6割)")]
     public float grannyBubbleTime = 1.2f;
     [Tooltip("吹き出しの大きさ(1 でふつう)")]
     public float grannyBubbleSize = 1f;
