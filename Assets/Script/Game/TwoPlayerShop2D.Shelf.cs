@@ -200,11 +200,20 @@ public partial class TwoPlayerShop2D
 
     // ---------- スクロール(棚がゆっくり左から右へ流れる) ----------
 
-    // LateUpdate から毎フレーム。shelfSlideInterval 秒待つ → 棚1つぶん右へスライド → また待つ。エントリー中・タイムアップのあとは止まる
+    // LateUpdate から毎フレーム。shelfScrollContinuous(初め ON)なら止めずにゆっくり流し続ける(棚1つぶん shelfScrollSectionTime 秒)。
+    // OFF なら前の動き: shelfSlideInterval 秒待つ → 棚1つぶん右へスライド → また待つ。エントリー中・タイムアップのあとは止まる
     void UpdateShelfScroll()
     {
         if (!shelfSlide || InEntry || entryPhase == -1 || IsTimeUp) return;
         if (clash != null) return;   // 掴み合い中は止める(取り合っている商品が棚に戻っているので、置いていかれないように)
+        // ずっと流す: 止まらずに同じ速さで右へ(区切りなし。sliding にしないので、流れている間も取れる)
+        if (shelfScrollContinuous)
+        {
+            sliding = false;
+            shelfScroll += ShelfSectionWidth / Mathf.Max(0.5f, shelfScrollSectionTime) * Time.deltaTime;
+            ApplyShelfScroll();
+            return;
+        }
         if (!sliding)
         {
             slideWait += Time.deltaTime;
