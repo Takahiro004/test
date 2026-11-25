@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
 //  - キーボード予備: 1P WASD + Space / 2P 矢印 + Enter
 // 仕組み: 詰め放題バトルの物はそのまま止めておき、3つのカメラを遠く(ShooterOrigin)へ動かして、そこに作った射撃場を映す。
 // シーンは書き換えない(全部スクリプトで作る)。
+// エントリー画面も、サイバーパンク風なら射撃場の上に出す(UpdateShooterEntry。照準を動かす・A で顔を出す練習ができる)。
 public partial class TwoPlayerShop2D
 {
     static readonly Vector3 ShooterOrigin = new Vector3(10000f, 0f, 0f);   // 射撃場を作る場所(詰め放題の物から遠く)
@@ -79,10 +80,90 @@ public partial class TwoPlayerShop2D
         if (!cyberTheme || !shooterMode || shooterOn) return false;
         shooterOn = true;
         shooterLeft = Mathf.Max(5f, shooterTime);
-        BuildShooter();
+        if (shooterRoot == null) BuildShooter();
+        Vector2 sv = ShopViewSize();
+        ShPopup(layerShop, "START!", Vector2.zero, new Color(1f, 0.9f, 0.3f), FitSize("START!", sv.x * 0.8f, sv.y * 0.3f, Mathf.Min(sv.x, sv.y) / 10f), 1f);
+        foreach (var s in shooters) s.state.text = "";
         lastEvent = "ネオン射撃 開始！";
         return true;
     }
+
+    // エントリー画面のあいだ(UpdateEntry から毎フレーム): サイバーパンク風なら、射撃場を先に作ってエントリー画面にする
+    void UpdateShooterEntry()
+    {
+        bool want = cyberTheme && shooterMode && InEntry;
+        if (want && shooterRoot == null && !cyberSwitching) BuildShooter();
+        if (!want && shooterRoot != null && !shooterOn) DestroyShooter();
+        if (shooterRoot == null) return;
+
+        float dt = Time.deltaTime;
+        foreach (var s in shooters) StepShooter(s, dt);   // 照準を動かす・A で顔を出すのは練習できる(的は出ない)
+        StepShPops(dt);
+        RefreshShooterShop();
+
+        Vector2 pv = PlayerViewSize(), sv = ShopViewSize();
+        for (int i = 0; i < 2; i++)
+        {
+            var s = shooters[i];
+            s.state.text = entryPhase == 2 ? "" : entryReady[i] ? $"{s.p.name}  参加OK！\n(Bで取り消し)" : $"{s.p.name}\nAで参加";
+            s.state.color = entryReady[i] ? s.p.color : Color.white;
+            SetTextSize(s.state, FitSize(s.state.text, pv.x * 0.85f, pv.y * 0.2f, Mathf.Min(pv.x, pv.y) / 14f));
+            s.state.transform.position = ShooterOrigin + new Vector3(0f, -pv.y * 0.32f, -2f);
+        }
+        if (entryPhase == 2)
+        {
+            shTimer.text = Mathf.CeilToInt(entryCountdownLeft).ToString();
+            shCenter.text = "";
+        }
+        else
+        {
+            shTimer.text = "READY?";
+            shCenter.text = entryReady[0] && entryReady[1] ? "" : "ふたりそろったらスタート";
+        }
+        LayoutShooterShop();
+    }
+
+    // 射撃場を消して、カメラを詰め放題の場所に戻す(エントリー画面で、かくしコマンドをもう一度打って元に戻したとき)
+    void DestroyShooter()
+    {
+        if (shooters != null) foreach (var s in shooters) if (s.glitch != null) Destroy(s.glitch.root.gameObject);
+        foreach (var p in shPops) if (p.tm != null) Destroy(p.tm.gameObject);
+        shPops.Clear();
+        if (shooterRoot != null) Destroy(shooterRoot.gameObject);
+        shooterRoot = null;
+        shooters = null;
+        if (switcher != null && switcher.screens != null)
+            foreach (var kv in shCamBase)
+                if (kv.Key >= 0 && kv.Key < switcher.screens.Length && switcher.screens[kv.Key].camera != null)
+                    switcher.screens[kv.Key].camera.transform.position = kv.Value;
+        shCamBase.Clear();
+    }
+
+    readonly Dictionary<int, Vector3> shCamBase = new Dictionary<int, Vector3>();   // 動かす前の 1P/2P のカメラの位置
+
+    // ---------- 文字の大きさ(画面からはみ出さないように) ----------
+
+    // 文字の幅(全角 = 1、半角 = 0.6 として、いちばん長い行)
+    static float TextWidthUnits(string text)
+    {
+        float best = 0f, cur = 0f;
+        foreach (char c in text)
+        {
+            if (c == '\n') { best = Mathf.Max(best, cur); cur = 0f; continue; }
+            cur += c < 128 ? 0.6f : 1f;
+        }
+        return Mathf.Max(best, cur, 0.6f);
+    }
+
+    // 幅 maxW・高さ maxH に収まる文字の大きさ(cap より大きくしない)。SetTextSize の大きさ 1 で、1文字が約 6.4
+    static float FitSize(string text, float maxW, float maxH, float cap)
+    {
+        int lines = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
+        float size = Mathf.Min(cap, maxW / (6.4f * TextWidthUnits(text ?? "")));
+        return Mathf.Min(size, maxH / (6.4f * 1.15f * lines));
+    }
+
+    void Fit(TextMesh tm, float maxW, float maxH, float cap) => SetTextSize(tm, FitSize(tm.text, maxW, maxH, cap));
 
     // ---------- 作る ----------
 
@@ -126,8 +207,7 @@ public partial class TwoPlayerShop2D
             }
             // 画面の下の文字(弾・リロード・撃たれた など)
             s.state = MakeText("ShooterState", shooterRoot, p.layer, "", Color.white, 460);
-            SetTextSize(s.state, pv.x / 60f);
-            s.state.transform.position = ShooterOrigin + new Vector3(0f, -pv.y * 0.42f, 0f);
+            s.state.transform.position = ShooterOrigin + new Vector3(0f, -pv.y * 0.4f, -2f);
             s.glitch = MakeGlitch(p.layer, false);
             shooters[i] = s;
         }
@@ -161,7 +241,7 @@ public partial class TwoPlayerShop2D
         shBar1.color = p1.color;
         shBar2.color = p2.color;
         shCenter = ShText("Center", layerShop, "", Color.white, sv.x / 40f, new Vector2(0f, -sv.y * 0.36f));
-        ShPopup(layerShop, "START!", new Vector2(0f, 0f), new Color(1f, 0.9f, 0.3f), sv.x / 14f, 1f);
+        LayoutShooterShop();
     }
 
     SpriteRenderer ShSprite(string n, int layer, Sprite sp, int order)
@@ -206,10 +286,11 @@ public partial class TwoPlayerShop2D
     {
         Vector2 pv = PlayerViewSize();
         float unit = Mathf.Min(pv.x, pv.y);
-        bool playing = !shooterEnded;
+        bool playing = shooterOn && !shooterEnded;
+        bool canAim = !shooterEnded;   // エントリー画面でも照準を動かせる
 
         // 照準を動かす
-        Vector2 move = playing ? (s.index == 0 ? GetMove1P() : GetMove2P()) : Vector2.zero;
+        Vector2 move = canAim ? (s.index == 0 ? GetMove1P() : GetMove2P()) : Vector2.zero;
         if (move.magnitude > 1f) move.Normalize();
         s.aim += move * unit * Mathf.Max(0.1f, shooterAimSpeed) * dt;
         s.aim.x = Mathf.Clamp(s.aim.x, -pv.x * 0.47f, pv.x * 0.47f);
@@ -217,7 +298,7 @@ public partial class TwoPlayerShop2D
 
         // A を押している = 顔を出す(撃たれて動けないあいだは、かくれたまま)
         s.stun = Mathf.Max(0f, s.stun - dt);
-        s.peek = playing && s.stun <= 0f && ShootHeld(s.index);
+        s.peek = canAim && s.stun <= 0f && ShootHeld(s.index);
         s.coverK = Mathf.MoveTowards(s.coverK, s.peek ? 0f : 1f, dt * 7f);
 
         // 撃つ / リロード
@@ -226,7 +307,7 @@ public partial class TwoPlayerShop2D
         if (s.peek)
         {
             s.reload = 0f;
-            if (s.ammo > 0 && s.fireCool <= 0f && s.coverK < 0.3f)
+            if (playing && s.ammo > 0 && s.fireCool <= 0f && s.coverK < 0.3f)
             {
                 s.fireCool = Mathf.Max(0.03f, shooterFireRate);
                 s.ammo--;
@@ -279,13 +360,15 @@ public partial class TwoPlayerShop2D
         StepGlitch(s.glitch, s.damage, Time.time);
         s.glitch.root.position = ShooterOrigin;
 
-        if (shooterEnded) return;
+        if (!playing) return;
         string ammoBar = new string('|', s.ammo) + new string('.', maxAmmo - s.ammo);
         s.state.text = s.stun > 0f ? "やられた！"
-                     : s.peek ? (s.ammo > 0 ? ammoBar : "弾切れ！ A を離してかくれる")
+                     : s.peek ? (s.ammo > 0 ? ammoBar : "弾切れ！ Aを離してかくれる")
                      : s.ammo < maxAmmo ? $"リロード中… {Mathf.RoundToInt(100f * s.reload / Mathf.Max(0.1f, shooterReloadTime))}%"
-                     : "A を押すと 顔を出して撃つ";
+                     : "Aを押すと 顔を出して撃つ";
         s.state.color = s.stun > 0f ? new Color(1f, 0.3f, 0.3f) : s.peek ? new Color(0.3f, 1f, 1f) : Color.white;
+        Fit(s.state, pv.x * 0.9f, pv.y * 0.1f, unit / 22f);
+        s.state.transform.position = ShooterOrigin + new Vector3(0f, -pv.y * 0.42f, -2f);
     }
 
     bool ShootHeld(int i)
@@ -448,8 +531,9 @@ public partial class TwoPlayerShop2D
             foreach (var t in s.targets) t.leaving = true;
             s.state.text = mine > other ? "WIN!" : mine < other ? "LOSE…" : "DRAW";
             s.state.color = mine > other ? new Color(1f, 0.85f, 0.2f) : mine < other ? new Color(0.6f, 0.6f, 0.8f) : Color.white;
-            SetTextSize(s.state, PlayerViewSize().x / 18f);
-            s.state.transform.position = ShooterOrigin + new Vector3(0f, PlayerViewSize().y * 0.1f, -2f);
+            Vector2 pv = PlayerViewSize();
+            Fit(s.state, pv.x * 0.8f, pv.y * 0.3f, Mathf.Min(pv.x, pv.y) / 6f);
+            s.state.transform.position = ShooterOrigin + new Vector3(0f, pv.y * 0.1f, -2f);
             s.state.GetComponent<MeshRenderer>().sortingOrder = 480;
         }
         shCenter.text = a > b ? $"{p1.name} の勝ち！" : a < b ? $"{p2.name} の勝ち！" : "引き分け！";
@@ -458,21 +542,52 @@ public partial class TwoPlayerShop2D
 
     void RefreshShooterShop()
     {
-        Vector2 sv = ShopViewSize();
-        int sec = Mathf.CeilToInt(shooterLeft);
-        shTimer.text = shooterEnded ? "TIME UP" : $"{sec / 60}:{sec % 60:00}";
-        shTimer.color = shooterEnded || shooterLeft > 10f ? new Color(0.3f, 1f, 1f) : new Color(1f, 0.35f, 0.3f);
         int maxAmmo = Mathf.Max(1, shooterAmmo);
+        if (shooterOn)
+        {
+            int sec = Mathf.CeilToInt(shooterLeft);
+            shTimer.text = shooterEnded ? "TIME UP" : $"{sec / 60}:{sec % 60:00}";
+            shTimer.color = shooterEnded || shooterLeft > 10f ? new Color(0.3f, 1f, 1f) : new Color(1f, 0.35f, 0.3f);
+        }
         for (int i = 0; i < 2; i++)
         {
             var s = shooters[i];
             shScore[i].text = $"{s.p.name}\n{s.score}";
-            shInfo[i].text = shooterEnded ? "" : s.stun > 0f ? "やられた！" : s.peek ? $"撃っている  弾 {s.ammo}/{maxAmmo}" : $"かくれている  弾 {s.ammo}/{maxAmmo}";
+            shInfo[i].text = !shooterOn ? (entryReady[i] ? "参加OK！" : "Aで参加")
+                           : shooterEnded ? ""
+                           : s.stun > 0f ? "やられた！"
+                           : (s.peek ? "撃っている" : "かくれている") + $"\n弾 {s.ammo}/{maxAmmo}";
         }
+        if (shooterEnded && Time.time - shooterEndTime >= Mathf.Max(0.5f, resultRestartDelay) && !shCenter.text.Contains("\n"))
+            shCenter.text += "\nAでもう一度";
+        LayoutShooterShop();
+    }
+
+    // 真ん中の画面の並び(上から: 名前 / 時間 / 1P・2P の点数 / 割合のバー / 勝ち負けなど)。文字は画面からはみ出さない大きさにする
+    void LayoutShooterShop()
+    {
+        if (shooters == null) return;
+        Vector2 sv = ShopViewSize();
+        float m = Mathf.Min(sv.x, sv.y);
+        void Put(TextMesh tm, float x, float y, float w, float h, float cap)
+        {
+            Fit(tm, w, h, cap);
+            tm.transform.position = ShooterOrigin + new Vector3(x, y, 0f);
+        }
+        Put(shTitle, 0f, sv.y * 0.39f, sv.x * 0.9f, sv.y * 0.1f, m / 12f);
+        Put(shTimer, 0f, sv.y * 0.24f, sv.x * 0.7f, sv.y * 0.16f, m / 5f);
+        for (int i = 0; i < 2; i++)
+        {
+            float x = (i == 0 ? -1f : 1f) * sv.x * 0.25f;
+            Put(shScore[i], x, sv.y * 0.04f, sv.x * 0.44f, sv.y * 0.2f, m / 8f);
+            Put(shInfo[i], x, -sv.y * 0.12f, sv.x * 0.44f, sv.y * 0.1f, m / 22f);
+        }
+        Put(shCenter, 0f, -sv.y * 0.36f, sv.x * 0.9f, sv.y * 0.16f, m / 10f);
+
         // 点数の割合のバー(左 1P / 右 2P)
         float total = shooters[0].score + shooters[1].score;
         float share = total > 0f ? shooters[0].score / total : 0.5f;
-        float w = sv.x * 0.8f, h = sv.y * 0.035f, y = -sv.y * 0.26f;
+        float w = sv.x * 0.85f, h = sv.y * 0.03f, y = -sv.y * 0.23f;
         Vector2 qs = GetSquareSprite().bounds.size;
         shBarBack.transform.localScale = new Vector3((w + h * 0.4f) / qs.x, h * 1.4f / qs.y, 1f);
         shBarBack.transform.position = ShooterOrigin + new Vector3(0f, y, 0f);
@@ -481,8 +596,6 @@ public partial class TwoPlayerShop2D
         shBar1.transform.position = ShooterOrigin + new Vector3(-w / 2f + w1 / 2f, y, 0f);
         shBar2.transform.localScale = new Vector3(Mathf.Max(0.0001f, w2) / qs.x, h / qs.y, 1f);
         shBar2.transform.position = ShooterOrigin + new Vector3(w / 2f - w2 / 2f, y, 0f);
-        if (shooterEnded && Time.time - shooterEndTime >= Mathf.Max(0.5f, resultRestartDelay) && !shCenter.text.Contains("\n"))
-            shCenter.text += "\nA でもう一度";
     }
 
     // ---------- 浮かんで消える文字 ----------
@@ -492,6 +605,8 @@ public partial class TwoPlayerShop2D
         if (shooterRoot == null) return;
         var tm = MakeText("Pop", shooterRoot, layer, text, color, 490);
         tm.fontStyle = FontStyle.Bold;
+        Vector2 v = layer == layerShop ? ShopViewSize() : PlayerViewSize();
+        size = Mathf.Min(size, FitSize(text, v.x * 0.9f, v.y * 0.5f, size));
         SetTextSize(tm, size);
         tm.transform.position = ShooterOrigin + new Vector3(pos.x, pos.y, -2f);
         shPops.Add(new ShPop { tm = tm, life = Mathf.Max(0.05f, life), vel = new Vector3(0f, size * 6f, 0f) });
@@ -520,12 +635,13 @@ public partial class TwoPlayerShop2D
 
     void UpdateShooterCameras()
     {
-        if (!shooterOn || shooters == null || switcher == null || switcher.screens == null) return;
+        if (shooterRoot == null || shooters == null || switcher == null || switcher.screens == null) return;
         foreach (var s in shooters)
         {
             if (s.p.screen < 0 || s.p.screen >= switcher.screens.Length) continue;
             var cam = switcher.screens[s.p.screen].camera;
             if (cam == null) continue;
+            if (!shCamBase.ContainsKey(s.p.screen)) shCamBase[s.p.screen] = cam.transform.position;
             Vector2 pv = PlayerViewSize();
             float amp = Mathf.Min(pv.x, pv.y) * 0.02f * s.shake;
             Vector3 shake = new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f) * amp;
