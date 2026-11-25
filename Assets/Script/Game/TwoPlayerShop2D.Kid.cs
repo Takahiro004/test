@@ -101,6 +101,7 @@ public partial class TwoPlayerShop2D
     }
 
     ProductInfo kidCarry;   // 頭の上に持っている商品
+    float kidCarryAngle;    // その商品の向き(棚に置かれていた角度のまま。袋に入れるときもこの向き)
     float kidX;             // 棚の画面で、商品を取った所(KidGetFromShelf)
 
     // 棚の画面で商品を取る: 並んでいる商品からランダムに選んでその所まで歩き、取る。
@@ -169,9 +170,14 @@ public partial class TwoPlayerShop2D
         if (kidTarget != null && infoOf.TryGetValue(kidTarget, out var info))
         {
             kidCarry = info;
+            kidCarryAngle = kidTarget.transform.eulerAngles.z;   // 棚に置かれていた角度を保つ
             TakeFromShelf(kidTarget);
         }
-        else kidCarry = RandomProduct();
+        else
+        {
+            kidCarry = RandomProduct();
+            kidCarryAngle = Random.Range(-1f, 1f) * shelfMessyAngleMax;   // 棚の商品と同じく、ばらばらの向き
+        }
         kidTarget = null;
         carried.sprite = ProductIconSprite(kidCarry);
         carried.enabled = carried.sprite != null;
@@ -190,7 +196,7 @@ public partial class TwoPlayerShop2D
     // 持っている商品を、p の袋の、子どもの真下へ落とす
     void KidDrop(Player p, SpriteRenderer carried)
     {
-        if (kidCarry != null) DropRandomProduct(p, kidCarry, carried.transform.position.x);
+        if (kidCarry != null) DropRandomProduct(p, kidCarry, carried.transform.position.x, kidCarryAngle);
         kidCarry = null;
         carried.enabled = false;
     }
@@ -274,6 +280,7 @@ public partial class TwoPlayerShop2D
             float cs = h * 0.45f / Mathf.Max(0.01f, Mathf.Max(carried.sprite.bounds.size.x, carried.sprite.bounds.size.y));
             carried.transform.localScale = new Vector3(cs, cs, 1f);
             carried.transform.position = new Vector3(x, y + bob + h * 0.65f, 0f);
+            carried.transform.rotation = Quaternion.Euler(0f, 0f, kidCarryAngle);   // 棚に置かれていた角度のまま持つ
         }
     }
 
@@ -305,7 +312,7 @@ public partial class TwoPlayerShop2D
     }
 
     // p の袋の上(横の位置 x)から、商品を1つ落とす(info が null ならランダム)。ふつうに落とした商品と同じ扱い(袋に入ったら数える)
-    void DropRandomProduct(Player p, ProductInfo info, float x)
+    void DropRandomProduct(Player p, ProductInfo info, float x, float angle = 0f)
     {
         if (p == null || p.bag == null) return;
         if (info == null) info = RandomProduct();
@@ -315,6 +322,7 @@ public partial class TwoPlayerShop2D
                                     : MakeSprite(info.name, pos, info.shape, RankColor(info.rank), p.layer, info.sprite);
         float scale = info.model != null ? info.modelSize : info.size;
         if (scale > 0f) go.transform.localScale *= scale;
+        go.transform.rotation = Quaternion.Euler(0f, 0f, angle);   // 子どもが持っていた向き
         SetLayer(go, p.layer);
         RegisterProduct(go);
         priceOf[go] = info.price;
