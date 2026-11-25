@@ -1538,7 +1538,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.linearVelocity = Vector2.zero;
         rb.angularVelocity = 0f;
-        go.transform.rotation = Quaternion.identity;
+        // 向きは棚に置かれていたまま(乱雑に置いた角度を保つ。2026-11-26 プログラマー)
 
         // 棚から取ったので、その場所に補充する(1回だけ)
         // (補充しないときも、棚の商品の一覧からは外す。並べ直しで棚へ戻されないように)
