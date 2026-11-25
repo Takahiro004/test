@@ -762,6 +762,8 @@ MonoBehaviour:
   layerP2: 10
   horizontalOnlyOnOwnScreen: 1
   rotateHeldProduct: 1
+  rotateHoldContinuous: 1
+  rotateHoldSpeed: 120
   showRotateHint: 1
   autoFitPlayerScreens: 1
   showOwnScreenFrame: 1
@@ -873,13 +875,15 @@ MonoBehaviour:
   portraitTopSpace: 0.2
   shopCameraAngle: {x: 0, y: 0, z: 0}
   shopOrientation: 1
-  portraitColumns: 2
+  portraitColumns: 3
   portraitRows: 3
   landscapeColumns: 3
   landscapeRows: 2
   refillDelay: 5
   shelfSlideInterval: 7
   shelfSlideTime: 2
+  shelfScrollContinuous: 1
+  shelfScrollSectionTime: 12
   rankWeights:
   - 1
   - 0.8
@@ -1014,6 +1018,7 @@ MonoBehaviour:
   shooterHitPenalty: 50
   shooterStunTime: 0.8
   shooterSound: 1
+  shooterMouse: 1
   shooterVolume: 0.6
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
@@ -1022,8 +1027,10 @@ MonoBehaviour:
   shelfModel: {fileID: 3957513940156799647, guid: 30a0d63d43a2f1a4480ad429d37c50f2, type: 3}
   shelfModelOffset: {x: 0, y: -0.15, z: 0}
   shelfModelRotation: {x: -5, y: 0, z: 0}
-  shelfModelScale: {x: 1.37, y: 1, z: 1}
+  shelfModelScale: {x: 1.5, y: 1, z: 1}
   shelfProductOffset: {x: 0, y: 0}
+  shelfMessyAngleMax: 180
+  shelfMessySpread: 1
   shelfRowOffsets:
   - {x: 0, y: -0.2}
   - {x: 0, y: 0}
@@ -1923,6 +1930,7 @@ MonoBehaviour:
     - "\u3076\u308D\u3063\u3053\u308A\u30FC"
     - "\u304A\u308A\u30FC\u3076\u304A\u3044\u308B"
     - "\u3070\u305F\u30FC"
+  menuIngredientCount: 3
   menuFixedIndex: -1
   menuPanelLayout: 1
   menuBandHeight: 0.11
