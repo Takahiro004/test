@@ -634,9 +634,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 shelfProductOffset = Vector2.zero;
     [Tooltip("棚の商品を乱雑に置く: 傾ける角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。0 でまっすぐ)")]
-    public float shelfMessyAngle = 20f;
+    public float shelfMessyTilt = 40f;
     [Tooltip("棚の商品を乱雑に置く: 横にずらす最大(1マスの幅に対する割合。0 でずらさない)")]
-    [Range(0f, 0.3f)] public float shelfMessyOffset = 0.12f;
+    [Range(0f, 0.5f)] public float shelfMessyShift = 0.25f;
+    [Tooltip("棚の商品を乱雑に置く: 横に倒れて置かれる割合(0〜1。0.25 なら4つに1つくらい。倒れた商品も少し傾く)")]
+    [Range(0f, 1f)] public float shelfMessyFallChance = 0.25f;
     [Tooltip("棚の商品(と値札)を、段ごとにずらす。Element 0 が一番上の段、1 がその下…(X=右・Y=上)。Shelf Product Offset に足す。段の数だけ要素を増やす。再生中に変えてもすぐ反映")]
     public Vector2[] shelfRowOffsets = new Vector2[0];
 

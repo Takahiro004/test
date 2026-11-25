@@ -98,8 +98,9 @@ public partial class TwoPlayerShop2D
         // 乱雑に置く: 商品ごとに決まった傾きと横のずれ(商品の番号から決めるので、毎フレーム置き直しても変わらない。
         // 補充で新しく置いた商品は、また別の傾き)。掴むと向きはまっすぐに戻る
         int id = go.GetInstanceID();
-        float tilt = (Hash01(id, 1) * 2f - 1f) * shelfMessyAngle;
-        float shiftX = (Hash01(id, 2) * 2f - 1f) * shelfMessyOffset * ShelfArea().width / ShelfColumns;
+        float tilt = (Hash01(id, 1) * 2f - 1f) * shelfMessyTilt;
+        if (Hash01(id, 3) < shelfMessyFallChance) tilt = (Hash01(id, 4) < 0.5f ? 90f : -90f) + tilt * 0.4f;   // 横に倒れている
+        float shiftX = (Hash01(id, 2) * 2f - 1f) * shelfMessyShift * ShelfArea().width / ShelfColumns;
         go.transform.rotation = Quaternion.Euler(0f, 0f, tilt);
         go.transform.position = (Vector3)slot.pos + new Vector3(shiftX, 0f, 0f);
         if (!showShelf) return;
