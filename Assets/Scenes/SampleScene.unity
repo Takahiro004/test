@@ -1836,7 +1836,7 @@ MonoBehaviour:
   deskVisualOffset: {x: 0, y: 2, z: 0}
   deskCoverZoom: 1
   deskCoverMargin: 1.2
-  deskHitVisible: 1
+  deskHitVisible: 0
   deskHitColor: {r: 1, g: 0.86453676, b: 0, a: 1}
   deskHitSize: {x: 5, y: 0}
   deskHitOffset: {x: 0, y: 1.95}
@@ -1847,7 +1847,7 @@ MonoBehaviour:
   bagHitSize: {x: 0.16, y: -1.5}
   bagHitOffset: {x: 0, y: -0.1}
   bagHitFollowLook: 1
-  bagFrameVisible: 1
+  bagFrameVisible: 0
   bagFrameColor: {r: 0, g: 1, b: 0.08852029, a: 1}
   pricePopupTime: 1
   removeAfterStopTime: 0.5
@@ -1997,7 +1997,7 @@ MonoBehaviour:
   bagLiftHoldTime: 3
   bagLiftCameraFollow: 1
   bagLiftCameraZoom: 1.5
-  bagMaxWeight: 57
+  bagMaxWeight: 39
   bagTearDelay: 2
   bagTearScatter: 1.5
   bagCreakStart: 0.7
