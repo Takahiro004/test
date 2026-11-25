@@ -14,6 +14,8 @@ using UnityEngine.SceneManagement;
 //    かくれていれば「ガード」
 //  - 的に当てると +10、こわすと +100。時間切れで点数の多いほうの勝ち。A でもう一度(シーンを読み込み直す)
 //  - キーボード予備: 1P WASD + Space / 2P 矢印 + Enter
+//  - マウス(shooterMouse): マウスがのっている 1P/2P の画面の照準が、マウスの場所に動く。左クリックを押しているあいだ撃つ
+//    (エントリー画面では、左クリックでその画面のプレイヤーが参加 / 右クリックで取り消し。終わったあとは左クリックでもう一度)
 // 仕組み: 詰め放題バトルの物はそのまま止めておき、3つのカメラを遠く(ShooterOrigin)へ動かして、そこに作った射撃場を映す。
 // シーンは書き換えない(全部スクリプトで作る)。
 // エントリー画面も、サイバーパンク風なら射撃場の上に出す(UpdateShooterEntry。照準を動かす・A で顔を出す練習ができる)。
@@ -97,6 +99,13 @@ public partial class TwoPlayerShop2D
         if (shooterRoot == null) return;
 
         float dt = Time.deltaTime;
+        UpdateShooterMouse();
+        if (entryPhase == 1 && shMouseOwner >= 0)   // マウス: 左クリックで参加 / 右クリックで取り消し
+        {
+            var m = Mouse.current;
+            if (m.leftButton.wasPressedThisFrame) entryReady[shMouseOwner] = true;
+            if (m.rightButton.wasPressedThisFrame) entryReady[shMouseOwner] = false;
+        }
         foreach (var s in shooters) StepShooter(s, dt);   // 照準を動かす・A で顔を出すのは練習できる(的は出ない)
         StepShPops(dt);
         RefreshShooterShop();
@@ -105,7 +114,7 @@ public partial class TwoPlayerShop2D
         for (int i = 0; i < 2; i++)
         {
             var s = shooters[i];
-            s.state.text = entryPhase == 2 ? "" : entryReady[i] ? $"{s.p.name}  参加OK！\n(Bで取り消し)" : $"{s.p.name}\nAで参加";
+            s.state.text = entryPhase == 2 ? "" : entryReady[i] ? $"{s.p.name}  参加OK！\n(Bで取り消し)" : (shooterMouse ? $"{s.p.name}\nAで参加(クリックでも)" : $"{s.p.name}\nAで参加");
             s.state.color = entryReady[i] ? s.p.color : Color.white;
             SetTextSize(s.state, FitSize(s.state.text, pv.x * 0.85f, pv.y * 0.2f, Mathf.Min(pv.x, pv.y) / 14f));
             s.state.transform.position = ShooterOrigin + new Vector3(0f, -pv.y * 0.32f, -2f);
@@ -137,6 +146,52 @@ public partial class TwoPlayerShop2D
                 if (kv.Key >= 0 && kv.Key < switcher.screens.Length && switcher.screens[kv.Key].camera != null)
                     switcher.screens[kv.Key].camera.transform.position = kv.Value;
         shCamBase.Clear();
+    }
+
+    // ---------- マウス ----------
+
+    int shMouseOwner = -1;      // マウスがのっている画面のプレイヤー(0 = 1P / 1 = 2P / -1 = どちらでもない)
+    Vector2 shMouseAim;         // マウスの場所(射撃場の中の位置)
+    bool shMouseAimNow;         // このフレーム、マウスで照準を動かすか(動かした・クリックした)
+    Vector2 shLastMouse;
+
+    void UpdateShooterMouse()
+    {
+        shMouseAimNow = false;
+        var m = Mouse.current;
+        if (!shooterMouse || m == null || shooters == null || switcher == null || switcher.screens == null)
+        {
+            shMouseOwner = -1;
+            return;
+        }
+        Vector2 raw = m.position.ReadValue();
+        bool moved = (raw - shLastMouse).sqrMagnitude > 0.01f;
+        shLastMouse = raw;
+        // モニターが複数のとき: どのモニターの、どこにあるか(対応していない環境では 0 が返るので、そのまま使う)
+        Vector3 rel = Display.RelativeMouseAt(new Vector3(raw.x, raw.y, 0f));
+        int display = -1;
+        Vector2 pos = raw;
+        if (rel != Vector3.zero) { display = (int)rel.z; pos = rel; }
+
+        int owner = -1;
+        Vector3 world = Vector3.zero;
+        foreach (var s in shooters)
+        {
+            if (s.p.screen < 0 || s.p.screen >= switcher.screens.Length) continue;
+            var cam = switcher.screens[s.p.screen].camera;
+            if (cam == null || !cam.enabled) continue;
+            if (display >= 0 && cam.targetDisplay != display) continue;
+            if (!cam.pixelRect.Contains(pos)) continue;
+            owner = s.index;
+            world = cam.ScreenToWorldPoint(new Vector3(pos.x, pos.y, Mathf.Abs(cam.transform.position.z)));
+            break;
+        }
+        // 押したまま画面の外へ出ても、撃っている画面はそのまま
+        if (m.leftButton.isPressed && !m.leftButton.wasPressedThisFrame && shMouseOwner >= 0 && owner != shMouseOwner) return;
+        shMouseOwner = owner;
+        if (owner < 0) return;
+        shMouseAim = (Vector2)(world - ShooterOrigin);
+        shMouseAimNow = moved || m.leftButton.wasPressedThisFrame;
     }
 
     readonly Dictionary<int, Vector3> shCamBase = new Dictionary<int, Vector3>();   // 動かす前の 1P/2P のカメラの位置
@@ -269,6 +324,7 @@ public partial class TwoPlayerShop2D
     {
         if (shooters == null) return;
         float dt = Time.deltaTime;
+        UpdateShooterMouse();
         if (!shooterEnded)
         {
             shooterLeft = Mathf.Max(0f, shooterLeft - dt);
@@ -278,7 +334,8 @@ public partial class TwoPlayerShop2D
         StepShPops(dt);
         RefreshShooterShop();
 
-        if (shooterEnded && Time.time - shooterEndTime >= Mathf.Max(0.5f, resultRestartDelay) && AnyAPressed())
+        if (shooterEnded && Time.time - shooterEndTime >= Mathf.Max(0.5f, resultRestartDelay) &&
+            (AnyAPressed() || (shooterMouse && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)))
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -293,6 +350,7 @@ public partial class TwoPlayerShop2D
         Vector2 move = canAim ? (s.index == 0 ? GetMove1P() : GetMove2P()) : Vector2.zero;
         if (move.magnitude > 1f) move.Normalize();
         s.aim += move * unit * Mathf.Max(0.1f, shooterAimSpeed) * dt;
+        if (canAim && shMouseOwner == s.index && shMouseAimNow) s.aim = shMouseAim;   // マウスがこの画面にあって動いた
         s.aim.x = Mathf.Clamp(s.aim.x, -pv.x * 0.47f, pv.x * 0.47f);
         s.aim.y = Mathf.Clamp(s.aim.y, -pv.y * 0.3f, pv.y * 0.45f);
 
@@ -375,6 +433,7 @@ public partial class TwoPlayerShop2D
     {
         var pad = PadOf(i);
         if (pad != null && pad.buttonSouth.isPressed) return true;
+        if (shMouseOwner == i && Mouse.current != null && Mouse.current.leftButton.isPressed) return true;   // マウスの左クリック
         var k = Kb;
         if (k == null) return false;
         return i == 0 ? k.spaceKey.isPressed : (k.enterKey.isPressed || k.numpadEnterKey.isPressed);

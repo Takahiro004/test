@@ -602,6 +602,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float shooterStunTime = 0.8f;
     [Tooltip("射撃の音(スクリプトで作る短い音)を鳴らす")]
     public bool shooterSound = true;
+    [Tooltip("マウスでも遊べる(マウスがのっている画面の照準がマウスの場所へ。左クリックで撃つ。エントリー画面では左クリックで参加)")]
+    public bool shooterMouse = true;
     [Range(0f, 1f)] public float shooterVolume = 0.6f;
 
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
