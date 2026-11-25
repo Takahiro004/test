@@ -230,7 +230,12 @@ public partial class TwoPlayerShop2D
             bool hasImage = panel.iconNames[k] == null;
             if (hasImage)
             {
+                // 絵のまわりの透明な余白を除いた、見えている所の大きさで合わせる(余白の多い絵が小さく見えないように)。
+                // 見えている所の真ん中を、枠の真ん中に置く。縦横の長いほうが iconSize なので、枠からははみ出さない
+                var vis = VisibleBounds(sr.sprite);
+                fit = iconSize / Mathf.Max(0.01f, Mathf.Max(vis.size.x, vis.size.y));
                 sr.transform.localScale = new Vector3(fit, fit, 1f);
+                sr.transform.localPosition -= new Vector3(vis.center.x * fit, vis.center.y * fit, 0f);
                 sr.sharedMaterial = got ? spriteMaterial : panel.silhouettes[k];
                 sr.color = got ? Color.white : shadow;
             }
@@ -310,6 +315,35 @@ public partial class TwoPlayerShop2D
             want = Mathf.Min(want, maxWidth / perSize);
         }
         tm.characterSize = want;
+    }
+
+    // 絵の、見えている所(透明でない所)の範囲(絵の中の位置。ピボットが 0)。絵ごとに1回だけ数える。読めなければ絵の全体
+    readonly Dictionary<Sprite, Bounds> visibleBoundsCache = new Dictionary<Sprite, Bounds>();
+
+    Bounds VisibleBounds(Sprite sprite)
+    {
+        if (visibleBoundsCache.TryGetValue(sprite, out var cached)) return cached;
+        Bounds result = sprite.bounds;
+        try
+        {
+            var px = ReadSpritePixels(sprite, 128, out int w, out int h, out float scale);   // TwoPlayerShop2D.Aura.cs
+            int minX = w, minY = h, maxX = -1, maxY = -1;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (px[y * w + x].a > 25) { minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x); minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y); }
+            if (maxX >= 0)
+            {
+                // 間引いたピクセル → 元の絵のピクセル → 絵の中の長さ(ピボットからの位置)
+                float ppu = sprite.pixelsPerUnit;
+                Vector2 pivot = sprite.pivot;
+                Vector2 min = new Vector2(minX / scale - pivot.x, minY / scale - pivot.y) / ppu;
+                Vector2 max = new Vector2((maxX + 1) / scale - pivot.x, (maxY + 1) / scale - pivot.y) / ppu;
+                result = new Bounds((min + max) / 2f, max - min);
+            }
+        }
+        catch (System.Exception) { }
+        visibleBoundsCache[sprite] = result;
+        return result;
     }
 
     MenuPanel BuildMenuPanel(Player p)
