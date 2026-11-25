@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // 棚の画面(画面2)の棚(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「棚の段と列・棚の見た目」)
@@ -93,18 +94,54 @@ public partial class TwoPlayerShop2D
     }
 
     // 棚に置いてある商品を、その場所へ動かす(棚を出すときは、商品の一番下を板の上に合わせる)
+    // 乱雑に置く: 商品ごとの向きと横のずれ(初めて置くときに1回だけ決めて覚える。毎フレーム置き直しても変わらない。
+    // 補充で新しく置いた商品は、また別の向き)。向きは、その向きの幅が1マスに入るものを選ぶので、隣の商品と重ならない。
+    // 横の位置も、1マスの中の空いている所だけで動かす(列にそろって見えないように)。掴むと向きはまっすぐに戻る
+    class ShelfPose { public float angle, dx, cellW; }
+    readonly Dictionary<GameObject, ShelfPose> shelfPoses = new Dictionary<GameObject, ShelfPose>();
+
     void PutOnShelf(GameObject go, ShelfSlot slot)
     {
-        // 乱雑に置く: 商品ごとに決まった傾きと横のずれ(商品の番号から決めるので、毎フレーム置き直しても変わらない。
-        // 補充で新しく置いた商品は、また別の傾き)。掴むと向きはまっすぐに戻る
-        int id = go.GetInstanceID();
-        float tilt = (Hash01(id, 1) * 2f - 1f) * shelfMessyTilt;
-        if (Hash01(id, 3) < shelfMessyFallChance) tilt = (Hash01(id, 4) < 0.5f ? 90f : -90f) + tilt * 0.4f;   // 横に倒れている
-        float shiftX = (Hash01(id, 2) * 2f - 1f) * shelfMessyShift * ShelfArea().width / ShelfColumns;
-        go.transform.rotation = Quaternion.Euler(0f, 0f, tilt);
-        go.transform.position = (Vector3)slot.pos + new Vector3(shiftX, 0f, 0f);
+        float cellW = ShelfArea().width / ShelfColumns;
+        if (!shelfPoses.TryGetValue(go, out var pose) || Mathf.Abs(pose.cellW - cellW) > 0.001f)
+        {
+            if (shelfPoses.Count > 300) CleanShelfPoses();
+            pose = ChooseShelfPose(go, slot, cellW);
+            shelfPoses[go] = pose;
+        }
+        go.transform.rotation = Quaternion.Euler(0f, 0f, pose.angle);
+        go.transform.position = (Vector3)slot.pos + new Vector3(pose.dx, 0f, 0f);
         if (!showShelf) return;
         go.transform.position += new Vector3(0f, slot.pos.y - LowestY(go), 0f);
+    }
+
+    // 商品の向きと横のずれを決める(何回か向きを試して、幅が1マスに入る向きにする)
+    ShelfPose ChooseShelfPose(GameObject go, ShelfSlot slot, float cellW)
+    {
+        int id = go.GetInstanceID();
+        float room = cellW * 0.96f;   // 隣とのあいだに少しだけすき間
+        float bestAngle = 0f, bestW = float.MaxValue, bestC = 0f;
+        const int tries = 16;
+        for (int t = 0; t < tries; t++)
+        {
+            float angle = (Hash01(id, 10 + t) * 2f - 1f) * shelfMessyAngleMax;
+            go.transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            go.transform.position = slot.pos;
+            if (!ShapeRect(go, out Rect r)) { bestAngle = angle; bestW = 0f; bestC = 0f; break; }
+            if (r.width < bestW) { bestAngle = angle; bestW = r.width; bestC = r.center.x - slot.pos.x; }
+            if (r.width <= room) break;   // 1マスに入る向きが見つかった
+        }
+        float free = Mathf.Max(0f, room - bestW);
+        float jitter = (Hash01(id, 2) * 2f - 1f) * free / 2f * Mathf.Clamp01(shelfMessySpread);
+        return new ShelfPose { angle = bestAngle, dx = jitter - bestC, cellW = cellW };
+    }
+
+    // 消えた商品の向きを忘れる
+    void CleanShelfPoses()
+    {
+        var dead = new List<GameObject>();
+        foreach (var kv in shelfPoses) if (kv.Key == null || !slotOf.ContainsKey(kv.Key)) dead.Add(kv.Key);
+        foreach (var k in dead) shelfPoses.Remove(k);
     }
 
     // 0〜1 の決まった乱数(同じ id と salt なら同じ値)
