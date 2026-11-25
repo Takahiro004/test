@@ -370,6 +370,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public float shelfSlideInterval = 8f;
     [Tooltip("棚がスライドする動きの秒数")]
     public float shelfSlideTime = 1f;
+    [Tooltip("ON: 棚を止めずに、ずっと同じ速さでゆっくり流す(区切りなし。流れている間も取れる) / OFF: 前のように Shelf Slide Interval 秒ごとに棚1つぶんスライド")]
+    public bool shelfScrollContinuous = true;
+    [Tooltip("ずっと流すとき: 棚1つぶん流れるのにかかる秒数(大きいほどゆっくり)")]
+    public float shelfScrollSectionTime = 12f;
     [Tooltip("ランクごとの、試合の始めの出やすさ(ランダム補充のとき)。Element 0 = ランク1 〜 Element 4 = ランク5。大きいほど出やすい(2 なら 1 の2倍)。0 なら出ない")]
     public float[] rankWeights = { 1f, 0.8f, 0.5f, 0.25f, 0.1f };
     [Tooltip("ランクごとの、試合の終わりの出やすさ。始め(Rank Weights)から、試合の進み具合に合わせて少しずつこの値になる(終盤ほど高いランクが出やすい)")]
