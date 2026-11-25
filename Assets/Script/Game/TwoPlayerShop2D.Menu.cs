@@ -317,31 +317,24 @@ public partial class TwoPlayerShop2D
         tm.characterSize = want;
     }
 
-    // 絵の、見えている所(透明でない所)の範囲(絵の中の位置。ピボットが 0)。絵ごとに1回だけ数える。読めなければ絵の全体
+    // 絵の、見えている所(透明でない所)の範囲(絵の中の位置。ピボットが 0)。絵ごとに1回だけ数える。
+    // 絵の網目(sprite.vertices)を使う: 取り込みの Mesh Type が Tight(初め)なら、網目は見えている所をぴったり囲んでいる。
+    // (前はピクセルを読んでいたが、読めない設定の絵で透明な所が正しく読めず、位置・大きさがおかしくなった)
     readonly Dictionary<Sprite, Bounds> visibleBoundsCache = new Dictionary<Sprite, Bounds>();
 
     Bounds VisibleBounds(Sprite sprite)
     {
         if (visibleBoundsCache.TryGetValue(sprite, out var cached)) return cached;
         Bounds result = sprite.bounds;
-        try
+        var v = sprite.vertices;
+        if (v != null && v.Length > 0)
         {
-            var px = ReadSpritePixels(sprite, 128, out int w, out int h, out float scale);   // TwoPlayerShop2D.Aura.cs
-            int minX = w, minY = h, maxX = -1, maxY = -1;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    if (px[y * w + x].a > 25) { minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x); minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y); }
-            if (maxX >= 0)
-            {
-                // 間引いたピクセル → 元の絵のピクセル → 絵の中の長さ(ピボットからの位置)
-                float ppu = sprite.pixelsPerUnit;
-                Vector2 pivot = sprite.pivot;
-                Vector2 min = new Vector2(minX / scale - pivot.x, minY / scale - pivot.y) / ppu;
-                Vector2 max = new Vector2((maxX + 1) / scale - pivot.x, (maxY + 1) / scale - pivot.y) / ppu;
+            Vector2 min = v[0], max = v[0];
+            foreach (var p in v) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+            // 小さすぎる(読み違い)ときは、絵の全体のまま
+            if ((max - min).x > sprite.bounds.size.x * 0.05f && (max - min).y > sprite.bounds.size.y * 0.05f)
                 result = new Bounds((min + max) / 2f, max - min);
-            }
         }
-        catch (System.Exception) { }
         visibleBoundsCache[sprite] = result;
         return result;
     }
