@@ -734,9 +734,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("手前の袋の画像の位置のずらし。X=右・Y=上(画像だけ動く。当たり判定は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 bagFrontOffset = Vector2.zero;
 
-    [Header("献立ミッション(食材5品が全部袋に入ったら、それ以降の商品が倍)")]
+    [Header("献立ミッション(献立の食材が全部袋に入ったら、それ以降の商品が倍)")]
     [Tooltip("献立と食材(食材は商品の一覧の名前と同じにする)。1試合に、この中から1つだけ出る")]
     public MenuRecipe[] menuList = MenuRecipe.Defaults();
+    [Tooltip("献立に必要な食材の数。Menu List の食材の上から、この数だけ使う(0 なら全部)。どれを使うかは Menu List の並び順で決まる")]
+    public int menuIngredientCount = 3;
     [Tooltip("この試合の献立を決める(Menu List の番号。0始まり)。-1 ならランダム")]
     public int menuFixedIndex = -1;
     [Tooltip("袋の画面の献立を、下の帯(プレイヤーの色)・食材のアイコン・メモ用紙で出す。OFF なら前の文字だけの表示(Menu Label Position / Size)")]
