@@ -37,9 +37,9 @@ public partial class TwoPlayerShop2D
         // 形のオーラ(Silhouette)
         public bool haloBuilt;
         public Sprite halo;           // 商品の形の、ぼかした光の絵
-        public bool haloIsModel;      // 3Dモデルの商品(撮った絵の真ん中を haloCenter に置き、幅を haloWidth にする)
+        public bool haloIsModel;      // 3Dモデルの商品(撮った絵のピボットを haloCenter に置き、絵の長さ 1 を haloWidth にする)
         public Vector2 haloCenter;    // 商品の中の位置
-        public float haloWidth;
+        public float haloWidth;       // 3Dモデルの商品: 撮った絵の長さ 1 あたりのゲームの長さ
         public SpriteRenderer haloBase;                 // いつも出ている光
         public readonly List<SpriteRenderer> haloWaves = new List<SpriteRenderer>();   // 昇っていく光
     }
@@ -167,6 +167,32 @@ public partial class TwoPlayerShop2D
         if (r.gameObject.layer != layer) r.gameObject.layer = layer;
     }
 
+    // 撮った絵の中の、モデルが写っている所(透明でない所)の範囲(絵の中の長さ。ピボットが 0)。読めなければ絵の全体
+    readonly Dictionary<Sprite, Bounds> iconOpaqueCache = new Dictionary<Sprite, Bounds>();
+    Bounds IconOpaqueBounds(Sprite sprite)
+    {
+        if (iconOpaqueCache.TryGetValue(sprite, out var cached)) return cached;
+        Bounds result = sprite.bounds;
+        if (sprite.texture.isReadable)
+        {
+            var px = ReadSpritePixels(sprite, 256, out int w, out int h, out float scale);
+            int minX = w, minY = h, maxX = -1, maxY = -1;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (px[y * w + x].a > 40) { minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x); minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y); }
+            if (maxX >= 0)
+            {
+                float ppu = sprite.pixelsPerUnit;
+                Vector2 pivot = sprite.pivot;
+                Vector2 min = new Vector2(minX / scale - pivot.x, minY / scale - pivot.y) / ppu;
+                Vector2 max = new Vector2((maxX + 1) / scale - pivot.x, (maxY + 1) / scale - pivot.y) / ppu;
+                result = new Bounds((min + max) / 2f, max - min);
+            }
+        }
+        iconOpaqueCache[sprite] = result;
+        return result;
+    }
+
     // 光の形を作る: 3Dモデルの商品は撮った絵、画像の商品はその画像から
     readonly Dictionary<(Sprite, int), Sprite> haloCache = new Dictionary<(Sprite, int), Sprite>();
     const int HaloMaxSize = 128;   // 光の絵を作るときの、元の絵の縦横の長いほう(ピクセル)
@@ -190,10 +216,16 @@ public partial class TwoPlayerShop2D
                 if (!has) src = null;
                 else
                 {
+                    // 撮った絵の中で、モデルが写っている所(透明でない所)を、ゲームのモデルの見た目の範囲にぴったり重ねる。
+                    // (前は「撮った絵の真ん中 = モデルの真ん中」としていたが、カニのように撮った絵の中でモデルが真ん中からずれていると、
+                    //  光が下にずれた)
+                    var vis = IconOpaqueBounds(src);
+                    float unit = Mathf.Max(b.size.x, b.size.y) / Mathf.Max(0.0001f, Mathf.Max(vis.size.x, vis.size.y));   // 絵の長さ 1 = ゲームの長さ unit
+                    Vector3 center = new Vector3(b.center.x - vis.center.x * unit, b.center.y - vis.center.y * unit, go.transform.position.z);
                     l.haloIsModel = true;
-                    l.haloCenter = go.transform.InverseTransformPoint(new Vector3(b.center.x, b.center.y, go.transform.position.z));
-                    l.haloWidth = Mathf.Max(b.extents.x, b.extents.y) * 1.08f * 2f;   // 撮った絵の幅(ModelIconSprite と同じ)
-                    worldWidth = l.haloWidth;
+                    l.haloCenter = go.transform.InverseTransformPoint(center);
+                    l.haloWidth = unit;                                     // 光の絵の大きさ(絵の長さ 1 あたり)
+                    worldWidth = src.bounds.size.x * unit;
                 }
             }
         }
