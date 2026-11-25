@@ -429,6 +429,39 @@ public partial class TwoPlayerShop2D
         cam.transform.position = new Vector3(b.center.x, b.center.y, b.min.z - 10f);
         cam.transform.rotation = Quaternion.identity;
 
+        var tex = CaptureModelIcon(cam);
+        // 何も写っていなかったら(面が裏向きで消える絵など)、反対側(奥)から撮り直す。左右は鏡にして正面と同じ向きにする
+        if (CountOpaque(tex) == 0)
+        {
+            Destroy(tex);
+            cam.transform.position = new Vector3(b.center.x, b.center.y, b.max.z + 10f);
+            cam.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            tex = CaptureModelIcon(cam);
+            if (CountOpaque(tex) > 0) MirrorX(tex);
+        }
+        if (CountOpaque(tex) == 0)
+        {
+            Debug.LogWarning($"[Shop2D] {info.name} の3Dモデルを撮影したが何も写らなかったので、献立のアイコンは名前の札にする" +
+                             $"(範囲 {b.size}・レンダラー {renderers.Length}個: {string.Join(", ", System.Array.ConvertAll(renderers, r => $"{r.name}({r.GetType().Name}, 有効 {r.enabled})"))})");
+            model.SetActive(false);
+            Destroy(camGo);
+            Destroy(model);
+            Destroy(tex);
+            return null;
+        }
+        // 消すのはフレームの終わりなので、その前に見えなくしておく(同じフレームで次のモデルを撮ると、重なって写ってしまうため)
+        model.SetActive(false);
+        Destroy(camGo);
+        Destroy(model);
+
+        var sprite = Sprite.Create(tex, new Rect(0, 0, ModelIconSize, ModelIconSize), new Vector2(0.5f, 0.5f), ModelIconSize);
+        modelIcons[key] = sprite;
+        return sprite;
+    }
+
+    // カメラで撮って、読める画像にする(背景は透明)
+    static Texture2D CaptureModelIcon(Camera cam)
+    {
         var rt = RenderTexture.GetTemporary(ModelIconSize, ModelIconSize, 24, RenderTextureFormat.ARGB32);
         cam.targetTexture = rt;
         cam.Render();
@@ -440,14 +473,27 @@ public partial class TwoPlayerShop2D
         RenderTexture.active = prev;
         cam.targetTexture = null;
         RenderTexture.ReleaseTemporary(rt);
-        // 消すのはフレームの終わりなので、その前に見えなくしておく(同じフレームで次のモデルを撮ると、重なって写ってしまうため)
-        model.SetActive(false);
-        Destroy(camGo);
-        Destroy(model);
+        return tex;
+    }
 
-        var sprite = Sprite.Create(tex, new Rect(0, 0, ModelIconSize, ModelIconSize), new Vector2(0.5f, 0.5f), ModelIconSize);
-        modelIcons[key] = sprite;
-        return sprite;
+    // 透明でない所の点の数
+    static int CountOpaque(Texture2D tex)
+    {
+        int n = 0;
+        foreach (var c in tex.GetPixels32()) if (c.a > 10) n++;
+        return n;
+    }
+
+    // 左右を入れ替える
+    static void MirrorX(Texture2D tex)
+    {
+        int w = tex.width, h = tex.height;
+        var px = tex.GetPixels32();
+        var outPx = new Color32[px.Length];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++) outPx[y * w + x] = px[y * w + (w - 1 - x)];
+        tex.SetPixels32(outPx);
+        tex.Apply();
     }
 
     // 「○○完成！ これから1.2倍」を、その人の画面の真ん中に出す
