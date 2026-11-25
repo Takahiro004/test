@@ -45,13 +45,14 @@ public partial class TwoPlayerShop2D
             if (entryCountdownLeft <= 0f)
             {
                 entryPhase = 0;
-                StartCoroutine(EntryStartMessage());
-                if (TryStartShooter()) return false;   // サイバーパンク風なら射的ミニゲーム(TwoPlayerShop2D.Shooter.cs)   // 「スタート！」を少し出してから消す
+                StartCoroutine(EntryStartMessage());   // 「スタート！」を少し出してから消す
+                if (TryStartShooter()) return false;   // サイバーパンク風なら射的ミニゲーム(TwoPlayerShop2D.Shooter.cs)
                 lastEvent = "ゲーム開始！";
                 return false;
             }
         }
         RefreshEntryTexts();
+        UpdateShooterEntry();   // サイバーパンク風なら、射撃場の上にエントリー画面を出す(TwoPlayerShop2D.Shooter.cs)
         return true;
     }
 
