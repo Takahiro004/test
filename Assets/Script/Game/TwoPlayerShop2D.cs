@@ -551,6 +551,22 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("「ガサゴソ」の文字の大きさ(1 でふつう)")]
     public float grannyRustleTextSize = 1.6f;
 
+    [Header("サイバーパンク風(かくしコマンド。エントリー画面で数字キーを Cyber Code の順に打つと切り替わる)")]
+    [Tooltip("サイバーパンク風の見た目にする(再生中に変えるとすぐ切り替わる。かくしコマンドでも ON/OFF する)")]
+    public bool cyberTheme = false;
+    [Tooltip("かくしコマンド(エントリー画面で、この数字を順に打つ。上の列・テンキーどちらでも)")]
+    public string cyberCode = "2077";
+    [Tooltip("切り替わるときに、3つの画面に走るノイズの秒数")]
+    public float cyberGlitchTime = 1.5f;
+    [Tooltip("サイバーパンク風のときの、画面の背景の色")]
+    public Color cyberBackColor = new Color(0.04f, 0.02f, 0.09f);
+    [Tooltip("1P/2P の画面の奥の絵(空ならスクリプトで描いたネオンの街と光る床)")]
+    public Sprite cyberBackgroundSprite;
+    [Tooltip("3つの画面にうっすら出す走査線の濃さ(0 で出さない)")]
+    [Range(0f, 1f)] public float cyberScanAlpha = 0.25f;
+    [Tooltip("ときどき出る小さなノイズの出やすさ(1フレームあたり。0 で出さない)")]
+    [Range(0f, 0.3f)] public float cyberIdleGlitch = 0.03f;
+
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
     public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);

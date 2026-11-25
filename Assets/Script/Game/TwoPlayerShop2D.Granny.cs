@@ -262,6 +262,7 @@ public partial class TwoPlayerShop2D
     class GlitchFx
     {
         public Transform root;
+        public bool shop;   // 棚の画面のノイズ(大きさ・位置は棚の画面に合わせる)
         public SpriteRenderer snow, flash, scan;
         public SpriteRenderer[] blocks;
         public TextMesh[] words;
@@ -269,16 +270,19 @@ public partial class TwoPlayerShop2D
         public Color flashColor = Color.white;
     }
 
-    GlitchFx MakeGlitch(Player p)
+    GlitchFx MakeGlitch(Player p) => MakeGlitch(p.layer, false);
+
+    // layer の画面のノイズを作る(shop = 棚の画面)
+    GlitchFx MakeGlitch(int layer, bool shop)
     {
-        var g = new GlitchFx();
+        var g = new GlitchFx { shop = shop };
         g.root = new GameObject("GrannyNoise").transform;
-        SetLayer(g.root.gameObject, p.layer);
+        SetLayer(g.root.gameObject, layer);
         SpriteRenderer Part(string n, Sprite sp, int order)
         {
             var r = new GameObject(n).AddComponent<SpriteRenderer>();
             r.transform.SetParent(g.root, false);
-            r.gameObject.layer = p.layer;
+            r.gameObject.layer = layer;
             r.sprite = sp;
             r.sortingOrder = order;
             return r;
@@ -291,7 +295,7 @@ public partial class TwoPlayerShop2D
         g.words = new TextMesh[Mathf.Clamp(grannyHackTextCount, 0, 20)];
         for (int i = 0; i < g.words.Length; i++)
         {
-            g.words[i] = MakeText("HackText", g.root, p.layer, "", new Color(0.2f, 1f, 0.3f), 4504);
+            g.words[i] = MakeText("HackText", g.root, layer, "", new Color(0.2f, 1f, 0.3f), 4504);
             g.words[i].fontStyle = FontStyle.Bold;
         }
         return g;
@@ -300,8 +304,8 @@ public partial class TwoPlayerShop2D
     // ノイズを1フレームぶん動かす(power = 強さ 0〜1)
     void StepGlitch(GlitchFx g, float power, float t)
     {
-        Vector2 view = PlayerViewSize();
-        float cy = CameraFollowY;
+        Vector2 view = g.shop ? ShopViewSize() : PlayerViewSize();
+        float cy = g.shop ? 0f : CameraFollowY;
         var statics = GetStaticSprites();
         // 砂嵐: ときどき(grannyStaticChance)、ぱっと出る。強いときほど出やすい
         if (t >= g.nextFlash)
