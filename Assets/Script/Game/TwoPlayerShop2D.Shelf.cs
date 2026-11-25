@@ -96,7 +96,7 @@ public partial class TwoPlayerShop2D
     // 棚に置いてある商品を、その場所へ動かす(棚を出すときは、商品の一番下を板の上に合わせる)
     // 乱雑に置く: 商品ごとの向きと横のずれ(初めて置くときに1回だけ決めて覚える。毎フレーム置き直しても変わらない。
     // 補充で新しく置いた商品は、また別の向き)。向きは、その向きの幅が1マスに入るものを選ぶので、隣の商品と重ならない。
-    // 横の位置も、1マスの中の空いている所だけで動かす(列にそろって見えないように)。掴むと向きはまっすぐに戻る
+    // 横の位置も、1マスの中の空いている所だけで動かす(列にそろって見えないように)。掴んでも向きはそのまま
     class ShelfPose { public float angle, dx, cellW; }
     readonly Dictionary<GameObject, ShelfPose> shelfPoses = new Dictionary<GameObject, ShelfPose>();
 
