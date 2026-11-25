@@ -3,7 +3,7 @@ using UnityEngine;
 
 // 献立ミッション(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の「献立ミッション」と「機能のON/OFF」→ Menu Mission)
 // 1試合に献立は1つだけ。試合の始めに menuList からランダムに1つ選び(2人共通)、1P/2P それぞれの袋の画面に、献立名と食材を出す。
-// 袋に入っている食材は ●(緑)、まだのものは ○。食材5品が全部自分の袋に入ったら「○○完成！」。
+// 袋に入っている食材は ●(緑)、まだのものは ○。食材(menuIngredientCount 品。初めは3品)が全部自分の袋に入ったら「○○完成！」。
 // それ以降に袋に入れた商品の金額が menuBonusRate 倍(1.2倍)になる。
 //  - 食材は商品の一覧の「名前」で見る(献立の食材の名前と、一覧の名前を同じにする)
 //  - 完成は1人1回だけ。完成したあとに食材がこぼれても、倍率はそのまま
@@ -68,6 +68,9 @@ public partial class TwoPlayerShop2D
         if (menuList == null || menuList.Length == 0) return;
         int i = menuFixedIndex >= 0 && menuFixedIndex < menuList.Length ? menuFixedIndex : Random.Range(0, menuList.Length);
         currentMenu = menuList[i];
+        // 必要な食材の数(menuIngredientCount)だけにする。上から順に使う(Menu List そのものは変えない)
+        if (currentMenu != null && currentMenu.ingredients != null && menuIngredientCount > 0 && currentMenu.ingredients.Length > menuIngredientCount)
+            currentMenu = new MenuRecipe(currentMenu.name, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(currentMenu.ingredients, menuIngredientCount)));
         Debug.Log($"[Shop2D] この試合の献立: {currentMenu?.name}");
     }
 
