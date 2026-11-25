@@ -750,8 +750,8 @@ MonoBehaviour:
   bagX: 0
   bagWidth: 4
   bagHeight: 7.5
-  screenP1: 0
-  screenShop: 1
+  screenP1: 1
+  screenShop: 0
   screenP2: 2
   p1BackColor: {r: 0.45, g: 0.12, b: 0.12, a: 1}
   shopBackColor: {r: 0.12, g: 0.4, b: 0.15, a: 1}
@@ -990,6 +990,31 @@ MonoBehaviour:
   grannyRustleText: 1
   grannyRustleTextColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   grannyRustleTextSize: 1.6
+  cyberTheme: 0
+  cyberCode: 2077
+  cyberGlitchTime: 1.5
+  cyberBackColor: {r: 0.04, g: 0.02, b: 0.09, a: 1}
+  cyberBackgroundSprite: {fileID: 0}
+  cyberScanAlpha: 0.25
+  cyberIdleGlitch: 0.03
+  shooterMode: 1
+  shooterTitle: "\u30CD\u30AA\u30F3\u30FB\u30B7\u30E5\u30FC\u30C8\u30A2\u30A6\u30C8"
+  shooterTime: 60
+  shooterTargetSprite: {fileID: 0}
+  shooterTargetSize: 0.2
+  shooterMaxTargets: 4
+  shooterSpawnInterval: 1.2
+  shooterTargetHp: 4
+  shooterTargetLife: 7
+  shooterAimSpeed: 0.9
+  shooterAmmo: 20
+  shooterFireRate: 0.1
+  shooterReloadTime: 1
+  shooterAttackWarn: 1
+  shooterHitPenalty: 50
+  shooterStunTime: 0.8
+  shooterSound: 1
+  shooterVolume: 0.6
   shelfBackColor: {r: 0.35, g: 0.24, b: 0.15, a: 1}
   shelfBoardColor: {r: 0.62, g: 0.45, b: 0.28, a: 1}
   shelfBoardThickness: 0.25
