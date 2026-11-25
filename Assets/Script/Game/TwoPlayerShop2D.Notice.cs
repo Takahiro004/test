@@ -17,7 +17,7 @@ public partial class TwoPlayerShop2D
     // LateUpdate から毎フレーム(タイマーのあと)
     void UpdateHighRankNotice()
     {
-        if (highRankNotice && rankWeighting && UseDeck && !InEntry && timeLeft >= 0f && !IsTimeUp && gameTime > 0f)
+        if (highRankNotice && !shooterOn && rankWeighting && UseDeck && !InEntry && timeLeft >= 0f && !IsTimeUp && gameTime > 0f)
         {
             float elapsed = gameTime - timeLeft;   // 試合が始まってからの秒数
             for (int rank = Mathf.Clamp(highRankNoticeFrom, 1, 5); rank <= 5; rank++)

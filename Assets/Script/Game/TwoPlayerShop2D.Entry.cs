@@ -45,7 +45,8 @@ public partial class TwoPlayerShop2D
             if (entryCountdownLeft <= 0f)
             {
                 entryPhase = 0;
-                StartCoroutine(EntryStartMessage());   // 「スタート！」を少し出してから消す
+                StartCoroutine(EntryStartMessage());
+                if (TryStartShooter()) return false;   // サイバーパンク風なら射的ミニゲーム(TwoPlayerShop2D.Shooter.cs)   // 「スタート！」を少し出してから消す
                 lastEvent = "ゲーム開始！";
                 return false;
             }
@@ -141,6 +142,7 @@ public partial class TwoPlayerShop2D
             return;
         }
 
+        entryShopTitle.text = cyberTheme && shooterMode ? shooterTitle : entryTitle;   // サイバーパンク風なら射的ミニゲームの名前
         string[] state = new string[2];
         for (int i = 0; i < 2; i++)
         {

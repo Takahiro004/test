@@ -127,12 +127,13 @@ public partial class TwoPlayerShop2D
         UpdateBagCreak();         // 袋が重くなったら「ミシ…」(TwoPlayerShop2D.Creak.cs)
         SyncModelOrder();         // 3Dモデルの商品の描く順番を、絵と同じにする(TwoPlayerShop2D.Products.cs)
 
-        if (screenShop < 0 || screenShop >= switcher.screens.Length) return;
+        if (screenShop < 0 || screenShop >= switcher.screens.Length) { UpdateShooterCameras(); return; }
         var cam = switcher.screens[screenShop].camera;
-        if (cam == null) return;
+        if (cam == null) { UpdateShooterCameras(); return; }
         ApplyShopCamera(cam);
         ApplyShopBackCamera(cam);
         UpdateShopScreenFrame();   // 棚の画面の枠(左右半分ずつプレイヤーの色。棚のカメラの向きが決まってから。TwoPlayerShop2D.Frame.cs)
+        UpdateShooterCameras();    // ネオン射撃中は、3つのカメラを射撃場へ(いちばん最後に上書き。TwoPlayerShop2D.Shooter.cs)
     }
 
     // 縦のとき、棚のカメラは真ん中しか描かないので、左右の余りには前の映像が残ってしまう

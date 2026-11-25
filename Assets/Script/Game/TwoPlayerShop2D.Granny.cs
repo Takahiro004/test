@@ -38,7 +38,7 @@ public partial class TwoPlayerShop2D
             grannyTestNow = false;
             if (!grannyRunning && p1 != null && p2 != null && !InEntry) StartCoroutine(GrannyRun(p1));
         }
-        if (!grannyEnabled || grannyTimes == null || InEntry || timeLeft < 0f || IsTimeUp || grannyRunning || p1 == null || p2 == null) return;
+        if (!grannyEnabled || shooterOn || grannyTimes == null || InEntry || timeLeft < 0f || IsTimeUp || grannyRunning || p1 == null || p2 == null) return;
         for (int i = 0; i < grannyTimes.Length; i++)
         {
             if (grannyDone.Contains(i) || timeLeft > grannyTimes[i]) continue;
