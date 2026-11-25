@@ -567,6 +567,43 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ときどき出る小さなノイズの出やすさ(1フレームあたり。0 で出さない)")]
     [Range(0f, 0.3f)] public float cyberIdleGlitch = 0.03f;
 
+    [Header("特殊モード: ネオン射撃(サイバーパンク風のままエントリーすると、詰め放題の代わりに遊ぶ射的ミニゲーム)")]
+    [Tooltip("ON: サイバーパンク風のときは射的ミニゲームを遊ぶ / OFF: サイバーパンク風でも詰め放題バトル")]
+    public bool shooterMode = true;
+    [Tooltip("真ん中の画面とエントリー画面に出す名前")]
+    public string shooterTitle = "ネオン・シュートアウト";
+    [Tooltip("制限時間(秒)")]
+    public float shooterTime = 60f;
+    [Tooltip("的の絵(空ならスクリプトで描いた、積み重なった四角いロボット)")]
+    public Sprite shooterTargetSprite;
+    [Tooltip("的の高さ(画面の短いほうの長さに対する割合)")]
+    public float shooterTargetSize = 0.2f;
+    [Tooltip("1つの画面に同時に出る的の数(最大)")]
+    public int shooterMaxTargets = 4;
+    [Tooltip("的が出てくる間隔(秒。終わりに近づくほど半分まで短くなる)")]
+    public float shooterSpawnInterval = 1.2f;
+    [Tooltip("的をこわすのに当てる回数(だいたい。±1 ばらつく)")]
+    public int shooterTargetHp = 4;
+    [Tooltip("的が出ている秒数(こわせなかったら引っこむ)")]
+    public float shooterTargetLife = 7f;
+    [Tooltip("照準の速さ(1秒に画面の短いほうの何倍動くか)")]
+    public float shooterAimSpeed = 0.9f;
+    [Tooltip("弾の数(かくれると補充)")]
+    public int shooterAmmo = 20;
+    [Tooltip("撃つ間隔(秒。A を押しているあいだ、この間隔で撃ち続ける)")]
+    public float shooterFireRate = 0.1f;
+    [Tooltip("かくれてから弾が満タンになるまでの秒数")]
+    public float shooterReloadTime = 1f;
+    [Tooltip("的が撃ってくる前に、赤い輪が出る秒数(この間にかくれればガード)")]
+    public float shooterAttackWarn = 1f;
+    [Tooltip("顔を出しているときに撃たれたら減る点数")]
+    public int shooterHitPenalty = 50;
+    [Tooltip("撃たれたあと、撃てない秒数")]
+    public float shooterStunTime = 0.8f;
+    [Tooltip("射撃の音(スクリプトで作る短い音)を鳴らす")]
+    public bool shooterSound = true;
+    [Range(0f, 1f)] public float shooterVolume = 0.6f;
+
     [Header("棚の見た目(画像か3Dモデルを入れると、仮の棚の代わりに出る)・棚の商品の位置")]
     [Tooltip("仮の棚の背板の色")]
     public Color shelfBackColor = new Color(0.35f, 0.24f, 0.15f);
@@ -1282,6 +1319,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
 
         // エントリー画面: 2人が A で参加 → カウントダウン → 開始(TwoPlayerShop2D.Entry.cs)
         if (UpdateEntry()) return;
+        // 特殊モード「ネオン射撃」中は、詰め放題バトルを止めて射撃だけ動かす(TwoPlayerShop2D.Shooter.cs)
+        if (shooterOn) { UpdateShooter(); return; }
 
         // タイムアップ: 操作と点数を止めて、勝ち負けを出す(Aでもう一度)
         if (showResultOnTimeUp && IsTimeUp) { UpdateResult(); return; }

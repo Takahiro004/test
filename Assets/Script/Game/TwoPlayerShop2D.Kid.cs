@@ -54,7 +54,7 @@ public partial class TwoPlayerShop2D
     void UpdateKid()
     {
         UpdateKidPreview();
-        if (!kidEnabled || kidTimes == null || InEntry || timeLeft < 0f || IsTimeUp || kidRunning || p1 == null || p2 == null) return;
+        if (!kidEnabled || shooterOn || kidTimes == null || InEntry || timeLeft < 0f || IsTimeUp || kidRunning || p1 == null || p2 == null) return;
         for (int i = 0; i < kidTimes.Length; i++)
         {
             if (kidDone.Contains(i) || timeLeft > kidTimes[i]) continue;
