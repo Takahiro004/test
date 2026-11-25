@@ -95,9 +95,26 @@ public partial class TwoPlayerShop2D
     // 棚に置いてある商品を、その場所へ動かす(棚を出すときは、商品の一番下を板の上に合わせる)
     void PutOnShelf(GameObject go, ShelfSlot slot)
     {
-        go.transform.position = slot.pos;
+        // 乱雑に置く: 商品ごとに決まった傾きと横のずれ(商品の番号から決めるので、毎フレーム置き直しても変わらない。
+        // 補充で新しく置いた商品は、また別の傾き)。掴むと向きはまっすぐに戻る
+        int id = go.GetInstanceID();
+        float tilt = (Hash01(id, 1) * 2f - 1f) * shelfMessyAngle;
+        float shiftX = (Hash01(id, 2) * 2f - 1f) * shelfMessyOffset * ShelfArea().width / ShelfColumns;
+        go.transform.rotation = Quaternion.Euler(0f, 0f, tilt);
+        go.transform.position = (Vector3)slot.pos + new Vector3(shiftX, 0f, 0f);
         if (!showShelf) return;
         go.transform.position += new Vector3(0f, slot.pos.y - LowestY(go), 0f);
+    }
+
+    // 0〜1 の決まった乱数(同じ id と salt なら同じ値)
+    static float Hash01(int id, int salt)
+    {
+        unchecked
+        {
+            uint x = (uint)id * 2654435761u ^ (uint)salt * 40503u;
+            x ^= x >> 15; x *= 0x2c1b3c6du; x ^= x >> 12; x *= 0x297a2d39u; x ^= x >> 15;
+            return (x & 0xFFFFFF) / (float)0xFFFFFF;
+        }
     }
 
     // 商品の一番下の高さ(画像は当たり判定の形から。透明なふちの分だけ浮かないように)

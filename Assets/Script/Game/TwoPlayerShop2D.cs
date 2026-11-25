@@ -116,8 +116,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("機能のON/OFF: 操作・画面(チェックを外すとその機能が止まる)")]
     [Tooltip("自分の画面: 商品を持っている間は横にだけ動く。OFFなら上下にも動ける")]
     public bool horizontalOnlyOnOwnScreen = true;
-    [Tooltip("自分の画面: 商品を持っている間、RB で90度ずつ回せる(キーボード予備: 1P E / 2P 右Ctrl)")]
+    [Tooltip("自分の画面: 商品を持っている間、RB で回せる(キーボード予備: 1P E / 2P 右Ctrl)")]
     public bool rotateHeldProduct = true;
+    [Tooltip("ON: RB を押しているあいだ少しずつ回る(Rotate Hold Speed) / OFF: 前のように押すたびに90度ずつ")]
+    public bool rotateHoldContinuous = true;
+    [Tooltip("RB を押しているあいだ回る速さ(度/秒。時計回り)")]
+    public float rotateHoldSpeed = 120f;
     [Tooltip("自分の画面: 商品を持っている間、商品のまわりに回転の目印(時計回りの矢印の輪)を出す(RB で回せることが分かるように)。見た目は「回転の目印」")]
     public bool showRotateHint = true;
     [Tooltip("1P/2Pの画面: どんな形の画面でも範囲が全部映るように、カメラを自動でズームする")]
@@ -629,6 +633,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelScale = Vector3.one;
     [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 shelfProductOffset = Vector2.zero;
+    [Tooltip("棚の商品を乱雑に置く: 傾ける角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。0 でまっすぐ)")]
+    public float shelfMessyAngle = 20f;
+    [Tooltip("棚の商品を乱雑に置く: 横にずらす最大(1マスの幅に対する割合。0 でずらさない)")]
+    [Range(0f, 0.3f)] public float shelfMessyOffset = 0.12f;
     [Tooltip("棚の商品(と値札)を、段ごとにずらす。Element 0 が一番上の段、1 がその下…(X=右・Y=上)。Shelf Product Offset に足す。段の数だけ要素を増やす。再生中に変えてもすぐ反映")]
     public Vector2[] shelfRowOffsets = new Vector2[0];
 
@@ -1370,9 +1378,17 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         if (press1) { if (p1.kick != null) LockKick(p1); else PressAction(p1); }
         if (press2) { if (p2.kick != null) LockKick(p2); else PressAction(p2); }
 
-        // RB: 持っている商品を90度回す
-        if (Rotate1PPressed()) RotateHeld(p1);
-        if (Rotate2PPressed()) RotateHeld(p2);
+        // RB: 持っている商品を回す(押しているあいだ少しずつ。rotateHoldContinuous OFF なら押すたびに90度)
+        if (rotateHoldContinuous)
+        {
+            if (Rotate1PHeld()) RotateHeld(p1, rotateHoldSpeed * Time.deltaTime);
+            if (Rotate2PHeld()) RotateHeld(p2, rotateHoldSpeed * Time.deltaTime);
+        }
+        else
+        {
+            if (Rotate1PPressed()) RotateHeld(p1, 90f);
+            if (Rotate2PPressed()) RotateHeld(p2, 90f);
+        }
 
         UpdateKick(p1);
         UpdateKick(p2);
@@ -1544,11 +1560,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         Debug.Log($"[Shop2D] {lastEvent}");
     }
 
-    // 自分の画面で持っている商品を、時計回りに90度回す(離したあとも向きはそのまま)
-    void RotateHeld(Player p)
+    // 自分の画面で持っている商品を、時計回りに degrees 度回す(離したあとも向きはそのまま)
+    void RotateHeld(Player p, float degrees)
     {
         if (!rotateHeldProduct || p.held == null || p.inShop) return;
-        p.held.transform.Rotate(0f, 0f, -90f);
+        p.held.transform.Rotate(0f, 0f, -degrees);
         lastEvent = $"{p.name}が {p.held.name} を回した({Mathf.RoundToInt(p.held.transform.eulerAngles.z)}度)";
     }
 
