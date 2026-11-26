@@ -161,6 +161,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showPriceTags = true;
     [Tooltip("値札の文字の大きさ(1 で前の大きさ)")]
     public float priceTagSize = 1.4f;
+    [Tooltip("値札と商品のあいだのすき間(値札は商品のすぐ上に出る)")]
+    public float priceTagGap = 0.05f;
     [Tooltip("値札の文字の色(好きな色に変えてよい。再生中に変えてもすぐ反映)")]
     public Color priceTagFontColor = Color.white;
     [Tooltip("値札の文字のふち(枠線)の色")]
@@ -1044,7 +1046,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public int product = -1;   // 置く商品(商品の一覧の番号。ランダム補充のとき。-1 = 空き)
         public GameObject go;      // 今置いてある商品(無ければ null)
         public TextMesh tag;       // このマスの値札
-        public TextMesh[] tagOutline;   // 値札のふち(同じ文字を黒で8方向に少しずらして、後ろに重ねる)
+        public TextMesh[] tagOutline;
+        public float tagTop;            // 値札の下のはしを置ける、いちばん上の高さ(上の段にかからないように)   // 値札のふち(同じ文字を黒で8方向に少しずらして、後ろに重ねる)
     }
 
     Player p1, p2;
