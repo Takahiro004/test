@@ -129,23 +129,31 @@ public partial class TwoPlayerShop2D
         if (!shelfMessy && !shelfMessyScatter) return new ShelfPose { angle = 0f, dx = 0f, cellW = cellW };   // 両方 OFF: まっすぐ・マスの真ん中
         int id = go.GetInstanceID();
         float room = cellW * 0.96f;   // 隣とのあいだに少しだけすき間
-        float bestAngle = 0f, bestW = float.MaxValue, bestC = 0f;
-        const int tries = 16;
+        // 高さ: 1段の高さから板の厚さを引いた分(上の段の商品にぶつからないように)
+        float roomH = (ShelfArea().height / ShelfRows - (showShelf ? shelfBoardThickness : 0f)) * 0.96f;
+        float bestAngle = 0f, bestW = float.MaxValue, bestC = 0f, bestOver = float.MaxValue;
+        const int tries = 24;
         for (int t = 0; t < tries; t++)
         {
             float angle = shelfMessy ? (Hash01(id, 10 + t) * 2f - 1f) * shelfMessyAngleMax : 0f;   // OFF: まっすぐ
             go.transform.rotation = Quaternion.Euler(0f, 0f, angle);
             go.transform.position = slot.pos;
             if (!ShapeRect(go, out Rect r)) { bestAngle = angle; bestW = 0f; bestC = 0f; break; }
-            if (r.width < bestW) { bestAngle = angle; bestW = r.width; bestC = r.center.x - slot.pos.x; }
-            if (r.width <= room || !shelfMessy) break;   // 1マスに入る向きが見つかった(まっすぐなら1回だけ)
+            // はみ出し具合(横も縦も入れば 1 以下)。いちばん小さい向きを選ぶ
+            float over = Mathf.Max(r.width / Mathf.Max(0.01f, room), r.height / Mathf.Max(0.01f, roomH));
+            if (over < bestOver) { bestOver = over; bestAngle = angle; bestW = r.width; bestC = r.center.x - slot.pos.x; }
+            if (over <= 1f || !shelfMessy) break;   // 横(隣)にも縦(上の段)にもぶつからない向きが見つかった(まっすぐなら1回だけ)
         }
+        if (bestOver > 1f && shelfMessy && warnedBigProducts.Add(go.name))
+            Debug.Log($"[Shop2D] {go.name} はどの向きでも棚の1マスに入りきらない(いちばん小さい向きで {bestOver:0.00} 倍)。隣や上の段に少しかかる。表の大きさを小さくするか、段・列を減らす");
         float free = Mathf.Max(0f, room - bestW);
         float jitter = (Hash01(id, 2) * 2f - 1f) * free / 2f * Mathf.Clamp01(shelfMessySpread);
         // マスにそろえるときは、ずらさない(前と同じ置き方)
         float dx = shelfMessyScatter ? jitter - bestC : 0f;
         return new ShelfPose { angle = bestAngle, dx = dx, cellW = cellW, messy = shelfMessy, scatter = shelfMessyScatter };
     }
+
+    readonly HashSet<string> warnedBigProducts = new HashSet<string>();   // 1マスに入らないと知らせた商品(1回だけ)
 
     // 消えた商品の向きを忘れる
     void CleanShelfPoses()
