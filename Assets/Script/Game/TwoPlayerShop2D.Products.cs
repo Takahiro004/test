@@ -301,7 +301,7 @@ public partial class TwoPlayerShop2D
             text = $"{info.name}\n¥{info.price:N0}";
         }
         slot.tag.text = text;
-        slot.tag.color = priceTagColor;   // 黒い文字に白いふち(2026-11-27 プログラマー。前は献立の食材だけ黄色)
+        slot.tag.color = priceTagColor;   // 黒い文字・ふち無し(2026-11-27 プログラマー。前は献立の食材だけ黄色)
         if (slot.tagOutline != null)
             foreach (var ol in slot.tagOutline) if (ol != null) { ol.text = text; ol.color = priceTagOutlineColor; }
     }
