@@ -265,7 +265,7 @@ public partial class TwoPlayerShop2D
             if (section >= shelfSections.Count) break;
             float x = area.xMin + cellW * (j % ShelfColumns + 0.5f);
             float rowTop = area.yMax - cellH * (j / ShelfColumns);
-            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagColor, PriceTagOrder);
+            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagTextColor, PriceTagOrder);
             float textSize = 0.012f * size * Mathf.Max(0.1f, priceTagSize);
             SetTextSize(tag, textSize);
             tag.anchor = TextAnchor.UpperCenter;
@@ -273,12 +273,12 @@ public partial class TwoPlayerShop2D
             Vector2 shift = ProductShift(j / ShelfColumns);   // 商品と一緒にずらす
             tag.transform.localPosition = new Vector3(x + shift.x, rowTop - 0.1f + shift.y, 0f);
             // ふち(枠線): 同じ文字をふちの色で8方向に少しずらして、すぐ後ろ(PriceTagOrder - 1)に重ねる
-            float d = textSize * 6.4f * priceTagOutlineWidth;   // 1行の高さ ≒ 大きさ x 6.4
+            float d = textSize * 6.4f * priceTagEdgeWidth;   // 1行の高さ ≒ 大きさ x 6.4
             slots[i].tagOutline = new TextMesh[d > 0f ? 8 : 0];
             for (int o = 0; o < slots[i].tagOutline.Length; o++)
             {
                 float ang = o * Mathf.PI / 4f;
-                var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagOutlineColor, PriceTagOrder - 1);
+                var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagEdgeColor, PriceTagOrder - 1);
                 SetTextSize(ol, textSize);
                 ol.anchor = TextAnchor.UpperCenter;
                 ol.alignment = TextAlignment.Center;
@@ -301,9 +301,9 @@ public partial class TwoPlayerShop2D
             text = $"{info.name}\n¥{info.price:N0}";
         }
         slot.tag.text = text;
-        slot.tag.color = priceTagColor;   // 黒い文字・ふち無し(2026-11-27 プログラマー。前は献立の食材だけ黄色)
+        slot.tag.color = priceTagTextColor;   // 黒い文字・ふち無し(2026-11-27 プログラマー。前は献立の食材だけ黄色)
         if (slot.tagOutline != null)
-            foreach (var ol in slot.tagOutline) if (ol != null) { ol.text = text; ol.color = priceTagOutlineColor; }
+            foreach (var ol in slot.tagOutline) if (ol != null) { ol.text = text; ol.color = priceTagEdgeColor; }
     }
 
     // ---------- 画像の商品の当たり判定 ----------
