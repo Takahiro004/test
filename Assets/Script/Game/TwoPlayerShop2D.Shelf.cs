@@ -97,13 +97,13 @@ public partial class TwoPlayerShop2D
     // 乱雑に置く: 商品ごとの向きと横のずれ(初めて置くときに1回だけ決めて覚える。毎フレーム置き直しても変わらない。
     // 補充で新しく置いた商品は、また別の向き)。向きは、その向きの幅が1マスに入るものを選ぶので、隣の商品と重ならない。
     // 横の位置も、1マスの中の空いている所だけで動かす(列にそろって見えないように)。掴んでも向きはそのまま
-    class ShelfPose { public float angle, dx, cellW; }
+    class ShelfPose { public float angle, dx, cellW; public bool messy; }
     readonly Dictionary<GameObject, ShelfPose> shelfPoses = new Dictionary<GameObject, ShelfPose>();
 
     void PutOnShelf(GameObject go, ShelfSlot slot)
     {
         float cellW = ShelfArea().width / ShelfColumns;
-        if (!shelfPoses.TryGetValue(go, out var pose) || Mathf.Abs(pose.cellW - cellW) > 0.001f)
+        if (!shelfPoses.TryGetValue(go, out var pose) || Mathf.Abs(pose.cellW - cellW) > 0.001f || pose.messy != shelfMessy)
         {
             if (shelfPoses.Count > 300) CleanShelfPoses();
             pose = ChooseShelfPose(go, slot, cellW);
@@ -118,6 +118,7 @@ public partial class TwoPlayerShop2D
     // 商品の向きと横のずれを決める(何回か向きを試して、幅が1マスに入る向きにする)
     ShelfPose ChooseShelfPose(GameObject go, ShelfSlot slot, float cellW)
     {
+        if (!shelfMessy) return new ShelfPose { angle = 0f, dx = 0f, cellW = cellW, messy = false };   // OFF: まっすぐ・マスの真ん中
         int id = go.GetInstanceID();
         float room = cellW * 0.96f;   // 隣とのあいだに少しだけすき間
         float bestAngle = 0f, bestW = float.MaxValue, bestC = 0f;
@@ -133,7 +134,7 @@ public partial class TwoPlayerShop2D
         }
         float free = Mathf.Max(0f, room - bestW);
         float jitter = (Hash01(id, 2) * 2f - 1f) * free / 2f * Mathf.Clamp01(shelfMessySpread);
-        return new ShelfPose { angle = bestAngle, dx = jitter - bestC, cellW = cellW };
+        return new ShelfPose { angle = bestAngle, dx = jitter - bestC, cellW = cellW, messy = true };
     }
 
     // 消えた商品の向きを忘れる
@@ -200,8 +201,15 @@ public partial class TwoPlayerShop2D
     }
 
     // 再生中に棚の設定が変わったか(LateUpdate から毎フレーム)
+    bool appliedMessy = true;
     void UpdateShelfIfChanged()
     {
+        // 乱雑に置くの ON/OFF を変えたら、棚の商品を置き直す(棚が流れていないときも)
+        if (shelfMessy != appliedMessy)
+        {
+            appliedMessy = shelfMessy;
+            foreach (var kv in slotOf) if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
+        }
         var now = CurrentShelfSettings();
         if (now == appliedShelf && RingSections == appliedPhaseCount && !RowOffsetsChanged()) return;
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す

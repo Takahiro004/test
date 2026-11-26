@@ -633,6 +633,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public Vector3 shelfModelScale = Vector3.one;
     [Tooltip("棚の商品(と値札)を、まとめてずらす。X=右・Y=上(マスの並びはそのまま。棚の見た目は動かない)。再生中に変えてもすぐ反映")]
     public Vector2 shelfProductOffset = Vector2.zero;
+    [Tooltip("ON: 棚の商品を乱雑に置く(ばらばらの向き・横の位置) / OFF: 前のようにまっすぐ、マスの真ん中に置く。再生中に変えてもすぐ反映")]
+    public bool shelfMessy = true;
     [Tooltip("棚の商品を乱雑に置く: 回す角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。180 でどの向きにもなる(360度)。0 でまっすぐ)。" +
              "隣の商品と重ならない向きを選ぶ(どの向きでも1マスに入らない大きな商品は、いちばん幅の狭い向き)")]
     [Range(0f, 180f)] public float shelfMessyAngleMax = 180f;
