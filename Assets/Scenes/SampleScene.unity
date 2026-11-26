@@ -781,7 +781,13 @@ MonoBehaviour:
   highRankNotice: 1
   highRankAura: 1
   shelfSlide: 1
-  showPriceTags: 0
+  showPriceTags: 1
+  priceTagSize: 1.6
+  priceTagShowName: 0
+  priceTagGap: 0.05
+  priceTagFontColor: {r: 0.78431374, g: 0.5803922, b: 0.3647059, a: 1}
+  priceTagBorderColor: {r: 0, g: 0, b: 0, a: 1}
+  priceTagBorderWidth: 0.07
   autoFitShopScreen: 1
   showTimerPlaceholder: 0
   createFloor: 1
@@ -954,6 +960,7 @@ MonoBehaviour:
   kidBagHeight: 0.75
   kidBagHeadTop: 0.45
   grannyEnabled: 1
+  grannyTargetsLeader: 1
   grannyPreview: 0
   grannyTimes:
   - 65
@@ -2042,6 +2049,18 @@ MonoBehaviour:
   - "\u30AE\u30B7\u2026"
   - "\u30AE\u30C1\u2026"
   bagCreakSize: 1
+  bagTearByChance: 1
+  bagCreakYellowFrom: 0.5
+  bagTearChanceWhite: 0.05
+  bagTearChanceYellow: {x: 0.2, y: 0.3}
+  bagSharpProducts:
+  - "\u305A\u308F\u3044\u304B\u306B"
+  - "\u3044\u305B\u3048\u3073"
+  - "\u3086\u3067\u3048\u3073"
+  - "\u3066\u3070\u3055\u304D"
+  - "\u3055\u3093\u307E"
+  - "\u3044\u308F\u3057"
+  bagSharpTearBonus: 0.1
   bagStretchStart: 0.6
   bagStretchAmount: 0.4
   bagHandleThin: 0.4
