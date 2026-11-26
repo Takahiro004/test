@@ -268,10 +268,12 @@ public partial class TwoPlayerShop2D
             var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagFontColor, PriceTagOrder);
             float textSize = 0.012f * size * Mathf.Max(0.1f, priceTagSize);
             SetTextSize(tag, textSize);
-            tag.anchor = TextAnchor.UpperCenter;
+            tag.anchor = TextAnchor.LowerCenter;   // 下のはしを商品のすぐ上に合わせる(PlaceTagNear)
             tag.alignment = TextAlignment.Center;
             Vector2 shift = ProductShift(j / ShelfColumns);   // 商品と一緒にずらす
             tag.transform.localPosition = new Vector3(x + shift.x, rowTop - 0.1f + shift.y, 0f);
+            // 値札の上のはしの限界(文字の高さ2行ぶん下げた所に下のはしを置く = 上の段にかからない)
+            slots[i].tagTop = rowTop - 0.1f + shift.y - textSize * 6.4f * 2.2f;
             // ふち(枠線): 同じ文字をふちの色で8方向に少しずらして、すぐ後ろ(PriceTagOrder - 1)に重ねる
             float d = textSize * 6.4f * priceTagBorderWidth;   // 1行の高さ ≒ 大きさ x 6.4
             slots[i].tagOutline = new TextMesh[d > 0f ? 8 : 0];
@@ -280,13 +282,14 @@ public partial class TwoPlayerShop2D
                 float ang = o * Mathf.PI / 4f;
                 var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagBorderColor, PriceTagOrder - 1);
                 SetTextSize(ol, textSize);
-                ol.anchor = TextAnchor.UpperCenter;
+                ol.anchor = TextAnchor.LowerCenter;
                 ol.alignment = TextAlignment.Center;
                 ol.transform.localPosition = new Vector3(Mathf.Cos(ang) * d, Mathf.Sin(ang) * d, 0.001f);
                 slots[i].tagOutline[o] = ol;
             }
             slots[i].tag = tag;
             SetSlotTag(slots[i]);
+            if (slots[i].go != null) PlaceTagNear(slots[i].go, slots[i]);
         }
     }
 

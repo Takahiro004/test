@@ -111,8 +111,16 @@ public partial class TwoPlayerShop2D
         }
         go.transform.rotation = Quaternion.Euler(0f, 0f, pose.angle);
         go.transform.position = (Vector3)slot.pos + new Vector3(pose.dx, 0f, 0f);
-        if (!showShelf) return;
-        go.transform.position += new Vector3(0f, slot.pos.y - LowestY(go), 0f);
+        if (showShelf) go.transform.position += new Vector3(0f, slot.pos.y - LowestY(go), 0f);
+        PlaceTagNear(go, slot);
+    }
+
+    // 値札を商品のすぐ上(横は商品の真ん中)に置く。上の段にかからないように、その段の上のはし(slot.tagTop)より上には出さない
+    void PlaceTagNear(GameObject go, ShelfSlot slot)
+    {
+        if (slot.tag == null || go == null || !ShapeRect(go, out Rect r)) return;
+        float y = Mathf.Min(r.yMax + priceTagGap, slot.tagTop);
+        slot.tag.transform.position = new Vector3(r.center.x, y, slot.tag.transform.position.z);
     }
 
     // 商品の向きと横のずれを決める(何回か向きを試して、幅が1マスに入る向きにする)
