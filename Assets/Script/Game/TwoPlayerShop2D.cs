@@ -157,14 +157,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool highRankAura = true;
     [Tooltip("棚の画面: 棚は横に長くつながっていて、Shelf Slide Interval 秒ごとに左から次の棚がスライドしてくる。OFF なら棚は1つだけで動かない")]
     public bool shelfSlide = true;
-    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額。白い文字に黒いふち)を出す。再生中に変えてもすぐ反映")]
+    [Tooltip("棚の画面: 棚の商品の上に値札(名前と金額。黒い文字に白いふち。商品より手前)を出す。再生中に変えてもすぐ反映")]
     public bool showPriceTags = true;
     [Tooltip("値札の文字の大きさ(1 で前の大きさ)")]
     public float priceTagSize = 1.4f;
     [Tooltip("値札の文字の色")]
-    public Color priceTagColor = Color.white;
+    public Color priceTagColor = Color.black;
     [Tooltip("値札の文字のふち(枠線)の色")]
-    public Color priceTagOutlineColor = Color.black;
+    public Color priceTagOutlineColor = Color.white;
     [Tooltip("値札の文字のふちの太さ(文字の高さに対する割合。0 でふちなし)")]
     [Range(0f, 0.2f)] public float priceTagOutlineWidth = 0.07f;
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
