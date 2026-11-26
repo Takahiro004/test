@@ -162,11 +162,11 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("値札の文字の大きさ(1 で前の大きさ)")]
     public float priceTagSize = 1.4f;
     [Tooltip("値札の文字の色")]
-    public Color priceTagColor = Color.black;
+    public Color priceTagTextColor = Color.black;
     [Tooltip("値札の文字のふち(枠線)の色")]
-    public Color priceTagOutlineColor = Color.white;
+    public Color priceTagEdgeColor = Color.white;
     [Tooltip("値札の文字のふちの太さ(文字の高さに対する割合。0 でふちなし)")]
-    [Range(0f, 0.2f)] public float priceTagOutlineWidth = 0f;   // 2026-11-27 プログラマー: ふちは無し
+    [Range(0f, 0.2f)] public float priceTagEdgeWidth = 0f;   // 2026-11-27 プログラマー: ふちは無し
     [Tooltip("棚の画面: 横のとき、配置が全部映るようにカメラを自動でズームする")]
     public bool autoFitShopScreen = true;
     [Tooltip("棚の画面: 縦のとき、上の空き場所に「TIMER」の目印を出す")]
