@@ -43,9 +43,16 @@ public partial class TwoPlayerShop2D
         {
             if (grannyDone.Contains(i) || timeLeft > grannyTimes[i]) continue;
             grannyDone.Add(i);
-            StartCoroutine(GrannyRun(Random.value < 0.5f ? p1 : p2));
+            StartCoroutine(GrannyRun(GrannyTarget()));
             return;
         }
+    }
+
+    // ねらう人: grannyTargetsLeader なら勝っているほう(袋の合計金額が多いほう。同じならランダム)、OFF ならランダム
+    Player GrannyTarget()
+    {
+        if (grannyTargetsLeader && p1.total != p2.total) return p1.total > p2.total ? p1 : p2;
+        return Random.value < 0.5f ? p1 : p2;
     }
 
     bool GrannyShouldStop => IsTimeUp || liftStarted;

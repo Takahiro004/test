@@ -36,7 +36,8 @@ public partial class TwoPlayerShop2D
     {
         if (bagCreakWords == null || bagCreakWords.Length == 0) yield break;
         string word = bagCreakWords[Random.Range(0, bagCreakWords.Length)];
-        Color color = over ? new Color(1f, 0.3f, 0.25f) : Color.Lerp(new Color(1f, 1f, 1f, 0.9f), new Color(1f, 0.85f, 0.4f), k);
+        // 色は3段階(破れる確率の目安): 白(5%) → 黄色(20〜30%。k が bagCreakYellowFrom から) → 赤(破れる重さを超えた。100%)
+        Color color = over ? new Color(1f, 0.3f, 0.25f) : k >= bagCreakYellowFrom ? new Color(1f, 0.85f, 0.2f) : new Color(1f, 1f, 1f, 0.9f);
         var label = MakeText("Creak", p.bag.root, p.layer, word, color, 1400);
         float size = HudTextSize * (over ? 1.1f : Mathf.Lerp(0.6f, 0.9f, k)) * Mathf.Max(0.1f, bagCreakSize);
         SetTextSize(label, size);

@@ -482,6 +482,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Header("袋あらしのおばあさん(妨害。ランダムな1人の袋の前に立って、ガサゴソして、商品を1つ抜き取っていく)")]
     [Tooltip("袋あらしのおばあさんを出す")]
     public bool grannyEnabled = true;
+    [Tooltip("ON: おばあさんは勝っているほう(袋の合計金額が多いほう。同じならランダム)の袋から取る / OFF: ランダムな1人")]
+    public bool grannyTargetsLeader = true;
     [Tooltip("見え方の確認: ON にすると、1P・2P の画面の袋の前に、おばあさんを出しっぱなしにする。下の大きさ・高さの欄を再生中に変えるとすぐ動く。決まったら OFF に戻す")]
     public bool grannyPreview = false;
     [Tooltip("出てくる時(残り時間の秒数)。例: 65 と 20 なら、残り 1:05 と 0:20 に1回ずつ(そのたびに 1P か 2P をランダムに選ぶ)")]
@@ -916,6 +918,19 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public string[] bagCreakWords = { "ミシ…", "ミシミシ…", "ギシ…", "ギチ…" };
     [Tooltip("擬音の文字の大きさ(1で普通)")]
     public float bagCreakSize = 1f;
+    [Tooltip("ON: 持ち上げたときに破れるかを、擬音の色(重さ)ごとの確率で決める(白 Bag Tear Chance White・黄色 Bag Tear Chance Yellow・赤 = 破れる重さを超えた 100%)。" +
+             "とがった商品(Bag Sharp Products)が入っていると、1つにつき Bag Sharp Tear Bonus だけ破れやすい。OFF: 前のように Bag Max Weight を超えたら必ず破れる")]
+    public bool bagTearByChance = true;
+    [Tooltip("擬音が黄色になるところ(擬音の出はじめ〜破れる重さ を 0〜1 として。0.5 なら真ん中から黄色。それより軽いと白)")]
+    [Range(0f, 1f)] public float bagCreakYellowFrom = 0.5f;
+    [Tooltip("擬音が白いときに、持ち上げて破れる確率(0.05 = 5%)")]
+    [Range(0f, 1f)] public float bagTearChanceWhite = 0.05f;
+    [Tooltip("擬音が黄色のときに、持ち上げて破れる確率。X = 黄色になったところ・Y = 破れる重さの直前(重いほど Y に近づく。0.2〜0.3 = 20〜30%)")]
+    public Vector2 bagTearChanceYellow = new Vector2(0.2f, 0.3f);
+    [Tooltip("とがった商品(袋が破れやすくなる)。商品の一覧の名前")]
+    public string[] bagSharpProducts = { "ずわいかに", "いせえび", "ゆでえび", "てばさき", "さんま", "いわし" };
+    [Tooltip("とがった商品1つにつき、破れる確率に足す値(0.1 = +10%。擬音が出ていない軽い袋でも足す)")]
+    [Range(0f, 1f)] public float bagSharpTearBonus = 0.1f;
 
     [Header("袋が破れる演出(伸びる・底が開く・ゴムパッチン)")]
     [Tooltip("中の重さが破れる重さのこの割合を超えたら伸び始める(1 で破れる重さのとき一番伸びる)")]
