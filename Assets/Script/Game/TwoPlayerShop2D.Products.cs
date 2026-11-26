@@ -262,12 +262,26 @@ public partial class TwoPlayerShop2D
             if (section >= shelfSections.Count) break;
             float x = area.xMin + cellW * (j % ShelfColumns + 0.5f);
             float rowTop = area.yMax - cellH * (j / ShelfColumns);
-            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", Color.white, -15);
-            SetTextSize(tag, 0.012f * size);
+            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagColor, -15);
+            float textSize = 0.012f * size * Mathf.Max(0.1f, priceTagSize);
+            SetTextSize(tag, textSize);
             tag.anchor = TextAnchor.UpperCenter;
             tag.alignment = TextAlignment.Center;
             Vector2 shift = ProductShift(j / ShelfColumns);   // 商品と一緒にずらす
             tag.transform.localPosition = new Vector3(x + shift.x, rowTop - 0.1f + shift.y, 0f);
+            // ふち(枠線): 同じ文字をふちの色で8方向に少しずらして、すぐ後ろ(-16)に重ねる
+            float d = textSize * 6.4f * priceTagOutlineWidth;   // 1行の高さ ≒ 大きさ x 6.4
+            slots[i].tagOutline = new TextMesh[d > 0f ? 8 : 0];
+            for (int o = 0; o < slots[i].tagOutline.Length; o++)
+            {
+                float ang = o * Mathf.PI / 4f;
+                var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagOutlineColor, -16);
+                SetTextSize(ol, textSize);
+                ol.anchor = TextAnchor.UpperCenter;
+                ol.alignment = TextAlignment.Center;
+                ol.transform.localPosition = new Vector3(Mathf.Cos(ang) * d, Mathf.Sin(ang) * d, 0.001f);
+                slots[i].tagOutline[o] = ol;
+            }
             slots[i].tag = tag;
             SetSlotTag(slots[i]);
         }
@@ -277,10 +291,16 @@ public partial class TwoPlayerShop2D
     void SetSlotTag(ShelfSlot slot)
     {
         if (slot.tag == null) return;
-        if (slot.go == null) { slot.tag.text = ""; return; }
-        var info = SlotInfo(slot);
-        slot.tag.text = $"{info.name}\n¥{info.price:N0}";
-        slot.tag.color = info.menuIngredient ? new Color(1f, 0.92f, 0.4f) : Color.white;
+        string text = "";
+        if (slot.go != null)
+        {
+            var info = SlotInfo(slot);
+            text = $"{info.name}\n¥{info.price:N0}";
+        }
+        slot.tag.text = text;
+        slot.tag.color = priceTagColor;   // 白い文字(2026-11-27 プログラマー。前は献立の食材だけ黄色)
+        if (slot.tagOutline != null)
+            foreach (var ol in slot.tagOutline) if (ol != null) { ol.text = text; ol.color = priceTagOutlineColor; }
     }
 
     // ---------- 画像の商品の当たり判定 ----------

@@ -18,7 +18,7 @@ public partial class TwoPlayerShop2D
     Transform shelfRoot;   // 棚の見た目(仮の棚 / 画像 / 3Dモデル)をまとめる親
     (int cols, int rows, bool show, float board, Color back, Color boardColor, Sprite sprite, GameObject model,
      Vector3 offset, Vector3 rotation, Vector3 scale, ShopOrientation orientation, float aspect, float width, float top,
-     Vector2 productOffset, bool tags) appliedShelf;
+     Vector2 productOffset, bool tags, float tagSize, float tagOutline, Color tagColor, Color tagOutlineColor) appliedShelf;
 
     int ShelfColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);
     int ShelfRows => Mathf.Max(1, IsPortrait ? portraitRows : landscapeRows);
@@ -218,10 +218,10 @@ public partial class TwoPlayerShop2D
         ApplyShopLayout();   // 商品を並べ直して(数が変わったら作り直して)、棚の見た目を作り直す
     }
 
-    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float, Vector2, bool) CurrentShelfSettings()
+    (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float, Vector2, bool, float, float, Color, Color) CurrentShelfSettings()
         => (ShelfColumns, ShelfRows, showShelf, shelfBoardThickness, shelfBackColor, shelfBoardColor, shelfSprite, shelfModel,
             shelfModelOffset, shelfModelRotation, shelfModelScale, shopOrientation, portraitAspect, portraitViewWidth, portraitTopSpace,
-            shelfProductOffset, showPriceTags);
+            shelfProductOffset, showPriceTags, priceTagSize, priceTagOutlineWidth, priceTagColor, priceTagOutlineColor);
 
     // 棚の見た目を作り直す(ApplyShopLayout から呼ぶ)
     void BuildShelfVisual()
