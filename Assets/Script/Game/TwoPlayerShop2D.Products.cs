@@ -250,6 +250,9 @@ public partial class TwoPlayerShop2D
         return ProductFor(slots.IndexOf(slot));
     }
 
+    // 値札の描く順番: 棚の商品より手前(いちばん前)。手のカーソル(2900)・画面の枠(2800)よりは奥
+    const int PriceTagOrder = 2700;
+
     // 棚の値札(商品の名前と金額)。マスごとに1つ作り、商品の上のあたりに出す(棚と一緒に流れる)
     void BuildPriceTags(Rect area)
     {
@@ -262,20 +265,20 @@ public partial class TwoPlayerShop2D
             if (section >= shelfSections.Count) break;
             float x = area.xMin + cellW * (j % ShelfColumns + 0.5f);
             float rowTop = area.yMax - cellH * (j / ShelfColumns);
-            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagColor, -15);
+            var tag = MakeText($"PriceTag{i + 1}", shelfSections[section], layerShop, "", priceTagColor, PriceTagOrder);
             float textSize = 0.012f * size * Mathf.Max(0.1f, priceTagSize);
             SetTextSize(tag, textSize);
             tag.anchor = TextAnchor.UpperCenter;
             tag.alignment = TextAlignment.Center;
             Vector2 shift = ProductShift(j / ShelfColumns);   // 商品と一緒にずらす
             tag.transform.localPosition = new Vector3(x + shift.x, rowTop - 0.1f + shift.y, 0f);
-            // ふち(枠線): 同じ文字をふちの色で8方向に少しずらして、すぐ後ろ(-16)に重ねる
+            // ふち(枠線): 同じ文字をふちの色で8方向に少しずらして、すぐ後ろ(PriceTagOrder - 1)に重ねる
             float d = textSize * 6.4f * priceTagOutlineWidth;   // 1行の高さ ≒ 大きさ x 6.4
             slots[i].tagOutline = new TextMesh[d > 0f ? 8 : 0];
             for (int o = 0; o < slots[i].tagOutline.Length; o++)
             {
                 float ang = o * Mathf.PI / 4f;
-                var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagOutlineColor, -16);
+                var ol = MakeText("Outline", tag.transform, layerShop, "", priceTagOutlineColor, PriceTagOrder - 1);
                 SetTextSize(ol, textSize);
                 ol.anchor = TextAnchor.UpperCenter;
                 ol.alignment = TextAlignment.Center;
@@ -298,7 +301,7 @@ public partial class TwoPlayerShop2D
             text = $"{info.name}\n¥{info.price:N0}";
         }
         slot.tag.text = text;
-        slot.tag.color = priceTagColor;   // 白い文字(2026-11-27 プログラマー。前は献立の食材だけ黄色)
+        slot.tag.color = priceTagColor;   // 黒い文字・ふち無し(2026-11-27 プログラマー。前は献立の食材だけ黄色)
         if (slot.tagOutline != null)
             foreach (var ol in slot.tagOutline) if (ol != null) { ol.text = text; ol.color = priceTagOutlineColor; }
     }
