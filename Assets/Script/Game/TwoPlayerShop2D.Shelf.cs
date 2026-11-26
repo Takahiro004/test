@@ -221,7 +221,7 @@ public partial class TwoPlayerShop2D
     (int, int, bool, float, Color, Color, Sprite, GameObject, Vector3, Vector3, Vector3, ShopOrientation, float, float, float, Vector2, bool, float, float, Color, Color) CurrentShelfSettings()
         => (ShelfColumns, ShelfRows, showShelf, shelfBoardThickness, shelfBackColor, shelfBoardColor, shelfSprite, shelfModel,
             shelfModelOffset, shelfModelRotation, shelfModelScale, shopOrientation, portraitAspect, portraitViewWidth, portraitTopSpace,
-            shelfProductOffset, showPriceTags, priceTagSize, priceTagEdgeWidth, priceTagTextColor, priceTagEdgeColor);
+            shelfProductOffset, showPriceTags, priceTagSize, priceTagBorderWidth, priceTagFontColor, priceTagBorderColor);
 
     // 棚の見た目を作り直す(ApplyShopLayout から呼ぶ)
     void BuildShelfVisual()
