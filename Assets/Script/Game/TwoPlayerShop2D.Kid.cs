@@ -176,7 +176,7 @@ public partial class TwoPlayerShop2D
         else
         {
             kidCarry = RandomProduct();
-            kidCarryAngle = Random.Range(-1f, 1f) * shelfMessyAngleMax;   // 棚の商品と同じく、ばらばらの向き
+            kidCarryAngle = shelfMessy ? Random.Range(-1f, 1f) * shelfMessyAngleMax : 0f;   // 棚の商品と同じく、ばらばらの向き
         }
         kidTarget = null;
         carried.sprite = ProductIconSprite(kidCarry);
