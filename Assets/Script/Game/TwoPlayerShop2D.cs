@@ -161,6 +161,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool showPriceTags = true;
     [Tooltip("値札の文字の大きさ(1 で前の大きさ)")]
     public float priceTagSize = 1.4f;
+    [Tooltip("ON: 値札に商品名も出す(名前と金額の2行) / OFF: 金額だけ。再生中に変えてもすぐ反映")]
+    public bool priceTagShowName = false;
     [Tooltip("値札と商品のあいだのすき間(値札は商品のすぐ上に出る)")]
     public float priceTagGap = 0.05f;
     [Tooltip("値札の文字の色(好きな色に変えてよい。再生中に変えてもすぐ反映)")]
