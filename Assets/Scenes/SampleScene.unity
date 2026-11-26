@@ -1029,6 +1029,8 @@ MonoBehaviour:
   shelfModelRotation: {x: -5, y: 0, z: 0}
   shelfModelScale: {x: 1.5, y: 1, z: 1}
   shelfProductOffset: {x: 0, y: 0}
+  shelfMessy: 1
+  shelfMessyScatter: 1
   shelfMessyAngleMax: 180
   shelfMessySpread: 1
   shelfRowOffsets:
