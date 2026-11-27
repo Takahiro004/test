@@ -659,6 +659,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool shelfBigNoOverlap = true;
     [Tooltip("ON: マス(列)をやめて、段ごとに商品の幅に合わせて左から詰めて並べる(大きな商品は広く使う。空いた列ができない。背の高い商品の上は空ける) / OFF: 前のマスごとの置き方")]
     public bool shelfPacked = true;
+    [Tooltip("詰めて並べるとき: 商品どうしのすき間(小さいほど詰まる。余った幅は、すき間に少しずつ足す)")]
+    public float shelfPackGap = 0.05f;
+    [Tooltip("詰めて並べるとき: 1段に試す商品の数 = 列の数(Portrait Columns) x この値。大きいほどたくさん詰まる(入りきらない分は棚に出さない)")]
+    public int shelfPackCapacity = 3;
     [Tooltip("棚の商品を乱雑に置く: 回す角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。180 でどの向きにもなる(360度)。0 でまっすぐ)。" +
              "隣の商品と重ならない向きを選ぶ(どの向きでも1マスに入らない大きな商品は、いちばん幅の狭い向き)")]
     [Range(0f, 180f)] public float shelfMessyAngleMax = 180f;

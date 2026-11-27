@@ -20,7 +20,9 @@ public partial class TwoPlayerShop2D
      Vector3 offset, Vector3 rotation, Vector3 scale, ShopOrientation orientation, float aspect, float width, float top,
      Vector2 productOffset, bool tags, bool tagName, float tagSize, float tagOutline, Color tagColor, Color tagOutlineColor) appliedShelf;
 
-    int ShelfColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);
+    int BaseColumns => Mathf.Max(1, IsPortrait ? portraitColumns : landscapeColumns);   // Inspector の列の数
+    // 1段に置ける商品の数。詰めて並べるとき(shelfPacked)は、列の数 x shelfPackCapacity まで試して、入るだけ並べる
+    int ShelfColumns => BaseColumns * (shelfPacked ? Mathf.Max(1, shelfPackCapacity) : 1);
     int ShelfRows => Mathf.Max(1, IsPortrait ? portraitRows : landscapeRows);
     int ShelfCount => ShelfColumns * ShelfRows;                 // 1画面ぶんの棚に置く数
     int RingSections => shelfSlide ? 2 : 1;                    // 輪にする棚の数(流れるときは2つ)
@@ -50,7 +52,7 @@ public partial class TwoPlayerShop2D
         if (!IsPortrait)
         {
             // 横: 1マス 横4 x 縦3(今までの 3列 x 2段 と同じ大きさ)。画面に入らなければ縮める
-            float w = Mathf.Min(ShelfColumns * 4f, view.x - 1f);
+            float w = Mathf.Min(BaseColumns * 4f, view.x - 1f);
             float h = Mathf.Min(ShelfRows * 3f, view.y - 1f);
             return new Rect(-w / 2f, -h / 2f, w, h);
         }
@@ -430,7 +432,7 @@ public partial class TwoPlayerShop2D
         if (!ShapeRect(go, out r)) return true;
         // 1マスより大きい商品は例外: 真ん中が画面に映っていれば取れる(全部は映りきらないため。2026-11-04 プログラマー)
         Rect a = ShelfArea();
-        if (r.width > a.width / ShelfColumns || r.height > a.height / ShelfRows)
+        if (r.width > a.width / BaseColumns || r.height > a.height / ShelfRows)
             return Mathf.Abs(r.center.x) <= half.x && Mathf.Abs(r.center.y) <= half.y;
         return r.xMin >= -half.x && r.xMax <= half.x && r.yMin >= -half.y && r.yMax <= half.y;
     }

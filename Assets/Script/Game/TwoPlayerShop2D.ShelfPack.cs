@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // 棚の商品を、マス(列)をやめて詰めて並べる(TwoPlayerShop2D の続き。設定の欄は TwoPlayerShop2D.cs の shelfPacked)
+//  - 1段に試す商品の数は 列の数 x shelfPackCapacity。すき間 shelfPackGap でできるだけ詰めて、入るだけ並べる(入らない分は山札へ戻す)
 //  - 1画面ぶんの棚(PackSection)の段ごとに、下の段から順に、その段の商品の幅を測って(向きは乱雑に置くときと同じ選び方。
 //    どの向きでも1段に入らない大きな商品はまっすぐ)、左から詰めて並べる。余った幅は、商品のあいだに同じだけ配る
 //  - 大きな商品は広い場所を使うので、空いた列ができない。入りきらない商品は山札へ戻し、次に棚が回ってくるまでその場所は空ける(packedOut)
@@ -24,7 +25,8 @@ public partial class TwoPlayerShop2D
         float cellW = W / cols, cellH = a.height / rows;
         float board = showShelf ? shelfBoardThickness : 0f;
         float roomH = (cellH - board) * 0.96f;
-        float minGap = 0.05f;
+        float minGap = Mathf.Max(0.01f, shelfPackGap);   // 商品どうしのすき間(できるだけ詰める)
+        float nominalW = W / BaseColumns;                 // 向きを選ぶときの1マスの幅(Inspector の列の数で決まる)
         var forbidden = new List<Vector2>[rows];   // 段ごとの、下の段の背の高い商品が届いている横の範囲(棚の左のはしから)
         for (int r = 0; r < rows; r++) forbidden[r] = new List<Vector2>();
 
@@ -44,7 +46,7 @@ public partial class TwoPlayerShop2D
                 s.hasAlloc = false;
                 if (s.go == null) { s.packedOut = true; continue; }   // 山札が空などで、もともと空いている
                 s.pos = ShelfSlotPosition(idx);
-                MeasurePackPose(s.go, s, cellW * 0.96f, roomH, out float ang, out float w, out float cx, out float over);
+                MeasurePackPose(s.go, s, nominalW * 0.96f, roomH, out float ang, out float w, out float cx, out float over);
                 items.Add(s); angles.Add(ang); widths.Add(w); centers.Add(cx); overs.Add(over);
             }
 
