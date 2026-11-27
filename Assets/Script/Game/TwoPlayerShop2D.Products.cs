@@ -322,7 +322,7 @@ public partial class TwoPlayerShop2D
         if (slot.go != null)
         {
             var info = SlotInfo(slot);
-            text = priceTagShowName ? $"{info.name}\n¥{info.price:N0}" : $"¥{info.price:N0}";   // 2026-11-27 プログラマー: 名前は消して金額だけ
+            text = priceTagWithName ? $"{info.name}\n¥{info.price:N0}" : $"¥{info.price:N0}";   // 2026-11-27 プログラマー: 名前と金額
         }
         slot.tag.text = text;
         slot.tag.color = priceTagFontColor;   // 文字の色は Inspector で調整・黒いふち(2026-11-27 プログラマー)
