@@ -392,6 +392,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool shelfScrollContinuous = true;
     [Tooltip("ずっと流すとき: 棚1つぶん流れるのにかかる秒数(大きいほどゆっくり)")]
     public float shelfScrollSectionTime = 12f;
+    [Tooltip("ON: 画面のはし(壁)で見切れている商品も、手が届いている(見えている所にかざした)なら取れる / OFF: 全部が画面に映っている商品だけ取れる")]
+    public bool shelfGrabCutOff = true;
     [Tooltip("ランクごとの、試合の始めの出やすさ(ランダム補充のとき)。Element 0 = ランク1 〜 Element 4 = ランク5。大きいほど出やすい(2 なら 1 の2倍)。0 なら出ない")]
     public float[] rankWeights = { 1f, 0.8f, 0.5f, 0.25f, 0.1f };
     [Tooltip("ランクごとの、試合の終わりの出やすさ。始め(Rank Weights)から、試合の進み具合に合わせて少しずつこの値になる(終盤ほど高いランクが出やすい)")]
@@ -1546,7 +1548,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         Collider2D col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
         if (col == null || !products.TryGetValue(col, out var go)) return;
         // 棚の商品は、全部が画面に映っていないと取れない(TwoPlayerShop2D.Shelf.cs)
-        if (slotOf.ContainsKey(go) && !CanGrabOnShelf(go)) { lastEvent = $"{go.name} は画面に全部映っていないので取れない"; return; }
+        // shelfGrabCutOff が ON なら、見切れていても取れる(カーソルは画面の中なので、見えている所にかざしている)
+        if (!shelfGrabCutOff && slotOf.ContainsKey(go) && !CanGrabOnShelf(go)) { lastEvent = $"{go.name} は画面に全部映っていないので取れない"; return; }
         TakeProduct(p, go);
     }
 
