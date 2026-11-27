@@ -164,12 +164,12 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     [Tooltip("ON: 値札は、プレイヤーの手(棚の画面のカーソル)をかざした商品にだけ出す / OFF: 全部の商品にいつも出す。再生中に変えてもすぐ反映")]
     public bool priceTagOnHover = true;
     [Tooltip("ON: 値札に商品名も出す(名前と金額の2行) / OFF: 金額だけ。再生中に変えてもすぐ反映")]
-    public bool priceTagShowName = false;
+    public bool priceTagWithName = true;   // 2026-11-27 プログラマー: 名前も出す
     [Tooltip("値札と商品のあいだのすき間(値札は商品のすぐ上に出る)")]
     public float priceTagGap = 0.05f;
     [Tooltip("値札の文字の色(好きな色に変えてよい。再生中に変えてもすぐ反映)")]
     public Color priceTagFontColor = Color.white;
-    [Tooltip("値札の文字のふち(枠線)の色")]
+    [Tooltip("値札の文字のふち(枠線)の色(好きな色に変えてよい。再生中に変えてもすぐ反映)")]
     public Color priceTagBorderColor = Color.black;
     [Tooltip("値札の文字のふちの太さ(文字の高さに対する割合。0 でふちなし)")]
     [Range(0f, 0.2f)] public float priceTagBorderWidth = 0.07f;   // 2026-11-27 プログラマー: 黒いふち・文字の色は調整する
