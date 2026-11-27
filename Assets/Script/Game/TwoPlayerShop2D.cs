@@ -657,6 +657,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool shelfMessyScatter = true;
     [Tooltip("ON: 1マスに入りきらない大きな商品は、傾けずにまっすぐ置き、かかっている隣・上の段のマスを空ける(ほかの商品とかぶらない。その商品が取られたら空いたマスに補充) / OFF: いちばんはみ出しが小さい向きにする(少しかぶる)")]
     public bool shelfBigNoOverlap = true;
+    [Tooltip("ON: マス(列)をやめて、段ごとに商品の幅に合わせて左から詰めて並べる(大きな商品は広く使う。空いた列ができない。背の高い商品の上は空ける) / OFF: 前のマスごとの置き方")]
+    public bool shelfPacked = true;
     [Tooltip("棚の商品を乱雑に置く: 回す角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。180 でどの向きにもなる(360度)。0 でまっすぐ)。" +
              "隣の商品と重ならない向きを選ぶ(どの向きでも1マスに入らない大きな商品は、いちばん幅の狭い向き)")]
     [Range(0f, 180f)] public float shelfMessyAngleMax = 180f;
@@ -1056,7 +1058,10 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public TextMesh tag;       // このマスの値札
         public TextMesh[] tagOutline;   // 値札のふち(同じ文字を黒で8方向に少しずらして、後ろに重ねる)
         public float tagTop;            // 値札の下のはしを置ける、いちばん上の高さ(上の段にかからないように)
-        public GameObject blockedBy;    // 大きな商品がかかっているので、ここには置かない(その商品が無くなったら空く。TwoPlayerShop2D.Shelf.cs)
+        public GameObject blockedBy;
+        public bool hasAlloc;           // 詰めて並べたときの場所がある(shelfPacked。TwoPlayerShop2D.ShelfPack.cs)
+        public float allocX, allocW;    // その場所: 棚の左のはしからの、商品の真ん中の位置 / 使える幅
+        public bool packedOut;          // 詰めたら入りきらなかったので、次に棚が回ってくるまで置かない    // 大きな商品がかかっているので、ここには置かない(その商品が無くなったら空く。TwoPlayerShop2D.Shelf.cs)
     }
 
     Player p1, p2;
@@ -1148,13 +1153,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             if (UseDeck) slot.product = DrawCard();
             if (!UseDeck || slot.product >= 0) PlaceProduct(slot);
         }
+        if (shelfPacked) PackAllSections();   // マスをやめて詰めて並べる(TwoPlayerShop2D.ShelfPack.cs)
     }
 
     // 棚の場所に商品を1個置く
     void PlaceProduct(ShelfSlot slot)
     {
-        // 大きな商品がかかっているマスには置かない(TwoPlayerShop2D.Shelf.cs)
-        if (slot.blockedBy != null && slotOf.ContainsKey(slot.blockedBy))
+        // 大きな商品がかかっているマス・詰めたら入りきらなかった場所には置かない(TwoPlayerShop2D.Shelf.cs / .ShelfPack.cs)
+        if ((slot.blockedBy != null && slotOf.ContainsKey(slot.blockedBy)) || (shelfPacked && slot.packedOut))
         {
             if (UseDeck && slot.product >= 0) { ReturnCard(slot.product); slot.product = -1; }
             SetSlotTag(slot);
@@ -1206,6 +1212,15 @@ public partial class TwoPlayerShop2D : MonoBehaviour
             }
         }
         PlaceProduct(slot);
+        // 詰めて並べているときは、空いた場所に入らない商品なら引き直す(4回まで)
+        for (int t = 0; t < 4 && shelfPacked && UseDeck && slot.go != null && shelfPoses.TryGetValue(slot.go, out var ps) && ps.over > 1f; t++)
+        {
+            ReturnCard(slot.product);
+            ForgetShelfProduct(slot.go);
+            slot.product = DrawCard();
+            if (slot.product < 0) break;
+            PlaceProduct(slot);
+        }
     }
 
     GameObject MakeSprite(string objName, Vector2 pos, ProductShape shape, Color color, int layer, Sprite image = null)
