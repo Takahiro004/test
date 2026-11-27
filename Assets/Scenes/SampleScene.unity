@@ -784,7 +784,7 @@ MonoBehaviour:
   showPriceTags: 1
   priceTagSize: 1.6
   priceTagOnHover: 1
-  priceTagShowName: 0
+  priceTagWithName: 1
   priceTagGap: 0.05
   priceTagFontColor: {r: 0.78431374, g: 0.5803922, b: 0.3647059, a: 1}
   priceTagBorderColor: {r: 0, g: 0, b: 0, a: 1}
@@ -1040,6 +1040,7 @@ MonoBehaviour:
   shelfProductOffset: {x: 0, y: 0}
   shelfMessy: 1
   shelfMessyScatter: 1
+  shelfBigNoOverlap: 1
   shelfMessyAngleMax: 180
   shelfMessySpread: 1
   shelfRowOffsets:
@@ -2075,7 +2076,7 @@ MonoBehaviour:
   - "\u3066\u3070\u3055\u304D"
   - "\u3055\u3093\u307E"
   - "\u3044\u308F\u3057"
-  bagSharpTearBonus: 0.1
+  bagSharpTearBonus: 0.05
   bagStretchStart: 0.6
   bagStretchAmount: 0.4
   bagHandleThin: 0.4
