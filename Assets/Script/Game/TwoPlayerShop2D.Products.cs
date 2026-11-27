@@ -279,7 +279,8 @@ public partial class TwoPlayerShop2D
     {
         if (!showPriceTags || shelfRoot == null) return;
         float cellW = area.width / ShelfColumns, cellH = area.height / ShelfRows;
-        float size = Mathf.Min(cellW, cellH);
+        // 文字の大きさは Inspector の列の数(BaseColumns)のマスで決める(詰めて並べるときに1段に試す数を増やしても、小さくならないように)
+        float size = Mathf.Min(area.width / BaseColumns, cellH);
         for (int i = 0; i < slots.Count; i++)
         {
             int section = i / ShelfCount, j = i % ShelfCount;   // どの棚の、何番目か
