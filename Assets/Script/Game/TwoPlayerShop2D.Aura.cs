@@ -115,7 +115,12 @@ public partial class TwoPlayerShop2D
         if (!l.haloBuilt)
         {
             l.haloBuilt = true;
-            BuildHalo(go, l);
+            // まっすぐな向きで計算する(棚で傾いた商品の見た目の範囲は斜めにふくらむので、光の位置・大きさがずれた。
+            // 光は商品の中の位置で覚えるので、描くときに商品の向きに合わせて回る)
+            var saved = go.transform.rotation;
+            go.transform.rotation = Quaternion.identity;
+            try { BuildHalo(go, l); }
+            finally { go.transform.rotation = saved; }
         }
         if (l.halo == null) return;
 
@@ -376,7 +381,11 @@ public partial class TwoPlayerShop2D
         {
             // 3Dモデルの商品は見た目の輪郭から(当たり判定は手足を包んだ大きな形なので、カニなどでは体から離れた輪になる)。
             // 画像・図形の商品と、輪郭が取れなかったときは当たり判定のふちから
-            if (!(infoOf.TryGetValue(go, out var info) && info.model != null && BuildSilhouetteEdge(go, l, info))) BuildEdge(go, l);
+            // まっすぐな向きで計算する(傾いた商品でずれないように。ふちは商品の中の位置で覚える)
+            var saved = go.transform.rotation;
+            go.transform.rotation = Quaternion.identity;
+            try { if (!(infoOf.TryGetValue(go, out var info) && info.model != null && BuildSilhouetteEdge(go, l, info))) BuildEdge(go, l); }
+            finally { go.transform.rotation = saved; }
         }
         // つぶの数 = ふちの長さ x 1 あたりの数(大きな商品ほど多い。つぶの大きさは同じ)
         int want = auraFlame ? Mathf.Clamp(Mathf.RoundToInt(l.perimeter * Mathf.Max(0f, auraFlameDensity)), 0, 250) : 0;
