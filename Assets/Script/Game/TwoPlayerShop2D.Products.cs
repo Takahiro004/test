@@ -250,6 +250,27 @@ public partial class TwoPlayerShop2D
         return ProductFor(slots.IndexOf(slot));
     }
 
+    // 手をかざした商品にだけ値札を出す(priceTagOnHover。LateUpdate から毎フレーム)。
+    // 棚の画面にカーソルがあるプレイヤー(1P・2P)の、カーソルの下にある棚の商品
+    readonly HashSet<GameObject> hoveredProducts = new HashSet<GameObject>();
+    void UpdatePriceTagHover()
+    {
+        hoveredProducts.Clear();
+        if (priceTagOnHover)
+            foreach (var p in new[] { p1, p2 })
+            {
+                if (p == null || !p.inShop || p.held != null) continue;
+                var col = Physics2D.OverlapPoint(p.shopPos, 1 << layerShop);
+                if (col != null && products.TryGetValue(col, out var go) && slotOf.ContainsKey(go)) hoveredProducts.Add(go);
+            }
+        foreach (var slot in slots)
+        {
+            if (slot.tag == null) continue;
+            bool show = !priceTagOnHover || (slot.go != null && hoveredProducts.Contains(slot.go));
+            if (slot.tag.gameObject.activeSelf != show) slot.tag.gameObject.SetActive(show);
+        }
+    }
+
     // 値札の描く順番: 棚の商品より手前(いちばん前)。手のカーソル(2900)・画面の枠(2800)よりは奥
     const int PriceTagOrder = 2700;
 
