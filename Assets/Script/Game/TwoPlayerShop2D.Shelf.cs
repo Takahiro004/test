@@ -69,7 +69,9 @@ public partial class TwoPlayerShop2D
         int section = i / ShelfCount, j = i % ShelfCount;   // どの棚の、何番目か
         // shelfProductOffset だけ棚の商品をまとめてずらし、さらに段ごとに shelfRowOffsets だけずらす(X 右・Y 上)
         Vector2 shift = ProductShift(j / cols);
-        float x = a.xMin + cellW * (j % cols + 0.5f) + SectionOffset(section) + shift.x;
+        // 詰めて並べたとき(shelfPacked)は、その場所(allocX)。そうでなければマスの真ん中
+        bool packed = shelfPacked && i < slots.Count && slots[i].hasAlloc;
+        float x = a.xMin + (packed ? slots[i].allocX : cellW * (j % cols + 0.5f)) + SectionOffset(section) + shift.x;
         float rowTop = a.yMax - cellH * (j / cols) + shift.y;
         if (!showShelf) return new Vector2(x, rowTop - cellH / 2f);
         return new Vector2(x, rowTop - cellH + shelfBoardThickness);
@@ -97,7 +99,7 @@ public partial class TwoPlayerShop2D
     // 乱雑に置く: 商品ごとの向きと横のずれ(初めて置くときに1回だけ決めて覚える。毎フレーム置き直しても変わらない。
     // 補充で新しく置いた商品は、また別の向き)。向きは、その向きの幅が1マスに入るものを選ぶので、隣の商品と重ならない。
     // 横の位置も、1マスの中の空いている所だけで動かす(列にそろって見えないように)。掴んでも向きはそのまま
-    class ShelfPose { public float angle, dx, cellW; public bool messy, scatter, big; }
+    class ShelfPose { public float angle, dx, cellW, over; public bool messy, scatter, big; }
     readonly Dictionary<GameObject, ShelfPose> shelfPoses = new Dictionary<GameObject, ShelfPose>();
 
     void PutOnShelf(GameObject go, ShelfSlot slot)
@@ -127,12 +129,12 @@ public partial class TwoPlayerShop2D
     ShelfPose ChooseShelfPose(GameObject go, ShelfSlot slot, float cellW)
     {
         int id = go.GetInstanceID();
-        float room = cellW * 0.96f;   // 隣とのあいだに少しだけすき間
+        float room = (shelfPacked && slot.hasAlloc ? slot.allocW : cellW) * 0.96f;   // 隣とのあいだに少しだけすき間(詰めて並べたときは、その場所の幅)
         // 高さ: 1段の高さから板の厚さを引いた分(上の段の商品にぶつからないように)
         float roomH = (ShelfArea().height / ShelfRows - (showShelf ? shelfBoardThickness : 0f)) * 0.96f;
         // 大きな商品(まっすぐで1マスに入らない): 傾けずにまっすぐ置く。横は、その棚(1画面ぶん)からはみ出さない所。
         // かかっている隣・上のマスは BlockAroundBigProduct で空ける
-        if (shelfBigNoOverlap)
+        if (shelfBigNoOverlap && !shelfPacked)   // 詰めて並べるときは使わない(大きな商品は広い場所をもらう)
         {
             go.transform.rotation = Quaternion.identity;
             go.transform.position = slot.pos;
@@ -166,13 +168,13 @@ public partial class TwoPlayerShop2D
         float jitter = (Hash01(id, 2) * 2f - 1f) * free / 2f * Mathf.Clamp01(shelfMessySpread);
         // マスにそろえるときは、ずらさない(前と同じ置き方)
         float dx = shelfMessyScatter ? jitter - bestC : 0f;
-        return new ShelfPose { angle = bestAngle, dx = dx, cellW = cellW, messy = shelfMessy, scatter = shelfMessyScatter };
+        return new ShelfPose { angle = bestAngle, dx = dx, cellW = cellW, messy = shelfMessy, scatter = shelfMessyScatter, over = bestOver };
     }
 
     // 大きな商品(pose.big)がかかっているマス(同じ棚の、隣・上の段)を空ける。そこにあった商品は山札へ戻して消す
     void BlockAroundBigProduct(GameObject go, ShelfSlot own)
     {
-        if (!shelfPoses.TryGetValue(go, out var pose) || !pose.big || !ShapeRect(go, out Rect r)) return;
+        if (shelfPacked || !shelfPoses.TryGetValue(go, out var pose) || !pose.big || !ShapeRect(go, out Rect r)) return;
         int idx = slots.IndexOf(own);
         if (idx < 0) return;
         float cellW = ShelfArea().width / ShelfColumns, cellH = ShelfArea().height / ShelfRows;
@@ -273,15 +275,22 @@ public partial class TwoPlayerShop2D
     }
 
     // 再生中に棚の設定が変わったか(LateUpdate から毎フレーム)
-    bool appliedMessy = true, appliedScatter = true;
+    bool appliedMessy = true, appliedScatter = true, appliedPacked = true;
     void UpdateShelfIfChanged()
     {
         // 乱雑に置くの ON/OFF を変えたら、棚の商品を置き直す(棚が流れていないときも)
-        if (shelfMessy != appliedMessy || shelfMessyScatter != appliedScatter)
+        if (shelfMessy != appliedMessy || shelfMessyScatter != appliedScatter || shelfPacked != appliedPacked)
         {
             appliedMessy = shelfMessy;
             appliedScatter = shelfMessyScatter;
-            foreach (var kv in slotOf) if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
+            appliedPacked = shelfPacked;
+            if (shelfPacked) PackAllSections();   // 詰めて並べ直す(TwoPlayerShop2D.ShelfPack.cs)
+            else
+            {
+                foreach (var s in slots) { s.hasAlloc = false; s.packedOut = false; s.pos = ShelfSlotPosition(slots.IndexOf(s)); }
+                shelfPoses.Clear();
+                foreach (var kv in slotOf) if (kv.Key != null) PutOnShelf(kv.Key, kv.Value);
+            }
         }
         var now = CurrentShelfSettings();
         if (now == appliedShelf && RingSections == appliedPhaseCount && !RowOffsetsChanged()) return;
@@ -394,7 +403,7 @@ public partial class TwoPlayerShop2D
     void RecycleSection(int k)
     {
         if (!UseDeck) return;
-        for (int i = k * ShelfCount; i < (k + 1) * ShelfCount && i < slots.Count; i++) slots[i].blockedBy = null;   // 並べ直すので空ける
+        for (int i = k * ShelfCount; i < (k + 1) * ShelfCount && i < slots.Count; i++) { slots[i].blockedBy = null; slots[i].packedOut = false; }   // 並べ直すので空ける
         for (int i = k * ShelfCount; i < (k + 1) * ShelfCount && i < slots.Count; i++)
         {
             var slot = slots[i];
@@ -407,6 +416,7 @@ public partial class TwoPlayerShop2D
             if (slot.product >= 0) PlaceProduct(slot);
             else SetSlotTag(slot);
         }
+        if (shelfPacked) PackSection(k);   // 詰めて並べる(TwoPlayerShop2D.ShelfPack.cs)
     }
 
     // 商品が全部画面に映っているか(映っていないと取れない)
