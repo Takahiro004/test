@@ -102,6 +102,7 @@ public partial class TwoPlayerShop2D
         if (switcher == null || p1 == null) return;
         UpdateShelfIfChanged();   // 段・列・棚の見た目を再生中に変えた
         UpdateShelfScroll();      // 棚をゆっくり左から右へ流す
+        UpdateBlockedSlots();     // 大きな商品が取られたら、かかっていたマスを空ける(TwoPlayerShop2D.Shelf.cs)
         UpdatePriceTagHover();    // 手をかざした商品にだけ値札を出す(TwoPlayerShop2D.Products.cs)
         if (screenP1 != appliedScreenP1 || screenShop != appliedScreenShop || screenP2 != appliedScreenP2)
             ApplyScreenAssignment();   // Inspector で画面の割り当てを入れ替えた

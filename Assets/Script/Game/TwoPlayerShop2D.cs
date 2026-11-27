@@ -655,6 +655,8 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     public bool shelfMessy = true;
     [Tooltip("ON: 棚の商品の横の位置をばらつかせる(マスにそろえない。隣と重ならない範囲) / OFF: マスの真ん中にそろえて置く。Shelf Messy とは別に切り替えられる。再生中に変えてもすぐ反映")]
     public bool shelfMessyScatter = true;
+    [Tooltip("ON: 1マスに入りきらない大きな商品は、傾けずにまっすぐ置き、かかっている隣・上の段のマスを空ける(ほかの商品とかぶらない。その商品が取られたら空いたマスに補充) / OFF: いちばんはみ出しが小さい向きにする(少しかぶる)")]
+    public bool shelfBigNoOverlap = true;
     [Tooltip("棚の商品を乱雑に置く: 回す角度の最大(度。商品ごとに -この値 〜 +この値 のどれか。180 でどの向きにもなる(360度)。0 でまっすぐ)。" +
              "隣の商品と重ならない向きを選ぶ(どの向きでも1マスに入らない大きな商品は、いちばん幅の狭い向き)")]
     [Range(0f, 180f)] public float shelfMessyAngleMax = 180f;
@@ -1052,8 +1054,9 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         public int product = -1;   // 置く商品(商品の一覧の番号。ランダム補充のとき。-1 = 空き)
         public GameObject go;      // 今置いてある商品(無ければ null)
         public TextMesh tag;       // このマスの値札
-        public TextMesh[] tagOutline;
-        public float tagTop;            // 値札の下のはしを置ける、いちばん上の高さ(上の段にかからないように)   // 値札のふち(同じ文字を黒で8方向に少しずらして、後ろに重ねる)
+        public TextMesh[] tagOutline;   // 値札のふち(同じ文字を黒で8方向に少しずらして、後ろに重ねる)
+        public float tagTop;            // 値札の下のはしを置ける、いちばん上の高さ(上の段にかからないように)
+        public GameObject blockedBy;    // 大きな商品がかかっているので、ここには置かない(その商品が無くなったら空く。TwoPlayerShop2D.Shelf.cs)
     }
 
     Player p1, p2;
@@ -1150,6 +1153,14 @@ public partial class TwoPlayerShop2D : MonoBehaviour
     // 棚の場所に商品を1個置く
     void PlaceProduct(ShelfSlot slot)
     {
+        // 大きな商品がかかっているマスには置かない(TwoPlayerShop2D.Shelf.cs)
+        if (slot.blockedBy != null && slotOf.ContainsKey(slot.blockedBy))
+        {
+            if (UseDeck && slot.product >= 0) { ReturnCard(slot.product); slot.product = -1; }
+            SetSlotTag(slot);
+            return;
+        }
+        slot.blockedBy = null;
         slot.count++;
         var info = SlotInfo(slot);
         slot.shape = info.shape;
@@ -1166,6 +1177,7 @@ public partial class TwoPlayerShop2D : MonoBehaviour
         RegisterProduct(go);
         slotOf[go] = slot;
         slot.go = go;
+        BlockAroundBigProduct(go, slot);   // 大きな商品なら、かかっているマスを空ける(TwoPlayerShop2D.Shelf.cs)
         if (UseDeck) MarkShown(slot.product);   // この試合で棚に出した(献立の食材を必ず出すため。TwoPlayerShop2D.Deck.cs)
         SetSlotTag(slot);   // 値札をこの商品に
         priceOf[go] = info.price;
